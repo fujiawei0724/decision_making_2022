@@ -70,6 +70,7 @@
 #include "InfluenceObstacle.hpp"
 #include "Obstacle.hpp"
 #include "AvoidancePath.hpp"
+#include "VehicleState.hpp"
 
 // extern bool GLOBAL_IS_IN_GROUND_;
 // extern std::mutex GLOBAL_IN_GROUND_MUTEX_;
