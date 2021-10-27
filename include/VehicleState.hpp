@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-27 14:25:15
+ * @LastEditTime: 2021-10-27 14:51:00
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -47,6 +47,9 @@ public:
     LongitudinalBehavior lon_beh_;
 };
 
+struct BehaviorSequence {
+
+};
 
 // The description of vehicle in world
 class VehicleStateWorld {
@@ -85,7 +88,6 @@ public:
 // Generator vehicle behavior sequence 
 class BehaviorGenerator {
 public:
-    using BehaviorSequence = std::vector<VehicleBehavior>;
     
     // Constructor
     BehaviorGenerator(int sequence_length) {
@@ -98,7 +100,7 @@ public:
     }
 
     // Generate vehicle behavior sequence
-        
+    
 
     int sequence_length_;
 };
