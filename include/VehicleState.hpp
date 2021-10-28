@@ -2,13 +2,15 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-28 17:10:39
+ * @LastEditTime: 2021-10-28 21:28:43
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
 #pragma once
 
 #include <unordered_map>
+#include <map>
+#include <algorithm>
 #include <stdio.h>
 #include "Const.hpp"
 #include "Point.hpp"
@@ -28,6 +30,7 @@ enum class LaneId {
     CenterLane = 0,
     LeftLane, 
     RightLane,
+    Undefined,
 }
 
 // Lateral behavior
@@ -286,9 +289,6 @@ public:
         return state;
     }
 
-
-
-
     Lane lane_;
 };
 
@@ -304,6 +304,11 @@ public:
     ~Vehicle() {
 
     }
+
+    State state_;
+    double length_{0.0};
+    double width_{0.0};
+
 };
 
 // Vehicle state with semantic information, such as current lane and reference lane
@@ -311,8 +316,14 @@ class SemanticVehicle {
 public:
     // Constructor
     SemanticVehicle() = default;
-    SemanticVehicle(Vehicle* vehicle) {
+    SemanticVehicle(const Vehicle& vehicle, const LateralBehavior& lat_beh, const LongitudinalBehavior& lon_beh, const LaneId& nearest_lane_id, const LaneId& reference_lane_id, const Lane& nearest_lane, const Lane& reference_lane) {
         vehicle_ = vehicle;
+        lat_beh_ = lat_beh;
+        lon_beh_ = lon_beh;
+        nearest_lane_id_ = nearest_lane_id;
+        reference_lane_id_ = reference_lane_id;
+        nearest_lane_ = nearest_lane;
+        reference_lane_id_ = reference_lane_id;
     }
 
     // Destructor
@@ -321,6 +332,12 @@ public:
     }
 
     VehicleStateWorld* vehicle_;
+    LateralBehavior lat_beh_;
+    LongitudinalBehavior lon_beh_;
+    LaneId nearest_lane_id_{Undefined};
+    LaneId reference_lane_id_{Undefined};
+    Lane nearest_lane_;
+    Lane reference_lane_;
 };
 
 // Generator vehicle behavior sequence 
@@ -387,16 +404,14 @@ public:
         // Initialize lane information
         if (lane_exist[LaneId::CenterLane]) {
             center_lane_exist_ = true;
-            center_lane_ = lane_info[LaneId::CenterLane];
         }
         if (lane_exist[LaneId::LeftLane]) {
             left_lane_exist_ = true;
-            left_lane_ = lane_info[LaneId::LeftLane];
         }
         if (lane_exist[LaneId::RightLane]) {
             right_lane_exist_ = true;
-            right_lane_ = lane_info[LaneId::RightLane];
         }
+        lane_set_ = lane_info;
     }
 
     // Destructor
@@ -404,23 +419,110 @@ public:
 
     }
 
+    // Calculate nearest lane for a vehicle
+    LaneId calculateNearestLaneId(const Vehicle& vehicle) {
+        // Calculate distance to each lane
+        std::vector<std::pair<LaneId, double>> lanes_distances{{LaneId::CenterLane, MAX_VALUE}, {LaneId::LeftLane, MAX_VALUE}, {LaneId::RightLane, MAX_VALUE}};
+        if (center_lane_exist_) {
+            lanes_distances[LaneId::CenterLane] = center_lane_.calculateDistanceFromPosition(vehicle.state_.position_);
+        }
+        if (left_lane_exist_) {
+            lanes_distances[LaneId::LeftLane] = left_lane_.calculateDistanceFromPosition(vehicle.state_.position_);
+        }
+        if (right_lane_exist_) {
+            lane_distances[LaneId::RightLane] = right_lane_.calculateDistanceFromPosition(vehicle.state_.position_);
+        }
+
+        std::sort(lanes_distances.begin(), lanes_distances.end(), [&] (const std::pair<LaneId, double>& a, const std::pair<LaneId, double>& b) {return a.second < b.second;});
+
+        assert(lanes_distances[0].second < MAX_VALUE);
+
+        return lanes_distances[0].first;
+    }
+
+    // Calculate reference lane for a vehicle
+    LaneId calculateReferenceLaneId(const LaneId& nearest_lane_id, const LateralBehavior& lat_beh) {
+        if (nearest_lane_id == LaneId::CenterLane) {
+            if (lat_beh == LateralBehavior::LaneKeeping) {
+                return LaneId::CenterLane;
+            } else if (lat_beh == LateralBehavior::LaneChangeLeft) {
+                return LaneId::LeftLane;
+            } else if (lat_beh == LateralBehavior::LaneChangeRight) {
+                return LaneId::RightLane;
+            } else {
+                assert(false);
+            }
+        } else if (nearest_lane_id == LaneId::LeftLane) {
+            if (lat_beh == LateralBehavior::LaneKeeping) {
+                return LaneId::LeftLane;
+            } else if (lat_beh == LateralBehavior::LaneChangeLeft) {
+                assert(false);
+            } else if (lat_beh == LateralBehavior::LaneChangeRight) {
+                return LaneId::CenterLane;
+            } else {
+                assert(false);
+            }
+        } else if (nearest_lane_id == LaneId::RightLane) {
+            if (lat_beh == LateralBehavior::LaneKeeping) {
+                return LaneId::RightLane;
+            } else if (lat_beh == LateralBehavior::LaneChangeLeft) {
+                return LaneId::CenterLane;
+            } else if (lat_beh == LateralBehavior::LaneChangeRight) {
+                assert(false);
+            }
+        } else {
+            assert(false);
+        }
+        return LaneId::Undefined;
+    }
+
+    // Predict lateral behavior for surround vehicles based on vehicle information
+    LateralBehavior predictSurroundVehicleLateralBehavior(const Vehicle& vehicle, const LaneId& nearest_lane_id) {
+        // Get nearest lane
+        Lane nearest_lane = lane_set_[nearest_lane_id];
+
+        // Get frenet state
+        StateTransformer stf(nearest_lane);
+        FrenetState frenet_state = stf.getFrenetStateFromState(vehicle.state_);
+
+        // Rule based judgement for potential lateral behavior
+        LateralBehavior potential_lateral_behavior;
+        const double lat_distance_threshold = 0.4;
+        const double lat_vel_threshold = 0.35;
+        if (frenet_state.vec_dt_[0] > lat_distance_threshold && frenet_state.vec_dt_[1] > lat_vel_threshold) {
+            potential_lateral_behavior = LateralBehavior::LaneChangeLeft;
+        } else if (frenet_state.vec_dt_[0] < -lat_distance_threshold && frenet_state.vec_dt_[1] < -lat_vel_threshold) {
+            potential_lateral_behavior = LateralBehavior::LaneChangeRight;
+        } else {
+            potential_lateral_behavior = LateralBehavior::LaneKeeping;
+        }
+
+        // TODO: add logic to handle the situation where the vehicle on the left lane and generate the lane change left behavior. The same situation also occurs on the right lane. 
+        if (potential_lateral_behavior == LateralBehavior::LaneChangeLeft && nearest_lane_id == LaneId::LeftLane) {
+            potential_lateral_behavior = LateralBehavior::LaneKeeping;
+        } else if (potential_lateral_behavior == LateralBehavior::LaneChangeRight && nearest_lane_id ==LaneId::RightLane) {
+            potential_lateral_behavior = LateralBehavior::LaneKeeping;
+        }
+
+        return potential_lateral_behavior;
+
+    }
+
     // Get semantic vehicle state (add lane information to vehicle state)
-    SemanticVehicleState getSemanticVehicle() {
+    SemanticVehicle getSemanticVehicle(const Vehicle& vehicle) {
         
     } 
 
     // Get leading vehicle state
-    SemanticVehicleState getLeadingSemanticVehicle() {
+    SemanticVehicle getLeadingSemanticVehicle(const SemanticVehicle& semantic_vehicle) {
 
-    }
+    } 
 
     // Lane information in map interface
     bool center_lane_exist_{false};
     bool left_lane_exist_{false};
     bool right_lane_exist_{false};
-    Lane center_lane_;
-    Lane left_lane_;
-    Lane right_lane_;
+    std::unordered_map<LaneId, Lane> lane_set_;
 };
 
 

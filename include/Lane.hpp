@@ -214,6 +214,26 @@ class Lane{
     // double getLaneTypeChangeDistance() const{
     //     return this->lane_type_changing_distance_;
     // }
+
+    // --------------------The function below is added for behavior planning-----------------------
+    // Calculate distance from a position to lane
+    double calculateDistanceFromPosition(const Eigen::Matrix<double, 2, 1>& cur_pos) {
+        // Get point2f
+        PathPlanningUtilities::Point2f current_point;
+        current_point.x_ = cur_pos(0);
+        current_point.y_ = cur_pos(1);
+
+        // Calculate the nearest point 
+        // TODO: this function maybe invalid for long distance calculation, edit the calculation logic
+        size_t nearest_point_index = Tools::findNearestPositionIndexInCoordination(lane_coorination_, current_point);
+        PathPlanningUtilities::Point2f nearest_point = lane_coorination_[nearest_point_index].worldpos_.position_;
+
+        double distance = sqrt(pow(current_point.x_ - nearest_point.x_, 2.0) + pow(current_point.y_ - nearest_point.y_, 2.0));
+
+        return distance;
+    }
+
+
  private:
     bool lane_existance_ = false;   // 道路是否可用
     std::vector<PathPlanningUtilities::CoordinationPoint> lane_coorination_;  // 道路完整信息
