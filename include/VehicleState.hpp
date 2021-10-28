@@ -2,21 +2,26 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-27 20:36:13
+ * @LastEditTime: 2021-10-28 11:25:40
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
 #pragma once
 
 #include <unordered_map>
+#include <stdio.h>
+#include "Const.hpp"
 #include "Point.hpp"
 #include "Point.hpp"
 #include "Const.hpp"
 #include "Compare.hpp"
 #include "Tools.hpp"
 #include "Lane.hpp"
+#include "Rectangle.hpp"
 
-namespace BehaviorPlanner{
+namespace BehaviorPlanner {
+
+// TODO: break up the code to several files
 
 // Lane id  
 enum class LaneId {
@@ -58,38 +63,106 @@ public:
 };
 
 
-// The description of vehicle in world
-class VehicleStateWorld {
+// The description of vehicle state in world coordination
+class State {
 public: 
     // Constructor
-    VehicleStateWorld() = default;
-    VehicleStateWorld() {
-        
+    State() = default;
+    State(double time_stamp, const PathPlanningUtilities::Point2f& position, double theta, double curvature, double velocity, double acceleration, double steer) {
+        time_stamp_ = time_stamp;
+        position_ = position;
+        theta_ = theta;
+        curvature_ = curvature;
+        velocity_ = velocity;
+        acceleration_ = acceleration;
+        steer_ = steer;
     }
 
     // Destructor
-    ~VehicleStateWorld() {
+    ~State() {
 
     }
+
+    void print() {
+        printf("State time stamp: %lf\n", time_stamp_);
+        printf("State position x: %lf\n", position_.x_);
+        printf("State position y: %lf\n", position_.y_);
+        printf("State theta: %lf\n", theta_);
+        printf("State curvature: %lf\n", curvature_);
+        printf("State velocity: %lf\n", velocity_);
+        printf("State acceleration: %lf\n", acceleration_);
+        printf("State steer: %lf\n", steer_);
+    }
+
+    double time_stamp_{0.0};
+    PathPlanningUtilities::Point2f position_;
+    double theta_{0.0};
+    double curvature_{0.0};
+    double velocity_{0.0};
+    double acceleration_{0.0};
+    double steer_{0.0};
+};
+
+/**
+ * @introduction: The description of vehicle state in frenet coordination.
+ * @param vec_ds_ denote the lateral offset based on the arc length s.
+ * @param vec_dt_ denote the lateral offset based on the tim t. (Maybe useless)
+ */
+class FrenetState {
+public: 
+    // Constructor
+    FrenetState() = default;
+    FrenetState(const Eigen::Matrix<double, 3, 1>& s, const Eigen::Matrix<double, 3, 1>& ds, const Eigen::Matrix<double, 3, 1>& dt) {
+        vec_s_ = s;
+        vec_ds_ = ds;
+        vec_dt_ = dt;
+    }
+
+    // Destructor
+    ~FrenetState() {
+
+    }
+
+    void load() {
+        
+    }
+
+    Eigen::Matrix<double, 3, 1> vec_s_{Eigen::Matrix<double, 3, 1>::Zero()};
+    Eigen::Matrix<double, 3, 1> vec_ds_{Eigen::Matrix<double, 3, 1>::Zero()};
+    Eigen::Matrix<double, 3, 1> vec_dt_{Eigen::Matrix<double, 3, 1>::Zero()};
 
     
 };
 
-// Vehicle state with semantic information, such as current lane and reference lane
-class SemanticVehicleState {
+class Vehicle {
 public:
     // Constructor
-    SemanticVehicleState() = default;
-    SemanticVehicleState(VehicleStateWorld* vehicle_state_world) {
-        vehicle_state_world_ = vehicle_state_world;
+    Vehicle() = default;
+    Vehicle() {
+
     }
 
     // Destructor
-    ~SemanticVehicleState() {
+    ~Vehicle() {
+
+    }
+};
+
+// Vehicle state with semantic information, such as current lane and reference lane
+class SemanticVehicle {
+public:
+    // Constructor
+    SemanticVehicle() = default;
+    SemanticVehicle(Vehicle* vehicle) {
+        vehicle_ = vehicle;
+    }
+
+    // Destructor
+    ~SemanticVehicle() {
         
     }
 
-    VehicleStateWorld* vehicle_state_world_;
+    VehicleStateWorld* vehicle_;
 };
 
 // Generator vehicle behavior sequence 
