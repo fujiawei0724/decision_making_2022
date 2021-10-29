@@ -837,3 +837,14 @@ double Tools::safeThetaTransform(double raw_theta) {
     }
     return safe_theta;
 }
+
+// Truncate control information
+double Tools::truncate(double val_in, double lower, double upper) {
+        if (lower > upper) {
+            assert(false);
+        }
+        double res = val_in;
+        res = std::max(res, lower);
+        res = std::min(res, upper);
+        return res;
+}

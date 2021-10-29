@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-29 15:59:56
+ * @LastEditTime: 2021-10-29 21:22:07
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -594,7 +594,9 @@ public:
     std::unordered_map<LaneId, Lane> lane_set_;
 };
 
+// Intelligent driver model
 class IDM {
+public:
     static double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
         double a_free = cur_velocity <= desired_velocity ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
 
@@ -617,7 +619,7 @@ class IDM {
         
         // Define linear predict function
         // TODO: use odeint to speed up calculation consumption  
-        std::function <std::vector<double> (std::vector<double>, double)> linearPredict = [&](const std::vector<double>& current_states, double t_gap) {
+        std::function<std::vector<double> (std::vector<double>, double)> linearPredict = [&](const std::vector<double>& current_states, double t_gap) {
             double cur_s = current_states[0], leading_s = current_states[1], cur_velocity = current_states[2], leading_velocity = current_states[3];
 
             double acc = calculateAcceleration(cur_s, leading_s, cur_velocity, leading_velocity, desired_velocity);
@@ -650,6 +652,131 @@ class IDM {
     double comfortable_braking_deceleration_{3.0};
     double hard_braking_deceleration_{5.0};
     double exponent_{4};
+};
+
+
+class IdealSteerModel {
+public:
+
+    // Constructor
+    IdealSteerModel(double wheelbase_len, double max_lon_acc, double max_lon_dec, double max_lon_acc_jerk, double max_lon_dec_jerk, double max_lat_acc, double max_lat_jerk, double max_steering_angle, double max_steer_rate, double max_curvature) {
+        // Load parameters
+        wheelbase_len_ = wheelbase_len;
+        max_lon_acc_ = max_lon_acc;
+        max_lon_dec_ = max_lon_dec;
+        max_lon_acc_jerk_ = max_lon_acc_jerk;
+        max_lon_dec_jerk = max_lon_dec_jerk;
+        max_lat_acc_ = max_lat_acc;
+        max_lat_jerk_ = max_lat_jerk;
+        max_steering_angle_ = max_steering_angle;
+        max_steer_rate_ = max_steer_rate;
+        max_curvature_ = max_curvature;
+
+
+    }
+    // Destructor
+    ~IdealSteerModel() {
+        
+    }
+
+    void setControl(const std::pair<double, double>& control) {
+        control_ = control;
+    }
+
+    void setState(const State& state) {
+        state_ = state;
+    }
+
+    void truncateControl(double dt) {
+        desired_lon_acc_ = (control_.second - state_.velocity_) / dt;
+        double desired_lon_jerk = (desired_lon_acc_ - state_.acceleration_) / dt;
+        desired_lon_jerk = Tools::truncate(desired_lon_jerk, -max_lon_dec_jerk_, max_lon_acc_jerk_);
+        desired_lon_acc_ = desired_lon_jerk * dt + state_.acceleration_;
+        desired_lon_acc_ = Tools::truncate(desired_lon_acc_, -max_lon_dec_, max_lon_acc_);
+        control_.second = std::max(state_.velocity_ + desired_lon_acc_ * dt, 0.0);
+        desired_lat_acc_ = pow(control_.second, 2) * (tan(control_.first) / wheelbase_len_);
+        double lat_acc_ori = pow(state_.velocity_, 2.0) * state_.curvature_;
+        double lat_jerk_desired = (desired_lat_acc_ - lat_acc_ori) / dt;
+        lat_jerk_desired = Tools::truncate(lat_jerk_desired, -max_lat_jerk_, max_lat_jerk_);
+        desired_lat_acc_ = lat_jerk_desired * dt + lat_acc_ori;
+        desired_lat_acc_ = Tools::truncate(desired_lat_acc_, -max_lat_acc_, max_lat_acc_);
+        control_.first = atan(desired_lat_acc_ * wheelbase_len_ / std::max(pow(self.control_.second, 2.0), 0.1 * BIG_EPS));
+        desired_steer_rate_ = Tools::normalizeAngle(control_.first - state_.steer_) / dt;
+        desired_steer_rate_ = Tools::truncate(desired_steer_rate_, -max_steer_rate_, max_steer_rate_);
+        control_.first = Tools::normalizeAngle(state_.steer_ + desired_steer_rate_ * dt);
+    }
+
+    void step(double dt) {
+
+        state_.steer_ = atan(state_.curvature_ * wheelbase_len_);
+        updateInternalState();
+        control_.second = std::max(0.0, control_.second);
+        control_.first = Tools::truncate(control_.first, -max_steering_angle_, max_steering_angle_);
+        truncateControl(dt);
+        desired_lon_acc_ = (control_.second - state_.velocity_) / dt;
+        desired_steer_rate_ = Tools::normalizeAngle(control_.first - state_.steer_);
+
+        // TODO: use odeint to speed up calculation consumption
+        std::function<Eigen::Matrix<double, 5, 1> (Eigen::Matrix<double, 5, 1>, double)> linearPredict = [&](const Eigen::Matrix<double, 5, 1>& cur_state, double t_gap) {
+            Eigen::Matrix<double, 5, 1> predicted_state{Eigen::Matrix<double, 5, 1>::Zero()};
+            predicted_state[0] = cur_state[0] + t_gap * cos(cur_state[2]) * cur_state[3];
+            predicted_state[1] = cur_state[1] + t_gap * sin(cur_state[2]) * cur_state[3];
+            predicted_state[2] = tan(cur_state[4]) * cur_state[3] / wheelbase_len_;
+            predicted_state[3] = cur_state[3] + dt * desired_lon_acc_;
+            predicted_state[4] = cur_state[4] + dt * desired_steer_rate_;
+            
+            return predicted_state;
+        };
+        
+        Eigen::Matrix<double, 5, 1> predict_state = internal_state_;
+        int iteration_num = 40;
+        for (int i = 0; i < iteration_num; i++) {
+            predict_state = linearPredict(predict_state, dt / static_cast<double>(iteration_num));
+        }
+
+        state_.position_(0) = predict_state[0];
+        state_.position_(1) = predict_state[1];
+        state_.theta_ = Tools::safeThetaTransform(predict_state[2]);
+        state_.velocity_ = predict_state[3];
+        state_.acceleration_ = desired_lon_acc_;
+        state_.curvature_ = tan(predict_state[4]) * 1.0 / wheelbase_len_;
+        state_.steer_ = Tools::safeThetaTransform(predict_state[4]);
+
+        // Note that the time stamp of state is not update here, that value should be updated in the forward extender
+
+        updateInternalState();
+    }
+
+    // Update internal state
+    void updateInternalState() {
+        internal_state_[0] = state_.position_(0);
+        internal_state_[1] = state_.position_(1);
+        internal_state_[2] = state_.theta_;
+        internal_state_[3] = state_.velocity_;
+        internal_state_[4] = state_.steer_;
+    }
+
+    double wheelbase_len_;
+    double max_lon_acc_;
+    double max_lon_dec_;
+    double max_lon_acc_jerk_;
+    double max_lon_dec_jerk_;
+    double max_lat_acc_;
+    double max_lat_jerk_;
+    double max_steering_angle_;
+    double max_steer_rate_;
+    double max_curvature_;
+
+    // State
+    std::pair<double, double> control_{0.0, 0.0};
+    State state_;
+    // Internal_state[0] means x position, internal_state[1] means y position, internal_state[2] means angle, internal_state[3] means velocity, internal_state[4] means steer
+    Eigen::Matrix<double, 5, 1> internal_state_{Eigen::Matrix<double, 5, 1>::Zero()};
+
+    // Parameters need to calculated
+    double desired_lon_acc_{0.0};
+    double desired_lat_acc_{0.0};
+    double desired_steer_rate_{0.0};
 };
 
 

@@ -184,6 +184,9 @@ double getCurveMaxCurvatureChangeRate(const PathPlanningUtilities::Curve &curve)
 // Transform theta to [-PI, PI)
 double safeThetaTransform(double raw_theta);
 
+// Truncate control information
+double Tools::truncate(double val_in, double lower, double upper);
+
 };  // namespace Tools
 
 #endif
