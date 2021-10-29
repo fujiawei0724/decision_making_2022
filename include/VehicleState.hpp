@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-28 21:28:43
+ * @LastEditTime: 2021-10-29 15:59:56
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <map>
 #include <algorithm>
+#include <functional>
 #include <stdio.h>
 #include "Const.hpp"
 #include "Point.hpp"
@@ -296,8 +297,11 @@ class Vehicle {
 public:
     // Constructor
     Vehicle() = default;
-    Vehicle() {
-
+    Vehicle(int id, const State& state, double length, double width) {
+        id_ = id;
+        state_ = state;
+        length_ = length;
+        width_ = width;
     }
 
     // Destructor
@@ -305,10 +309,10 @@ public:
 
     }
 
+    int id_{0};
     State state_;
     double length_{0.0};
     double width_{0.0};
-
 };
 
 // Vehicle state with semantic information, such as current lane and reference lane
@@ -331,7 +335,7 @@ public:
         
     }
 
-    VehicleStateWorld* vehicle_;
+    Vehicle vehicle_;
     LateralBehavior lat_beh_;
     LongitudinalBehavior lon_beh_;
     LaneId nearest_lane_id_{Undefined};
@@ -434,8 +438,13 @@ public:
         }
 
         std::sort(lanes_distances.begin(), lanes_distances.end(), [&] (const std::pair<LaneId, double>& a, const std::pair<LaneId, double>& b) {return a.second < b.second;});
-
         assert(lanes_distances[0].second < MAX_VALUE);
+
+        // Judge whether excess the tolerance
+        // TODO: add logic to handle this situation
+        if (lanes_distances[0].second > 5.0) {
+            return LaneId::Undefined;
+        }
 
         return lanes_distances[0].first;
     }
@@ -509,13 +518,73 @@ public:
     }
 
     // Get semantic vehicle state (add lane information to vehicle state)
-    SemanticVehicle getSemanticVehicle(const Vehicle& vehicle) {
-        
+    SemanticVehicle getSurroundSemanticVehicle(const Vehicle& surround_vehicle) {
+        // Calculate nearest lane
+        LaneId nearest_lane_id = calculateNearestLaneId(surround_vehicle.state_.position_);
+        Lane nearest_lane = lane_set_[nearest_lane_id];
+
+        // Calculate potential behavior
+        LateralBehavior potential_lateral_behavior = predictSurroundVehicleLateralBehavior(surround_vehicle, nearest_lane_id);
+
+        // Calculate reference lane 
+        LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, potential_lateral_behavior);
+        Lane reference_lane = lane_set_[reference_lane_id];
+
+        return SemanticVehicle(surround_vehicle, potential_lateral_behavior, LongitudinalBehavior::Normal, nearest_lane_id, nearest_lane, reference_lane_id, reference_lane);
     } 
 
-    // Get leading vehicle state
-    SemanticVehicle getLeadingSemanticVehicle(const SemanticVehicle& semantic_vehicle) {
+    // Get ego semantic vehicle state
+    // Note that ego vehicle's reference lane could be updated with the behavior sequence
+    SemanticVehicle getEgoSemanticVehicle(const Vehicle& ego_vehicle, const VehicleBehavior& ego_vehicle_behavior) {
+        // Calculate nearest lane
+        LaneId nearest_lane_id = calculateNearestLaneId(ego_vehicle.state_.position_);
+        Lane nearest_lane = lane_set_[nearest_lane_id];
 
+        // Transform vehicle behavior to lateral behavior and longitudinal behavior
+        LateralBehavior lat_beh = ego_vehicle_behavior.lat_beh_;
+        LongitudinalBehavior lon_beh = ego_vehicle_behavior.lon_beh_;
+
+        // Update reference lane
+        LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, lat_beh);
+        Lane reference_lane = lane_set_[reference_lane_id];
+
+        return SemanticVehicle(ego_vehicle, lat_beh, lon_beh, nearest_lane_id, nearest_lane, reference_lane_id, reference_lane);
+    }
+
+    // Get leading vehicle state
+    bool getLeadingVehicle(const SemanticVehicle& cur_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& other_semantic_vehicles_set, Vehicle& leading_vehicle) {
+        // Initialize 
+        Vehicle leading_veh;        
+        int min_diff_index{MAX_VALUE};
+        bool leading_veh_existed{false};
+
+        // Get reference lane id and reference lane
+        LaneId ref_lane_id = cur_semantic_vehicle.reference_lane_id_;
+        Lane ref_lane = cur_semantic_vehicle.reference_lane_;
+
+        // Calculate current vehicle index in reference lane
+        size_t current_vehicle_index = ref_lane.findCurrenPositionIndexInLane(cur_semantic_vehicle.vehicle_.state_.position_(0), cur_semantic_vehicle.vehicle_.state_.position_(1));
+
+        // Traverse vehicles
+        for (const auto& sem_veh: other_semantic_vehicles_set) {
+            if (sem_veh.first == cur_semantic_vehicle.vehicle_.id_) {
+                continue;
+            }
+
+            if(sem_veh.second.nearest_lane_id_ == cur_semantic_vehicle.reference_lane_id_) {
+                // Calculate this vehicle index in reference lane (its nearest lane)
+                size_t this_vehicle_index = ref_lane.findCurrenPositionIndexInLane(sem_veh.second.vehicle_.state_.position_(0), sem_veh.second.vehicle_.state_.position_(1));
+
+                if (static_cast<int>(this_vehicle_index) > static_cast<int>(current_vehicle_index) && ((this_vehicle_index - current_vehicle_index) < min_diff_index)) {
+                    min_diff_index = static_cast<int>(this_vehicle_index) - static_cast<int>(current_vehicle_index);
+                    leading_veh = sem_veh.second.vehicle_;
+                    leading_veh_existed = true;
+                }
+            }
+        }
+
+        leading_vehicle = leading_veh;
+        return leading_veh_existed;
     } 
 
     // Lane information in map interface
@@ -524,6 +593,68 @@ public:
     bool right_lane_exist_{false};
     std::unordered_map<LaneId, Lane> lane_set_;
 };
+
+class IDM {
+    static double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
+        double a_free = cur_velocity <= desired_velocity ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
+
+        double s_alpha = std::max(0.0 + EPS, leading_s - cur_s - vehicle_length_)
+        double z = (minimum_spacing_ + std::max(0.0, cur_velocity * desired_headaway_time_ + cur_velocity * (cur_velocity - leading_velocity) / (2.0 * sqrt(acceleration_ * comfortable_braking_deceleration_)))) / s_alpha;
+
+        // Calculate output acceleration
+        double a_out;
+        if (cur_velocity <= desired_velocity) {
+            a_out = z >= 1.0 ? acceleration_ * (1 - pow(z, 2)) : a_free * (1.0 - pow(z, 2.0 * acceleration_ / (a_free + EPS)));
+        } else {
+            a_out = z >= 0.0 ? a_free + acceleration_ * (1 - pow(z, 2)) : a_free;
+        }
+        a_out = std::max(std::min(acceleration_, a_out), -hard_braking_deceleration_);
+
+        return a_out;
+    }
+
+    static double calculateVelocity(double input_cur_s, double input_leading_s, double input_cur_velocity, double input_leading_velocity, double dt, double desired_velocity) {
+        
+        // Define linear predict function
+        // TODO: use odeint to speed up calculation consumption  
+        std::function <std::vector<double> (std::vector<double>, double)> linearPredict = [&](const std::vector<double>& current_states, double t_gap) {
+            double cur_s = current_states[0], leading_s = current_states[1], cur_velocity = current_states[2], leading_velocity = current_states[3];
+
+            double acc = calculateAcceleration(cur_s, leading_s, cur_velocity, leading_velocity, desired_velocity);
+            acc = std::max(acc, -std::min(hard_braking_deceleration_, cur_velocity / t_gap));
+            double next_cur_s = cur_s + cur_velocity * t_gap + 0.5 * acc * t_gap * t_gap;
+            double next_leading_s = leading_s + leading_velocity * t_gap;
+            double next_cur_velocity = cur_velocity + acc * t_gap;
+            double next_leading_velocity = leading_velocity;
+
+            std::vector<double> next_states{next_cur_s, next_leading_s, next_cur_velocity, next_leading_velocity};
+
+            return next_states;
+        };
+
+        // States cache
+        std::vector<double> predicted_states{input_cur_s, input_leading_s, input_cur_velocity, input_leading_velocity};
+
+        int iteration_num = 40;
+        for (int i = 0; i < iteration_num; i++) {
+            predicted_states = linearPredict(predicted_states, dt / static_cast<double>(iteration_num));
+        }
+
+        return predicted_states[2];
+    }
+
+    double vehicle_length_{5.0};
+    double minimum_spacing_{2.0};
+    double desired_headaway_time_{1.0};
+    double acceleration_{2.0};
+    double comfortable_braking_deceleration_{3.0};
+    double hard_braking_deceleration_{5.0};
+    double exponent_{4};
+};
+
+
+
+
 
 
 } // End of namespace BehaviorPlanner
