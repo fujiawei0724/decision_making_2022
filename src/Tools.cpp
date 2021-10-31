@@ -848,3 +848,8 @@ double Tools::truncate(double val_in, double lower, double upper) {
         res = std::min(res, upper);
         return res;
 }
+
+// Calculate target steer 
+double Tools::calculateSteer(const double& wheelbase_length, const double& angle_diff, const double& look_ahead_distance) {
+    return atan2(2.0 * wheelbase_length * sin(angle_diff), look_ahead_distance);
+}

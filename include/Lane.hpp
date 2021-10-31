@@ -216,6 +216,7 @@ class Lane{
     // }
 
     // --------------------The function below is added for behavior planning-----------------------
+    
     // Calculate distance from a position to lane
     double calculateDistanceFromPosition(const Eigen::Matrix<double, 2, 1>& cur_pos) {
         // Get point2f
@@ -231,6 +232,26 @@ class Lane{
         double distance = sqrt(pow(current_point.x_ - nearest_point.x_, 2.0) + pow(current_point.y_ - nearest_point.y_, 2.0));
 
         return distance;
+    }
+
+    // Calculate target lane point from a position and a specified distance
+    Eigen::Matrix<double, 2, 1> calculateTargetLanePosition(const Eigen::Matrix<double, 2, 1>& position, double distance) {
+        // Calculate nearest lane index
+        int position_x = position(0), position_y = position(1);
+        size_t lane_point_index = findCurrenPositionIndexInLane(position_x, position_y);
+        
+        // Calculate target point 
+        size_t target_lane_point_index = lane_point_index + static_cast<size_t>(distance / 0.1);
+        PathPlanningUtilities::CoordinationPoint target_path_point = lane_coorination_[target_lane_point_index];
+        Eigen::Matrix<double, 2, 1> target_point{target_path_point.worldpos_.position_.x_, target_path_point.worldpos_.position_.y_};
+
+        return target_point;
+    }
+
+    // Find nearest lane point index from a position
+    size_t findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) {
+        int position_x = position(0), position_y = position(1);
+        return findCurrenPositionIndexInLane(position_x, position_y);
     }
 
 

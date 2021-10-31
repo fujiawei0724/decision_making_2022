@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-29 21:22:07
+ * @LastEditTime: 2021-10-31 14:45:25
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -26,13 +26,31 @@ namespace BehaviorPlanner {
 
 // TODO: break up the code to several files
 
+// Config for behavior planner 
+class BehaviorPlannerConfig {
+    static const double look_ahead_min_distance{3.0};
+    static const double look_ahead_max_distance{50.0};
+    static const double steer_control_gain{1.5};
+    static const double wheelbase_length{2.8498};
+
+    static const double max_lon_acc_jerk{5.0};
+    static const double max_lon_brake_jerk{5.0};
+    static const double max_lat_acceleration_abs{1.5};
+    static const double max_lat_jerk_abs{3.0};
+    static const double max_steer_angle_abs{45.0 / 180.0 * PI};
+    static const double max_steer_rate{0.39};
+    static const double max_curvature_abs{0.33};
+    
+};
+
+
 // Lane id  
 enum class LaneId {
     CenterLane = 0,
     LeftLane, 
     RightLane,
     Undefined,
-}
+};
 
 // Lateral behavior
 enum class LateralBehavior {
@@ -645,16 +663,16 @@ public:
         return predicted_states[2];
     }
 
-    double vehicle_length_{5.0};
-    double minimum_spacing_{2.0};
-    double desired_headaway_time_{1.0};
-    double acceleration_{2.0};
-    double comfortable_braking_deceleration_{3.0};
-    double hard_braking_deceleration_{5.0};
-    double exponent_{4};
+    static const double vehicle_length_{5.0};
+    static const double minimum_spacing_{2.0};
+    static const double desired_headaway_time_{1.0};
+    static const double acceleration_{2.0};
+    static const double comfortable_braking_deceleration_{3.0};
+    static const double hard_braking_deceleration_{5.0};
+    static const double exponent_{4};
 };
 
-
+// Predict the vehicle desired state use velocity and steer
 class IdealSteerModel {
 public:
 
@@ -777,6 +795,71 @@ public:
     double desired_lon_acc_{0.0};
     double desired_lat_acc_{0.0};
     double desired_steer_rate_{0.0};
+};
+
+// Update all vehicles' states
+class ForwardExtender {
+public:
+    // Calculate vehicle steer 
+    static double calculateSteer(SemanticVehicle* semantic_vehicle) {
+        // Determine look ahead distance in reference lane
+        double look_ahead_distance = std::min(std::max(BehaviorPlannerConfig::look_ahead_min_distance, semantic_vehicle->vehicle_.state_.velocity_ * BehaviorPlannerConfig::steer_control_gain), BehaviorPlannerConfig::look_ahead_max_distance);
+
+        // Calculate target point based on look ahead distance
+        Eigen::Matrix<double, 2, 1> target_point = semantic_vehicle->reference_lane_.calculateTargetLanePosition(semantic_vehicle->vehicle_.state_.position_, look_ahead_distance);
+
+        // Calculate look ahead distance in world 
+        double look_ahead_distance_world = (target_point - semantic_vehicle->vehicle_.state_.position_).norm();
+
+        // Calculate target angle and diff angle
+        double target_angle = atan2(target_point(1) - semantic_vehicle->vehicle_.state_.position_(1), target_point(0) - semantic_vehicle->vehicle_.state_.position_(0));
+        double diff_angle = Tools::safeThetaTransform(target_angle - semantic_vehicle->vehicle_.state_.theta_);
+
+        // Calculate target steer 
+        double target_steer = Tools::calculateSteer(BehaviorPlannerConfig::wheelbase_length, diff_angle, look_ahead_distance_world);
+
+        return target_steer;        
+    }
+
+    // Calculate vehicle velocity 
+    static double calculateVelocity(MapInterface* mtf, const SemanticVehicle& cur_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& semantic_vehicles, double dt, double desired_velocity) {
+        // Calculate leading vehicle
+        Vehicle leading_vehicle;
+        bool leading_vehicle_exist = mtf->getLeadingVehicle(semantic_vehicle, semantic_vehicles, leading_vehicle);
+
+        double target_velocity = 0.0;
+        if (!leading_vehicle_exist) {
+            // Don't exist leading vehicle
+            double virtual_leading_vehicle_distance = 100.0 + 100.0 * cur_semantic_vehicle.vehicle_.state_.velocity_;
+            target_velocity = IDM::calculateVelocity(0.0, virtual_leading_vehicle_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, cur_semantic_vehicle.vehicle_.state_.velocity_, dt, desired_velocity);
+        } else {
+            // The distance between leading vehicle and ego vehicle could also be calculated in frenet frame
+            // With leading vehicle
+            Lane corresponding_lane = cur_semantic_vehicle.reference_lane_;
+
+            // Calculate cur vehicle index and leading vehicle index in corresponding lane
+            size_t cur_vehicle_index = corresponding_lane.findCurrenPositionIndexInLane(cur_semantic_vehicle.vehicle_.state_.position_);
+            size_t leading_vehicle_index = corresponding_lane.findCurrenPositionIndexInLane(leading_vehicle.state_.position_);
+
+            // Calculate gap distance
+            double leading_cur_distance = (static_cast<int>(leading_vehicle_index) - static_cast<int>(cur_vehicle_index)) * 0.1;
+
+            target_velocity = IDM::calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_);
+        }
+
+        return target_velocity;
+    }
+
+    // Calculate desired vehicle stateuse steer and velocity based on ideal steer model
+    static Vehicle calculateDesiredVehicleState(const Vehicle& veh, const double& steer, const double& velocity, const double& dt) {
+        // Load parameters for ideal steer model
+        IdealSteerModel ideal_steer_model(BehaviorPlannerConfig::wheelbase_length, )
+    }
+};
+
+// Behavior planner core
+class BehaviorPlannerCore {
+
 };
 
 

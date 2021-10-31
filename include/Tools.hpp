@@ -185,7 +185,10 @@ double getCurveMaxCurvatureChangeRate(const PathPlanningUtilities::Curve &curve)
 double safeThetaTransform(double raw_theta);
 
 // Truncate control information
-double Tools::truncate(double val_in, double lower, double upper);
+double truncate(double val_in, double lower, double upper);
+
+// Calculate target steer 
+double calculateSteer(const double& wheelbase_length, const double& angle_diff, const double& look_ahead_distance);
 
 };  // namespace Tools
 
