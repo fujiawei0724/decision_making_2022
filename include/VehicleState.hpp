@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-31 14:45:25
+ * @LastEditTime: 2021-10-31 15:24:20
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -853,13 +853,45 @@ public:
     // Calculate desired vehicle stateuse steer and velocity based on ideal steer model
     static Vehicle calculateDesiredVehicleState(const Vehicle& veh, const double& steer, const double& velocity, const double& dt) {
         // Load parameters for ideal steer model
-        IdealSteerModel ideal_steer_model(BehaviorPlannerConfig::wheelbase_length, )
+        using Config = BehaviorPlannerConfig;
+        IdealSteerModel ideal_steer_model(Config::wheelbase_length, IDM::acceleration_, IDM::hard_braking_deceleration_, Config::max_lon_acc_jerk, Config::max_lon_brake_jerk, Config::max_lat_acceleration_abs, Config::max_lat_jerk_abs, Config::max_steer_angle_abs, Config::max_steer_rate, Config::max_curvature_abs);
+        ideal_steer_model.setState(veh.state_);
+        ideal_steer_model.setControl(make_pair(steer, velocity));
+        ideal_steer_model.step(dt);
+
+        // Calculate preicted state and predict vehicle information
+        State predicted_state = ideal_steer_model.state_;
+        predicted_state.time_stamp_ = veh.state_.time_stamp_ + dt;
+        Vehicle predicted_vehicle_state(veh.id_, predicted_state, veh.length_, veh.width_);
+
+        return predicted_vehicle_state;
+
     }
+};
+
+// Transform ego vehicle and obstacle vehicle information to behavior planner interface
+class VehicleInterface {
+
 };
 
 // Behavior planner core
 class BehaviorPlannerCore {
+public:
+    using Trajectory = std::vector<Vehicle>;
+    // Construtor
+    BehaviorPlannerCore() {
 
+    }
+    // Destructor
+    ~BehaviorPlannerCore() {
+        
+    }
+
+    MapInterface* mtf_{nullptr};
+    // Store multiple thread information
+    std::vector<double> behavior_sequence_cost_;
+    std::vector<Trajectory> ego_traj_;
+    std::vector<std::unordered_map<int, Trajectory>> sur_veh_trajs_;
 };
 
 
