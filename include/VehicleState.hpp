@@ -2,13 +2,14 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-31 15:24:20
+ * @LastEditTime: 2021-10-31 21:08:23
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
 #pragma once
 
 #include <unordered_map>
+#include <thread>
 #include <map>
 #include <algorithm>
 #include <functional>
@@ -368,7 +369,10 @@ class BehaviorGenerator {
 public:
     
     // Constructor
-    BehaviorGenerator(int sequence_length) {
+    BehaviorGenerator(MapInterface* mtf, int sequence_length) {
+        is_lane_keeping_available_ = mtf->center_lane_exist_;
+        is_lane_change_left_available_ = mtf->left_lane_exist_;
+        is_lane_change_right_available_ = mtf->right_lane_exist_;
         sequence_length_ = sequence_length;
     }
 
@@ -387,6 +391,15 @@ public:
             std::vector<VehicleBehavior> cur_beh_seq;
             for (int beh_index = 0; beh_index < sequence_length_; beh_index++) {
                 for (int lat = 0; lat < static_cast<int>(LateralBehavior::MaxCount); lat++) {
+                    // Shield the situation where the corresponding lane doesn't exist 
+                    if (!is_lane_change_left_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeLeft) [
+                        continue;
+                    ]
+                    if (!is_lane_change_right_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeRight) {
+                        continue;
+                    }
+
+                    // Shield lane keeping situation
                     if (LateralBehavior(lat) != LateralBehavior::LaneKeeping) {
 
                         // Complete lane change situations
@@ -415,7 +428,9 @@ public:
         return completed_beh_seq;
     }
     
-
+    bool is_lane_keeping_available_{false};
+    bool is_lane_change_left_available_{false};
+    bool is_lane_change_right_available_{false};
     int sequence_length_;
 };
 
@@ -536,7 +551,7 @@ public:
     }
 
     // Get semantic vehicle state (add lane information to vehicle state)
-    SemanticVehicle getSurroundSemanticVehicle(const Vehicle& surround_vehicle) {
+    SemanticVehicle getSingleSurroundSemanticVehicle(const Vehicle& surround_vehicle) {
         // Calculate nearest lane
         LaneId nearest_lane_id = calculateNearestLaneId(surround_vehicle.state_.position_);
         Lane nearest_lane = lane_set_[nearest_lane_id];
@@ -550,6 +565,15 @@ public:
 
         return SemanticVehicle(surround_vehicle, potential_lateral_behavior, LongitudinalBehavior::Normal, nearest_lane_id, nearest_lane, reference_lane_id, reference_lane);
     } 
+
+    // Get multiple semantic vehicles
+    std::unordered_map<int, SemanticVehicle> getSurroundSemanticVehicles(const std::unordered_map<int, Vehicle>& surround_vehicles) {
+        std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles;
+        for (const auto& sur_veh: surround_vehicles) {
+            surround_semantic_vehicles[sur_veh.first] = getSingleSurroundSemanticVehicle(sur_veh.second);
+        }
+        return surround_semantic_vehicles;
+    }
 
     // Get ego semantic vehicle state
     // Note that ego vehicle's reference lane could be updated with the behavior sequence
@@ -878,8 +902,15 @@ class VehicleInterface {
 class BehaviorPlannerCore {
 public:
     using Trajectory = std::vector<Vehicle>;
+    using BehaviorSequence = std::vector<VehicleBehavior>;
     // Construtor
-    BehaviorPlannerCore() {
+    // Add the variability of behavior sequence
+    BehaviorPlannerCore(MapInterface* mtf, double predict_time_span, double dt) {
+        mtf_ = mtf;
+        predict_time_span_ = predict_time_span;
+        dt_ = dt;
+
+
 
     }
     // Destructor
@@ -887,7 +918,51 @@ public:
         
     }
 
+    // Behavior planner runner
+    void runBehaviorPlanner() {
+
+    }
+
+    // Simulate all situation and store trajectories information
+    void simulateAllBehaviors(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles) const {
+        // Generate all behavior sequences
+        BehaviorGenerator* behavior_generator = new BehaviorGenerator(mtf_, static_cast<int>(predict_time_span_ / dt_));
+        std::vector<BehaviorSequence> behavior_set = behavior_generator->generateBehaviorSequence();
+        delete behavior_generator;
+        int sequence_num = behavior_set.size();
+
+        // Initialize container
+        initializeContainer(sequence_num);
+
+        // Multiple threads calculation
+        // TODO: use thread pool to balance calculation consumption in difference thread
+        std::vector<thread> thread_set(sequence_num);
+        for (int i = 0; i < sequence_num; i++) {
+            thread_set[i] = std::thread();
+        }
+        for (int i = 0; i < sequence_num; i++) {
+            thread_set[i].join();
+        }
+ 
+    }
+
+    // Simulate single behavior sequence
+    void simulateSingleSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, int index) {
+        
+    }
+
+    // Initialize container for multiple threads calculation
+    // TODO: add detailed cost information for the information of each behavior sequence
+    void initializeContainer(int length) {
+        behavior_sequence_cost_.resize(length);
+        ego_traj_.resize(length);
+        sur_veh_trajs_.resize(length);
+    }
+
     MapInterface* mtf_{nullptr};
+    double predict_time_span_{0.0};
+    double dt_{0.0};
+
     // Store multiple thread information
     std::vector<double> behavior_sequence_cost_;
     std::vector<Trajectory> ego_traj_;
