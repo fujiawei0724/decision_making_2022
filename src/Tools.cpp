@@ -880,3 +880,32 @@ double Tools::getOverlapLength(const std::vector<double>& proj_1, const std::vec
     return std::min(proj_1[1], proj_2[1]) - sd::max(proj_1[0], proj_2[2]);
 
 }
+
+
+// Judge collision based on OBB
+bool Tools::isCollision(Rectangle* rec_1, Rectangle* rec_2) {
+    // Get the vertex of two rectangle
+    std::vector<PathPlanningUtilities::Point2f> rec_1_vertex = rec_1->points_;
+    std::vector<PathPlanningUtilities::Point2f> rec_2_vertex = rec_2->points_;
+
+    // Pooling axes of two rectangle
+    std::vector<Eigen::Matrix<double, 2, 1>> axes;
+    axes.insert(axes.end(), rec_1->axes_.begin(), rec_1->axes_.end());
+    axes.insert(axes.end(), rec_2->axes_.begin(), rec_2->axes_.end());
+
+    // Traverse axis 
+    for (const auto& axis: axes) {
+        // Get projection
+        std::vector<double> proj_1 = Tools::getProjectionOnVertex(rec_1_vertex, axis);
+        std::vector<double> proj_2 = Tools::getProjectionOnVertex(rec_2_vertex, axis);
+
+        // Calculate overlap length
+        double overlap_length = Tools::getOverlapLength(proj_1, proj_2);
+
+        if (fabs(overlap_length) < MIDDLE_EPS) {
+            return false;
+        }
+    }
+
+    return true;
+}
