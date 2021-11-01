@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-01 18:33:27
+ * @LastEditTime: 2021-11-01 19:08:44
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -959,12 +959,11 @@ public:
         // TODO: use thread pool to balance calculation consumption in difference thread
         std::vector<thread> thread_set(sequence_num);
         for (int i = 0; i < sequence_num; i++) {
-            thread_set[i] = std::thread();
+            thread_set[i] = std::thread(&simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
         }
         for (int i = 0; i < sequence_num; i++) {
             thread_set[i].join();
         }
- 
     }
 
     // Simulate single behavior sequence
@@ -1001,15 +1000,37 @@ public:
         for (int i = 0; i < behavior_sequence.size(); i++) {
             // Update the lateral behavior and reference lane for ego semantic vehicle
             if (i > 0 && behavior_sequence[i].lat_beh_ != behavior_sequence[i - 1].lat_beh_) {
-                ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(current_ego_vehicle, behavior_sequence[0]);
+                ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(current_ego_vehicle, behavior_sequence[i]);
             }
 
-            
+            // Initialize desired state
+            Vehicle ego_desired_state;
+            std::unordered_map<int, Vehicle> surround_desired_states;
 
+            // Simulate single behavior
+            simulateSingleBehavior(ego_semantic_vehicle, surround_semantic_vehicles, behavior_sequence[i], ego_desired_state, surround_desired_states);
 
+            // Update trajectories
+            ego_trajectory.emplace_back(ego_desired_state);
+            for (auto sur_desired_state_info: surround_desired_states) {
+                surround_trajectories[sur_desired_state_info.first].emplace_back(sur_desired_state_info.second);
+            }
 
-            
+            // Update state (the vehicle information in semantic vehicle)
+            // Note that the reference lane information is not update in each round
+            current_ego_vehicle = ego_desired_state;
+            current_surround_vehicles = surround_desired_states;
+            ego_semantic_vehicle.vehicle_ = current_ego_vehicle;
+            for (auto& sur_semantic_vehicle_info: surround_semantic_vehicles) {
+                sur_semantic_vehicle_info.second.vehicle_ = current_surround_vehicles[sur_semantic_vehicle_info.first];
+            }
         }
+
+        // Calculate cost information for each policy
+
+        // Update trajectory and cost
+        ego_traj_[index] = ego_trajectory;
+        sur_veh_trajs_[index] = surround_trajectories;
     }
 
     // Simulate single vehicle behavior (lateral and longitudinal)
@@ -1061,6 +1082,10 @@ public:
     std::vector<double> behavior_sequence_cost_;
     std::vector<Trajectory> ego_traj_;
     std::vector<std::unordered_map<int, Trajectory>> sur_veh_trajs_;
+};
+
+class PolicyEvaluater {
+    
 };
 
 
