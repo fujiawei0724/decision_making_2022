@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-01 19:08:44
+ * @LastEditTime: 2021-11-01 19:44:27
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -321,6 +321,7 @@ public:
         state_ = state;
         length_ = length;
         width_ = width;
+        generateRectangle();
     }
 
     // Destructor
@@ -328,10 +329,16 @@ public:
 
     }
 
+    // Generate rectangle
+    void generateRectangle() {
+        rectangle_ = Rectangle(state_.position_(0), state_.position_(1), state_.theta_, width_, length_);
+    }
+
     int id_{0};
     State state_;
     double length_{0.0};
     double width_{0.0};
+    Rectangle rectangle_;
 };
 
 // Vehicle state with semantic information, such as current lane and reference lane
@@ -1085,7 +1092,7 @@ public:
 };
 
 class PolicyEvaluater {
-    
+
 };
 
 

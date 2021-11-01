@@ -8,6 +8,7 @@
 #include "Point.hpp"
 #include "Path.hpp"
 #include "LineSegment.hpp"
+#include "Const.hpp"
 #include <vector>
 
 // 占用区域基本单位——矩形
@@ -20,6 +21,7 @@ class Rectangle {
     double rotation_;  // 矩形朝向
     std::vector<PathPlanningUtilities::Point2f> points_;  // 矩形角点
     std::vector<PathPlanningUtilities::LineSegment> lines_;  // 矩形的边
+    std::vector<Eigen::Matrix<double, 2, 1>> axes_; // The axes of rectangle
 
     // 构造函数
     Rectangle(){};
@@ -36,6 +38,7 @@ class Rectangle {
         this->length_ = length;
         this->generatePoints();
         this->generateLines();
+        generateAxes();
     }
 
     // 求解矩形四个角点
@@ -58,6 +61,34 @@ class Rectangle {
         return points;
     }
 
+    // Judge collision based on OBB
+    static bool isCollision(Rectangle* rec_1, Rectangle* rec_2) {
+        // Get the vertex of two rectangle
+        std::vector<PathPlanningUtilities::Point2f> rec_1_vertex = rec_1->points_;
+        std::vector<PathPlanningUtilities::Point2f> rec_2_vertex = rec_2->points_;
+
+        // Pooling axes of two rectangle
+        std::vector<Eigen::Matrix<double, 2, 1>> axes;
+        axes.insert(axes.end(), rec_1->axes_.begin(), rec_1->axes_.end());
+        axes.insert(axes.end(), rec_2->axes_.begin(), rec_2->axes_.end());
+
+        // Traverse axis 
+        for (const auto& axis: axes) {
+            // Get projection
+            std::vector<double> proj_1 = Tools::getProjectionOnVertex(rec_1_vertex, axis);
+            std::vector<double> proj_2 = Tools::getProjectionOnVertex(rec_2_vertex, axis);
+
+            // Calculate overlap length
+            double overlap_length = Tools::getOverlapLength(proj_1, proj_2);
+
+            if (fabs(overlap_length) < MIDDLE_EPS) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
  private:
     // 计算矩形角点
     void generatePoints() {
@@ -70,6 +101,23 @@ class Rectangle {
             PathPlanningUtilities::LineSegment line = PathPlanningUtilities::LineSegment(this->points_[i % 4], this->points_[(i + 1) % 4]);
             this->lines_.push_back(line);
         }
+    }
+
+    // Calculate the axes of rectangle
+    void generateAxes() {
+        // For the first two vertex
+        Eigen::Matrix<double, 2, 1> vec_1{points_[1].x_ - points_[0].x_, points_[1].y_ - points_[0].y_};
+        double length_1 = vec_1.norm();
+        Eigen::Matrix<double, 2, 1> normalized_vec_1 = vec_1 / length_1;
+        Eigen::Matrix<double, 2, 1> axis_0{-normalized_vec_1(1), normalized_vec_1(0)};
+        axes_.emplace_back(axis_0);
+
+        // For the second and third vertex
+        Eigen::Matrix<double, 2, 1> vec_2{points_[2].x_ - points_[1].x_, points_[2].y_ - points_[1].y_};
+        double length_2 = vec_2.norm();
+        Eigen::Matrix<double, 2, 1> normalized_vec_2 = vec_2 / length_2;
+        Eigen::Matrix<double, 2, 1> axis_1{-normalized_vec_2(1), normalized_vec_2(0)};
+        axes_.emplace_back(axis_1);
     }
 };
 

@@ -853,3 +853,30 @@ double Tools::truncate(double val_in, double lower, double upper) {
 double Tools::calculateSteer(const double& wheelbase_length, const double& angle_diff, const double& look_ahead_distance) {
     return atan2(2.0 * wheelbase_length * sin(angle_diff), look_ahead_distance);
 }
+
+// Calculate projection on axis
+double Tools::getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& vertex, const Eigen::Matrix<double, 2, 1>& axis) {
+    double min_value = MAX_VALUE;
+    double max_value = MIN_VALUE;
+    for (const auto vertice: vertex) {
+        Eigen::Matrix<double, 2, 1> vertice{vertice.x_, vertice.y_};
+        double projection = axis.dot(vertice);
+        if (projection < min_value) {
+            min_value = projection;
+        }
+        if (projection > max_value) {
+            max_value = projection;
+        }
+    }
+    std::vector<double> proj{min_value, max_value};
+    return proj;
+}
+
+// Calculate overlap length for OBB collision detection
+double Tools::getOverlapLength(const std::vector<double>& proj_1, const std::vector<double>& proj_2) {
+    if (proj_1[0] > proj_2[1] || proj_2[0] > proj_1[1]) {
+        return 0.0;
+    }
+    return std::min(proj_1[1], proj_2[1]) - sd::max(proj_1[0], proj_2[2]);
+
+}
