@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-10-31 21:08:23
+ * @LastEditTime: 2021-11-01 18:33:27
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -889,7 +889,28 @@ public:
         Vehicle predicted_vehicle_state(veh.id_, predicted_state, veh.length_, veh.width_);
 
         return predicted_vehicle_state;
+    }
 
+
+    /**
+     * @introduction: Forward one step, this function is for all vehicle agents, not only for ego vehicle
+     * @param semantic_vehicles denotes the all vehicles (include the ego vehicle)
+     * @return current vehicle's extended state
+     */   
+    // TODO: add detailed logic for ego vehicle state update, which means a different calculation method with surround vehicles 
+    static Vehicle extendState(MapInterface* mtf, const std::unordere_map<int, SemanticVehicle>& semantic_vehicles, int current_vehicle_id, double dt, double desired_velocity) {
+        // Load current semantic vehicle 
+        SemanticVehicle cur_semantic_vehicle = semantic_vehicles[current_vehicle_id];
+
+        // Calculate steer 
+        double steer = calculateSteer(cur_semantic_vehicle);
+
+        // Calculate velocity
+        double velocity = calculateVelocity(mtf, cur_semantic_vehicle, semantic_vehicles, dt, desired_velocity);
+
+        Vehicle desired_vehicle_state = calculateDesiredVehicleState(cur_semantic_vehicle.vehicle_, steer, velocity, dt);
+
+        return desired_vehicle_state;
     }
 };
 
@@ -947,9 +968,82 @@ public:
     }
 
     // Simulate single behavior sequence
-    void simulateSingleSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, int index) {
-        
+    void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, int index) {
+
+        // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
+        SemanticVehicle ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0]);
+        std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = mtf_->getSingleSurroundSemanticVehicle(surround_vehicles);
+
+        // Determine desired speed based on longitudinal speed
+        // TODO: add logic to calculate the desired speed
+        double ego_vehicle_desired_speed = ego_vehicle.state_.velocity_;
+        if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Aggressive) {
+            ego_vehicle_desired_speed += 10.0;
+        } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Conservative) {
+            ego_vehicle_desired_speed -= 10.0;
+        }
+
+        // Initialize trajectory
+        Trajectory ego_trajectory;
+        std::unordered_map<int, Trajectory> surround_trajectories;
+        ego_trajectory.emplace_back(ego_vehicle);
+        for (auto sur_veh: surround_vehicles) {
+            surround_trajectories[sur_veh.first] = sur_veh.second;
+        }
+
+        // State cache
+        Vehicle current_ego_vehicle = ego_vehicle;
+        std::unordered_map<int, Vehicle> current_surround_vehicles = surround_vehicles;
+        // std::unordered_map<int, Vehicle> all_vehicles = surround_vehicles;
+        // all_vehicles.insert({0, ego_vehicle});
+
+        // Traverse behavior sequence to forward simulation
+        for (int i = 0; i < behavior_sequence.size(); i++) {
+            // Update the lateral behavior and reference lane for ego semantic vehicle
+            if (i > 0 && behavior_sequence[i].lat_beh_ != behavior_sequence[i - 1].lat_beh_) {
+                ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(current_ego_vehicle, behavior_sequence[0]);
+            }
+
+            
+
+
+
+            
+        }
     }
+
+    // Simulate single vehicle behavior (lateral and longitudinal)
+    void simulateSingleBehavior(const SemanticVehicle& ego_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& surround_semantic_vehicles, const VehicleBehavior& vehicle_behavior, Vehicle& ego_vehicle_next_state, std::unordered_map<int, Vehicle>& surround_vehicles_next_states) {
+        // Get all semantic vehicles
+        std::unordered_map<int, SemanticVehicle> all_semantic_vehicles = surround_semantic_vehicles;
+        all_semantic_vehicles.insert({0, ego_semantic_vehicle});
+
+        // Traverse all vehicles
+        for (const auto& veh_info: all_semantic_vehicles) {
+            // Calculate desired velocity
+            double desired_velocity = veh_info.second.vehicle_.state_.velocity_;
+            if (veh_info.fisrt == 0) {
+                // Ego vehicle
+                if (vehicle_behavior.lon_beh_ == LongitudinalBehavior::Aggressive) {
+                    desired_velocity += 10.0;
+                } else if (vehicle_behavior.lon_beh_ == LongitudinalBehavior::Conservative) {
+                    desired_velocity = std::max(0.0, desired_velocity - 10.0);
+                }
+            }
+
+            // Calculate desired state
+            Vehicle cur_vehicle_desired_state = ForwardExtender::extendState(mtf_, all_semantic_vehicles, veh_info.first, dt_, desired_velocity);
+
+            // State cache
+            if (veh_info.first == 0) {
+                ego_vehicle_next_state = cur_vehicle_desired_state;
+            } else {
+                surround_vehicles_next_states[veh_info.first] = cur_vehicle_desired_state;
+            }
+        }
+
+    }
+    
 
     // Initialize container for multiple threads calculation
     // TODO: add detailed cost information for the information of each behavior sequence
