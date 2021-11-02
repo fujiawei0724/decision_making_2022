@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-01 19:44:27
+ * @LastEditTime: 2021-11-02 11:43:02
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -1035,9 +1035,15 @@ public:
 
         // Calculate cost information for each policy
 
-        // Update trajectory and cost
+        // Update trajectory information and cost
         ego_traj_[index] = ego_trajectory;
         sur_veh_trajs_[index] = surround_trajectories;
+        
+        // Judge whether generate lane change behavior
+        for (const VehicleBehavior& veh_beh: behavior_sequence) {
+            
+        }
+        
     }
 
     // Simulate single vehicle behavior (lateral and longitudinal)
@@ -1077,6 +1083,7 @@ public:
     // TODO: add detailed cost information for the information of each behavior sequence
     void initializeContainer(int length) {
         behavior_sequence_cost_.resize(length);
+        is_lane_changed_.resize(length);
         ego_traj_.resize(length);
         sur_veh_trajs_.resize(length);
     }
@@ -1087,12 +1094,17 @@ public:
 
     // Store multiple thread information
     std::vector<double> behavior_sequence_cost_;
+    std::vector<bool> is_lane_changed_;
     std::vector<Trajectory> ego_traj_;
     std::vector<std::unordered_map<int, Trajectory>> sur_veh_trajs_;
 };
 
 class PolicyEvaluater {
+public:
+    using Trajectory = std::vector<Vehicle>;
+    static double calculateCost(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories) {
 
+    }
 };
 
 

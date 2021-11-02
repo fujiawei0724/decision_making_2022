@@ -197,7 +197,7 @@ double getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& 
 double getOverlapLength(const std::vector<double>& proj_1, const std::vector<double>& proj_2);
 
 // Judge collision based on OBB
-bool Tools::isCollision(Rectangle* rec_1, Rectangle* rec_2);
+bool isCollision(Rectangle* rec_1, Rectangle* rec_2);
 
 };  // namespace Tools
 
