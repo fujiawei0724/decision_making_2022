@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-02 15:24:03
+ * @LastEditTime: 2021-11-02 16:38:32
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -960,8 +960,41 @@ public:
     }
 
     // Behavior planner runner
-    void runBehaviorPlanner() {
+    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory& ego_best_traj, std::unordered<int, Trajectory>& sur_best_trajs) {
+        // Simulate all policies
+        simulateAllBehaviors(ego_vehicle, surround_vehicles);
 
+        // Select best policy
+        int winner_index = -1;
+        double winner_cost = MAX_VALUE;
+        evaluatePolicies(winner_index, winner_cost);
+        if (winner_index == -1) {
+            // TODO: add logic to handle the situation where there is no safe policy
+            return false;
+        }
+
+        ego_best_traj = ego_traj_[winner_index];
+        sur_best_trajs = sur_veh_trajs_[winner_index];
+        return true;
+
+    }
+
+    // Evaluate all policies
+    void evaluatePolicies(int& winner_index, double& winner_cost) {
+        int sequence_num = behavior_sequence_cost_;
+        int win_idx = -1;
+        double win_cost = MAX_VALUE;
+        for (int i = 0; i < sequence_num; i++) {
+            if (!behavior_safety_[i]) {
+                continue;
+            }
+            if (behavior_sequence_cost_[i] < win_cost) {
+                win_idx = i;
+                win_cost = behavior_sequence_cost_[i];
+            }
+        }
+        winner_index = win_idx;
+        winner_cost = win_cost;
     }
 
     // Simulate all situation and store trajectories information
@@ -1046,8 +1079,6 @@ public:
             }
         }
 
-        // Calculate cost information for each policy
-
         // Store trajectories information
         ego_traj_[index] = ego_trajectory;
         sur_veh_trajs_[index] = surround_trajectories;
@@ -1066,6 +1097,12 @@ public:
         // Calculate speed max limit
         double speed_limit = mtf_->calculateSpeedLimit(ego_vehicle_last_desired_state);
         target_position_velocity_limit_[index] = speed_limit;
+
+        // Calculate policy situation whether safe
+        behavior_safety_[index] = PolicyEvaluater::calculateSafe(ego_trajectory, surround_trajectories, speed_limit);
+
+        // Calculate policy situation cost
+        behavior_sequence_cost_[index] = PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, is_lane_changed_, speed_limit);
 
     }
 
@@ -1120,7 +1157,7 @@ public:
     // Store multiple thread information
     // Store the final cost information
     std::vector<double> behavior_sequence_cost_;
-    std::vector<double> behavior_safety_;
+    std::vector<bool> behavior_safety_;
     // Store the trajectory information
     std::vector<bool> is_lane_changed_;
     std::vector<double> target_position_velocity_limit_;
@@ -1133,6 +1170,7 @@ public:
     using Trajectory = std::vector<Vehicle>;
     
     // Calculate all costs
+    // TODO: add safety cost consider the collision and collision velocity
     static double calculateCost(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, const bool& is_lane_changed, const double& lane_speed_limit) {
         double cost = calculateActionCost(is_lane_changed) + calculateEfficiencyCost(ego_trajectory, lane_speed_limit);
         return cost;
