@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-02 11:43:02
+ * @LastEditTime: 2021-11-02 15:24:03
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -634,7 +634,20 @@ public:
 
         leading_vehicle = leading_veh;
         return leading_veh_existed;
-    } 
+    }
+
+    // Calculate the speed limit given a vehicle state
+    double calculateSpeedLimit(const Vehicle& vehicle) {
+        // Calculate nearest lane and its speed limit
+        LaneId nearest_lane_id = calculateNearestLaneId(vehicle);
+        Lane nearest_lane = lane_set_[nearest_lane_id];
+        std::vector<double> speed_limits = nearest_lane.getLaneVelocityLimitation();
+        
+        // Calculate the point index in the lane 
+        size_t point_index = nearest_lane.findCurrenPositionIndexInLane(vehicle.state_);
+
+        return speed_limits[point_index];
+    }
 
     // Lane information in map interface
     bool center_lane_exist_{false};
@@ -1035,15 +1048,25 @@ public:
 
         // Calculate cost information for each policy
 
-        // Update trajectory information and cost
+        // Store trajectories information
         ego_traj_[index] = ego_trajectory;
         sur_veh_trajs_[index] = surround_trajectories;
         
         // Judge whether generate lane change behavior
         for (const VehicleBehavior& veh_beh: behavior_sequence) {
-            
+            if (veh_beh.lat_beh_ != LateralBehavior::LaneKeeping) {
+                is_lane_changed_[index] = true;
+                break;
+            }
         }
-        
+
+        // Calculate target speed in nearest lane
+        // Calculate ego vehicle's last predict state
+        Vehicle ego_vehicle_last_desired_state = ego_trajectory.back();
+        // Calculate speed max limit
+        double speed_limit = mtf_->calculateSpeedLimit(ego_vehicle_last_desired_state);
+        target_position_velocity_limit_[index] = speed_limit;
+
     }
 
     // Simulate single vehicle behavior (lateral and longitudinal)
@@ -1083,7 +1106,9 @@ public:
     // TODO: add detailed cost information for the information of each behavior sequence
     void initializeContainer(int length) {
         behavior_sequence_cost_.resize(length);
+        behavior_safety_.resize(length);
         is_lane_changed_.resize(length);
+        target_position_velocity_limit_.resize(length);
         ego_traj_.resize(length);
         sur_veh_trajs_.resize(length);
     }
@@ -1093,8 +1118,12 @@ public:
     double dt_{0.0};
 
     // Store multiple thread information
+    // Store the final cost information
     std::vector<double> behavior_sequence_cost_;
+    std::vector<double> behavior_safety_;
+    // Store the trajectory information
     std::vector<bool> is_lane_changed_;
+    std::vector<double> target_position_velocity_limit_;
     std::vector<Trajectory> ego_traj_;
     std::vector<std::unordered_map<int, Trajectory>> sur_veh_trajs_;
 };
@@ -1102,8 +1131,57 @@ public:
 class PolicyEvaluater {
 public:
     using Trajectory = std::vector<Vehicle>;
-    static double calculateCost(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories) {
+    
+    // Calculate all costs
+    static double calculateCost(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, const bool& is_lane_changed, const double& lane_speed_limit) {
+        double cost = calculateActionCost(is_lane_changed) + calculateEfficiencyCost(ego_trajectory, lane_speed_limit);
+        return cost;
+    }
 
+    // Calculate lane change action cost
+    static double calculateActionCost(const bool& is_lane_changed) {
+        double action_cost = 0.0;
+        if (is_lane_changed) {
+            action_cost = 0.5;
+        }
+        return action_cost;
+    }
+
+    // Calculate efficiency cost, due to ego current velocity and lane limit velocity
+    static double calculateEfficiencyCost(const Trajectory& ego_trajectory, const double& speed_limit) {
+        Vehicle ego_vehicle_last_state = ego_trajectory.back();
+
+        double efficiency_cost = 0.0;
+        if (speed_limit >= ego_vehicle_last_state.state_.velocity_) {
+            efficiency_cost = (speed_limit - ego_vehicle_last_state.state_.velocity_) / 10.0;
+        } else{
+            // Velocity excess the lane limitation
+        }
+        return efficiency_cost;
+    }
+
+    // Judge is safe
+    static bool calculateSafe(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, double speed_limit) {
+        // Judge whether excess the lane speed limit
+        Vehicle ego_vehicle_last_state = ego_trajectory.back();
+        if (ego_vehicle_last_state.state_.velocity_ > speed_limit) {
+            return false;
+        }
+
+        // Judge whether collision
+        for (int time_stamp_index = 0; time_stamp_index < ego_trajectory.size(); time_stamp_index++) {
+            Rectangle ego_vehicle_rec = ego_trajectory[time_stamp_index].rectangle_;
+            
+            // Traverse surround vehicles
+            for (const auto& sur_veh_traj_info: surround_trajectories) {
+                Rectangle sur_veh_rec = sur_veh_traj_info.second[time_stamp_index].rectangle_;
+                if (Tools::isCollision(&ego_vehicle_rec, &sur_veh_rec)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 };
 
