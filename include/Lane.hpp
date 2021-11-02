@@ -254,6 +254,23 @@ class Lane{
         return findCurrenPositionIndexInLane(position_x, position_y);
     }
 
+    // Judge position whether in lane
+    bool isInLane(const PathPlanningUtilities::Point2f& position) {
+        // Calculate nearest pat point index and lane width
+        size_t nearest_index = findCurrenPositionIndexInLane(position.x_, position.y_);
+        PathPlanningUtilities::CoordinationPoint nearest_path_point = lane_coorination_[nearest_index];
+        double lane_width = std::max(fabs(nearest_path_point.max_height_), fabs(nearest_path_point.min_height_));
+
+        // Calculate distance
+        double distance = sqrt(pow(position.x_ - nearest_path_point.worldpos_.position_.x_, 2.0) + pow(position.y_ - nearest_path_point.worldpos_.position_.y_, 2.0));
+
+        if (distance <= lane_width) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
  private:
     bool lane_existance_ = false;   // 道路是否可用

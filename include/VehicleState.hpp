@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-02 16:38:32
+ * @LastEditTime: 2021-11-02 22:42:55
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -22,6 +22,7 @@
 #include "Tools.hpp"
 #include "Lane.hpp"
 #include "Rectangle.hpp"
+#include "Obstacle.hpp"
 
 namespace BehaviorPlanner {
 
@@ -465,16 +466,21 @@ public:
 
     // Calculate nearest lane for a vehicle
     LaneId calculateNearestLaneId(const Vehicle& vehicle) {
+        return calculateNearestLaneId(vehicle.state_.position_);
+    }
+
+    // Calculate nearest lane for a position
+    LaneId calculateNearestLaneId(const Eigen::Matrix<double, 2, 1>& position) {
         // Calculate distance to each lane
         std::vector<std::pair<LaneId, double>> lanes_distances{{LaneId::CenterLane, MAX_VALUE}, {LaneId::LeftLane, MAX_VALUE}, {LaneId::RightLane, MAX_VALUE}};
         if (center_lane_exist_) {
-            lanes_distances[LaneId::CenterLane] = center_lane_.calculateDistanceFromPosition(vehicle.state_.position_);
+            lanes_distances[LaneId::CenterLane] = center_lane_.calculateDistanceFromPosition(position);
         }
         if (left_lane_exist_) {
-            lanes_distances[LaneId::LeftLane] = left_lane_.calculateDistanceFromPosition(vehicle.state_.position_);
+            lanes_distances[LaneId::LeftLane] = left_lane_.calculateDistanceFromPosition(position);
         }
         if (right_lane_exist_) {
-            lane_distances[LaneId::RightLane] = right_lane_.calculateDistanceFromPosition(vehicle.state_.position_);
+            lane_distances[LaneId::RightLane] = right_lane_.calculateDistanceFromPosition(position);
         }
 
         std::sort(lanes_distances.begin(), lanes_distances.end(), [&] (const std::pair<LaneId, double>& a, const std::pair<LaneId, double>& b) {return a.second < b.second;});
@@ -649,6 +655,41 @@ public:
         return speed_limits[point_index];
     }
 
+    // Calculate point in lane
+    bool isInLane(const PathPlanningUtilities::Point2f& position) {
+        if (center_lane_exist_) {
+            if (lane_set_[LaneId::CenterLane].isInLane(position)) {
+                return true;
+            }
+        }
+        if (left_lane_exist_) {
+            if (lane_set_[LaneId::LeftLane].isInLane(position)) {
+                return true;
+            }
+        }
+        if (right_lane_exist_) {
+            if (lane_set_[LaneId::RightLane].isInLane(position)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Calculate the orientation of a lane point that has the minimum distance from the specified position
+    double calculateNearestPointOrientation(const PathPlanningUtilities::Point2f& position) {
+        // Calculate the nearest lane
+        Eigen::Matrix<double, 2, 1> point_position{position.x_, position.y_};
+        LaneId nearest_lane_id = calculateNearestLaneId(point_position);
+        Lane nearest_lane = lane_set_[nearest_lane_id];
+
+        // Calculate the nearest lane point from the position
+        size_t nearest_lane_point_index = nearest_lane.findCurrenPositionIndexInLane(point_position);
+
+        double orientation = nearest_lane.getLaneCoordnation()[nearest_lane_point_index].worldpos_.theta_;
+
+        return orientation;
+    }
+
     // Lane information in map interface
     bool center_lane_exist_{false};
     bool left_lane_exist_{false};
@@ -713,7 +754,7 @@ public:
     static const double acceleration_{2.0};
     static const double comfortable_braking_deceleration_{3.0};
     static const double hard_braking_deceleration_{5.0};
-    static const double exponent_{4};
+    static const double exponent_{4.0};
 };
 
 // Predict the vehicle desired state use velocity and steer
@@ -936,6 +977,36 @@ public:
 
 // Transform ego vehicle and obstacle vehicle information to behavior planner interface
 class VehicleInterface {
+public:
+
+    // Calculate ego vehicle
+    static Vehicle getEgoVehicle(const Eigen::Matrix<double, 2, 1>& position, const double& theta, const double& curvature, const double& velocity, const double& acceleration, const double& steer, const double& length, const double& width) {
+        State ego_vehicle_state = State(0.0, position, theta, curvature, velocity, acceleration, steer);
+        return Vehicle(0, ego_vehicle_state, length, width);
+    }
+
+    // Calculate surround vehicle from perception obstacles
+    static std::unordered_map<int, Vehicle> getSurroundVehicles(MapInterface* mtf, const std::vector<Obstacle>& obstacles) {
+        
+    }
+
+    // Calculate single surround vehicle
+    bool getSingleSurroundVehicle(MapInterface* mtf, const Obstacle& obstacle, std::pair<int, Vehicle>& sur_veh_info) {
+        // Judge whether the position is out of the lane network
+        if (!mtf->isInLane(obstacle.getObstaclePosition())) {
+            return false;
+        }
+
+        // Filt the vehicle whose orientation is unreliable
+        double obstacle_speed_orientation = Tools::safeThetaTransform(obstacle.getObstacleVelocityDirection());
+        double nearest_lane_point_orientation = mtf->calculateNearestPointOrientation(obstacle.getObstaclePosition());
+        if (Tools::safeThetaTransform(fabs(obstacle_speed_orientation - nearest_lane_point_orientation)) > PI / 3.0) {
+            return false;
+        }
+
+
+    }
+
 
 };
 
