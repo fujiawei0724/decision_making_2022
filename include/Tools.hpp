@@ -191,7 +191,7 @@ double truncate(double val_in, double lower, double upper);
 double calculateSteer(const double& wheelbase_length, const double& angle_diff, const double& look_ahead_distance);
 
 // Calculate projection on axis
-double getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& vertex, const Eigen::Matrix<double, 2, 1>& axis);
+std::vector<double> getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& vertex, const Eigen::Matrix<double, 2, 1>& axis);
 
 // Calculate overlap length for OBB collision detection
 double getOverlapLength(const std::vector<double>& proj_1, const std::vector<double>& proj_2);

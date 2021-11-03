@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-03 15:22:43
+ * @LastEditTime: 2021-11-03 16:59:48
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -31,18 +31,18 @@ namespace BehaviorPlanner {
 // Config for behavior planner 
 class BehaviorPlannerConfig {
 public:
-    static const double look_ahead_min_distance{3.0};
-    static const double look_ahead_max_distance{50.0};
-    static const double steer_control_gain{1.5};
-    static const double wheelbase_length{2.8498};
+    static constexpr double look_ahead_min_distance{3.0};
+    static constexpr double look_ahead_max_distance{50.0};
+    static constexpr double steer_control_gain{1.5};
+    static constexpr double wheelbase_length{2.8498};
 
-    static const double max_lon_acc_jerk{5.0};
-    static const double max_lon_brake_jerk{5.0};
-    static const double max_lat_acceleration_abs{1.5};
-    static const double max_lat_jerk_abs{3.0};
-    static const double max_steer_angle_abs{45.0 / 180.0 * PI};
-    static const double max_steer_rate{0.39};
-    static const double max_curvature_abs{0.33};
+    static constexpr double max_lon_acc_jerk{5.0};
+    static constexpr double max_lon_brake_jerk{5.0};
+    static constexpr double max_lat_acceleration_abs{1.5};
+    static constexpr double max_lat_jerk_abs{3.0};
+    static constexpr double max_steer_angle_abs{45.0 / 180.0 * PI};
+    static constexpr double max_steer_rate{0.39};
+    static constexpr double max_curvature_abs{0.33};
     
 };
 
@@ -372,81 +372,10 @@ public:
     Lane reference_lane_;
 };
 
-// Generator vehicle behavior sequence 
-// TODO: add the consideration of current behavior
-class BehaviorGenerator {
-public:
-    
-    // Constructor
-    BehaviorGenerator(MapInterface* mtf, int sequence_length) {
-        is_lane_keeping_available_ = mtf->center_lane_exist_;
-        is_lane_change_left_available_ = mtf->left_lane_exist_;
-        is_lane_change_right_available_ = mtf->right_lane_exist_;
-        sequence_length_ = sequence_length;
-    }
-
-    // Destructor
-    ~BehaviorGenerator() {
-
-    }
-
-    // Generate vehicle behavior sequence
-    std::vector<std::vector<VehicleBehavior>> generateBehaviorSequence() {
-        // Initialize result
-        std::vector<std::vector<VehicleBehavior>> veh_beh_seq;
-
-        // Traverse all behavior possibility
-        for (int lon = 0; lon < static_cast<int>(LongitudinalBehavior::MaxCount); lon++) {
-            std::vector<VehicleBehavior> cur_beh_seq;
-            for (int beh_index = 0; beh_index < sequence_length_; beh_index++) {
-                for (int lat = 0; lat < static_cast<int>(LateralBehavior::MaxCount); lat++) {
-                    // Shield the situation where the corresponding lane doesn't exist 
-                    if (!is_lane_change_left_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeLeft) {
-                        continue;
-                    }
-                    if (!is_lane_change_right_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeRight) {
-                        continue;
-                    }
-
-                    // Shield lane keeping situation
-                    if (LateralBehavior(lat) != LateralBehavior::LaneKeeping) {
-
-                        // Complete lane change situations
-                        veh_beh_seq.emplace_back(completeBehaviorSequence(cur_beh_seq, LateralBehavior(lat), LongitudinalBehavior(lon), sequence_length_ - beh_index));
-                    }
-                }
-                cur_beh_seq.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior(lon)));
-            }
-            veh_beh_seq.emplace_back(cur_beh_seq);
-        }
-
-        return veh_beh_seq;
-
-    }
-
-    // Add lane change behavior to supple behavior sequence
-    static std::vector<VehicleBehavior> completeBehaviorSequence(const std::vector<VehicleBehavior>& cur_beh_seq, LateralBehavior lat_beh, LongitudinalBehavior lon_beh, int num) {
-        // Initialize
-        std::vector<VehicleBehavior> completed_beh_seq = cur_beh_seq;
-
-        // Add lane change behavior 
-        for (int i = 0; i < num; i++) {
-            completed_beh_seq.emplace_back(VehicleBehavior(lat_beh, lon_beh));
-        }
-
-        return completed_beh_seq;
-    }
-    
-    bool is_lane_keeping_available_{false};
-    bool is_lane_change_left_available_{false};
-    bool is_lane_change_right_available_{false};
-    int sequence_length_;
-};
-
 class MapInterface {
 public:
     // Constructor
-    MapInterface(const std::unordered_map<LaneId, bool>& lane_exist, const std::unordered_map<LaneId, Lane>& lane_info) {
+    MapInterface(const std::map<LaneId, bool>& lane_exist, const std::map<LaneId, Lane>& lane_info) {
         // Initialize lane information
         if (lane_exist.at(LaneId::CenterLane)) {
             center_lane_exist_ = true;
@@ -611,11 +540,11 @@ public:
     bool getLeadingVehicle(const SemanticVehicle& cur_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& other_semantic_vehicles_set, Vehicle& leading_vehicle) {
         // Initialize 
         Vehicle leading_veh;        
-        int min_diff_index{MAX_VALUE};
+        int min_diff_index = static_cast<int>(MAX_VALUE);
         bool leading_veh_existed{false};
 
         // Get reference lane id and reference lane
-        LaneId ref_lane_id = cur_semantic_vehicle.reference_lane_id_;
+        // LaneId ref_lane_id = cur_semantic_vehicle.reference_lane_id_;
         Lane ref_lane = cur_semantic_vehicle.reference_lane_;
 
         // Calculate current vehicle index in reference lane
@@ -631,7 +560,7 @@ public:
                 // Calculate this vehicle index in reference lane (its nearest lane)
                 size_t this_vehicle_index = ref_lane.findCurrenPositionIndexInLane(sem_veh.second.vehicle_.state_.position_(0), sem_veh.second.vehicle_.state_.position_(1));
 
-                if (static_cast<int>(this_vehicle_index) > static_cast<int>(current_vehicle_index) && ((this_vehicle_index - current_vehicle_index) < min_diff_index)) {
+                if (static_cast<int>(this_vehicle_index) > static_cast<int>(current_vehicle_index) && ((static_cast<int>(this_vehicle_index) - static_cast<int>(current_vehicle_index)) < min_diff_index)) {
                     min_diff_index = static_cast<int>(this_vehicle_index) - static_cast<int>(current_vehicle_index);
                     leading_veh = sem_veh.second.vehicle_;
                     leading_veh_existed = true;
@@ -695,7 +624,7 @@ public:
     bool center_lane_exist_{false};
     bool left_lane_exist_{false};
     bool right_lane_exist_{false};
-    std::unordered_map<LaneId, Lane> lane_set_;
+    std::map<LaneId, Lane> lane_set_;
 };
 
 // Intelligent driver model
@@ -749,13 +678,13 @@ public:
         return predicted_states[2];
     }
 
-    static const double vehicle_length_{5.0};
-    static const double minimum_spacing_{2.0};
-    static const double desired_headaway_time_{1.0};
-    static const double acceleration_{2.0};
-    static const double comfortable_braking_deceleration_{3.0};
-    static const double hard_braking_deceleration_{5.0};
-    static const double exponent_{4.0};
+    static constexpr double vehicle_length_{5.0};
+    static constexpr double minimum_spacing_{2.0};
+    static constexpr double desired_headaway_time_{1.0};
+    static constexpr double acceleration_{2.0};
+    static constexpr double comfortable_braking_deceleration_{3.0};
+    static constexpr double hard_braking_deceleration_{5.0};
+    static constexpr double exponent_{4.0};
 };
 
 // Predict the vehicle desired state use velocity and steer
@@ -976,6 +905,139 @@ public:
     }
 };
 
+
+// Generator vehicle behavior sequence 
+// TODO: add the consideration of current behavior
+class BehaviorGenerator {
+public:
+    
+    // Constructor
+    BehaviorGenerator(MapInterface* mtf, int sequence_length) {
+        is_lane_keeping_available_ = mtf->center_lane_exist_;
+        is_lane_change_left_available_ = mtf->left_lane_exist_;
+        is_lane_change_right_available_ = mtf->right_lane_exist_;
+        sequence_length_ = sequence_length;
+    }
+
+    // Destructor
+    ~BehaviorGenerator() {
+
+    }
+
+    // Generate vehicle behavior sequence
+    std::vector<std::vector<VehicleBehavior>> generateBehaviorSequence() {
+        // Initialize result
+        std::vector<std::vector<VehicleBehavior>> veh_beh_seq;
+
+        // Traverse all behavior possibility
+        for (int lon = 0; lon < static_cast<int>(LongitudinalBehavior::MaxCount); lon++) {
+            std::vector<VehicleBehavior> cur_beh_seq;
+            for (int beh_index = 0; beh_index < sequence_length_; beh_index++) {
+                for (int lat = 0; lat < static_cast<int>(LateralBehavior::MaxCount); lat++) {
+                    // Shield the situation where the corresponding lane doesn't exist 
+                    if (!is_lane_change_left_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeLeft) {
+                        continue;
+                    }
+                    if (!is_lane_change_right_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeRight) {
+                        continue;
+                    }
+
+                    // Shield lane keeping situation
+                    if (LateralBehavior(lat) != LateralBehavior::LaneKeeping) {
+
+                        // Complete lane change situations
+                        veh_beh_seq.emplace_back(completeBehaviorSequence(cur_beh_seq, LateralBehavior(lat), LongitudinalBehavior(lon), sequence_length_ - beh_index));
+                    }
+                }
+                cur_beh_seq.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior(lon)));
+            }
+            veh_beh_seq.emplace_back(cur_beh_seq);
+        }
+
+        return veh_beh_seq;
+
+    }
+
+    // Add lane change behavior to supple behavior sequence
+    static std::vector<VehicleBehavior> completeBehaviorSequence(const std::vector<VehicleBehavior>& cur_beh_seq, LateralBehavior lat_beh, LongitudinalBehavior lon_beh, int num) {
+        // Initialize
+        std::vector<VehicleBehavior> completed_beh_seq = cur_beh_seq;
+
+        // Add lane change behavior 
+        for (int i = 0; i < num; i++) {
+            completed_beh_seq.emplace_back(VehicleBehavior(lat_beh, lon_beh));
+        }
+
+        return completed_beh_seq;
+    }
+    
+    bool is_lane_keeping_available_{false};
+    bool is_lane_change_left_available_{false};
+    bool is_lane_change_right_available_{false};
+    int sequence_length_;
+};
+
+class PolicyEvaluater {
+public:
+    using Trajectory = std::vector<Vehicle>;
+    
+    // Calculate all costs
+    // TODO: add safety cost consider the collision and collision velocity
+    static double calculateCost(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, const bool& is_lane_changed, const double& lane_speed_limit) {
+        double cost = calculateActionCost(is_lane_changed) + calculateEfficiencyCost(ego_trajectory, lane_speed_limit);
+        return cost;
+    }
+
+    // Calculate lane change action cost
+    static double calculateActionCost(const bool& is_lane_changed) {
+        double action_cost = 0.0;
+        if (is_lane_changed) {
+            action_cost = 0.5;
+        }
+        return action_cost;
+    }
+
+    // Calculate efficiency cost, due to ego current velocity and lane limit velocity
+    static double calculateEfficiencyCost(const Trajectory& ego_trajectory, const double& speed_limit) {
+        Vehicle ego_vehicle_last_state = ego_trajectory.back();
+
+        double efficiency_cost = 0.0;
+        if (speed_limit >= ego_vehicle_last_state.state_.velocity_) {
+            efficiency_cost = (speed_limit - ego_vehicle_last_state.state_.velocity_) / 10.0;
+        } else{
+            // Velocity excess the lane limitation
+        }
+        return efficiency_cost;
+    }
+
+    // Judge is safe
+    static bool calculateSafe(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, double speed_limit) {
+        // Judge whether excess the lane speed limit
+        Vehicle ego_vehicle_last_state = ego_trajectory.back();
+        if (ego_vehicle_last_state.state_.velocity_ > speed_limit) {
+            return false;
+        }
+
+        // Judge whether collision
+        for (int time_stamp_index = 0; time_stamp_index < static_cast<int>(ego_trajectory.size()); time_stamp_index++) {
+            Rectangle ego_vehicle_rec = ego_trajectory[time_stamp_index].rectangle_;
+            
+            // Traverse surround vehicles
+            for (const auto& sur_veh_traj_info: surround_trajectories) {
+                Rectangle sur_veh_rec = sur_veh_traj_info.second[time_stamp_index].rectangle_;
+                if (Tools::isCollision(&ego_vehicle_rec, &sur_veh_rec)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+};
+
+
+
+
 // Transform ego vehicle and obstacle vehicle information to behavior planner interface
 class VehicleInterface {
 public:
@@ -1106,7 +1168,7 @@ public:
         // TODO: use thread pool to balance calculation consumption in difference thread
         std::vector<std::thread> thread_set(sequence_num);
         for (int i = 0; i < sequence_num; i++) {
-            thread_set[i] = std::thread(&simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
+            thread_set[i] = std::thread(&BehaviorPlannerCore::simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
         }
         for (int i = 0; i < sequence_num; i++) {
             thread_set[i].join();
@@ -1144,7 +1206,7 @@ public:
         // all_vehicles.insert({0, ego_vehicle});
 
         // Traverse behavior sequence to forward simulation
-        for (int i = 0; i < behavior_sequence.size(); i++) {
+        for (int i = 0; i < static_cast<int>(behavior_sequence.size()); i++) {
             // Update the lateral behavior and reference lane for ego semantic vehicle
             if (i > 0 && behavior_sequence[i].lat_beh_ != behavior_sequence[i - 1].lat_beh_) {
                 ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(current_ego_vehicle, behavior_sequence[i]);
@@ -1262,63 +1324,6 @@ public:
     std::vector<std::unordered_map<int, Trajectory>> sur_veh_trajs_;
 };
 
-class PolicyEvaluater {
-public:
-    using Trajectory = std::vector<Vehicle>;
-    
-    // Calculate all costs
-    // TODO: add safety cost consider the collision and collision velocity
-    static double calculateCost(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, const bool& is_lane_changed, const double& lane_speed_limit) {
-        double cost = calculateActionCost(is_lane_changed) + calculateEfficiencyCost(ego_trajectory, lane_speed_limit);
-        return cost;
-    }
-
-    // Calculate lane change action cost
-    static double calculateActionCost(const bool& is_lane_changed) {
-        double action_cost = 0.0;
-        if (is_lane_changed) {
-            action_cost = 0.5;
-        }
-        return action_cost;
-    }
-
-    // Calculate efficiency cost, due to ego current velocity and lane limit velocity
-    static double calculateEfficiencyCost(const Trajectory& ego_trajectory, const double& speed_limit) {
-        Vehicle ego_vehicle_last_state = ego_trajectory.back();
-
-        double efficiency_cost = 0.0;
-        if (speed_limit >= ego_vehicle_last_state.state_.velocity_) {
-            efficiency_cost = (speed_limit - ego_vehicle_last_state.state_.velocity_) / 10.0;
-        } else{
-            // Velocity excess the lane limitation
-        }
-        return efficiency_cost;
-    }
-
-    // Judge is safe
-    static bool calculateSafe(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, double speed_limit) {
-        // Judge whether excess the lane speed limit
-        Vehicle ego_vehicle_last_state = ego_trajectory.back();
-        if (ego_vehicle_last_state.state_.velocity_ > speed_limit) {
-            return false;
-        }
-
-        // Judge whether collision
-        for (int time_stamp_index = 0; time_stamp_index < ego_trajectory.size(); time_stamp_index++) {
-            Rectangle ego_vehicle_rec = ego_trajectory[time_stamp_index].rectangle_;
-            
-            // Traverse surround vehicles
-            for (const auto& sur_veh_traj_info: surround_trajectories) {
-                Rectangle sur_veh_rec = sur_veh_traj_info.second[time_stamp_index].rectangle_;
-                if (Tools::isCollision(&ego_vehicle_rec, &sur_veh_rec)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-};
 
 
 

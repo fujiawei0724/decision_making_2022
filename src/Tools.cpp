@@ -855,11 +855,11 @@ double Tools::calculateSteer(const double& wheelbase_length, const double& angle
 }
 
 // Calculate projection on axis
-double Tools::getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& vertex, const Eigen::Matrix<double, 2, 1>& axis) {
+std::vector<double> Tools::getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& vertex, const Eigen::Matrix<double, 2, 1>& axis) {
     double min_value = MAX_VALUE;
     double max_value = MIN_VALUE;
-    for (const auto vertice: vertex) {
-        Eigen::Matrix<double, 2, 1> vertice{vertice.x_, vertice.y_};
+    for (const auto vertice_info: vertex) {
+        Eigen::Matrix<double, 2, 1> vertice{vertice_info.x_, vertice_info.y_};
         double projection = axis.dot(vertice);
         if (projection < min_value) {
             min_value = projection;
@@ -868,7 +868,7 @@ double Tools::getProjectionOnVertex(const std::vector<PathPlanningUtilities::Poi
             max_value = projection;
         }
     }
-    std::vector<double> proj{min_value, max_value};
+    std::vector<double> proj = {min_value, max_value};
     return proj;
 }
 
@@ -877,7 +877,7 @@ double Tools::getOverlapLength(const std::vector<double>& proj_1, const std::vec
     if (proj_1[0] > proj_2[1] || proj_2[0] > proj_1[1]) {
         return 0.0;
     }
-    return std::min(proj_1[1], proj_2[1]) - sd::max(proj_1[0], proj_2[2]);
+    return std::min(proj_1[1], proj_2[1]) - std::max(proj_1[0], proj_2[2]);
 
 }
 
@@ -896,8 +896,8 @@ bool Tools::isCollision(Rectangle* rec_1, Rectangle* rec_2) {
     // Traverse axis 
     for (const auto& axis: axes) {
         // Get projection
-        std::vector<double> proj_1 = Tools::getProjectionOnVertex(rec_1_vertex, axis);
-        std::vector<double> proj_2 = Tools::getProjectionOnVertex(rec_2_vertex, axis);
+        std::vector<double> proj_1 = getProjectionOnVertex(rec_1_vertex, axis);
+        std::vector<double> proj_2 = getProjectionOnVertex(rec_2_vertex, axis);
 
         // Calculate overlap length
         double overlap_length = Tools::getOverlapLength(proj_1, proj_2);
