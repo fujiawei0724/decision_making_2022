@@ -249,7 +249,7 @@ class Lane{
     }
 
     // Find nearest lane point index from a position
-    size_t findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) {
+    size_t findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) const {
         int position_x = position(0), position_y = position(1);
         return findCurrenPositionIndexInLane(position_x, position_y);
     }

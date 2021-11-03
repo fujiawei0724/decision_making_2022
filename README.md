@@ -1,1 +1,1 @@
-multi_path_generator
+Trajectory planning with EUDM behavior planner.

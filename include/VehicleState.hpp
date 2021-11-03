@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-02 22:42:55
+ * @LastEditTime: 2021-11-03 15:22:43
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -30,6 +30,7 @@ namespace BehaviorPlanner {
 
 // Config for behavior planner 
 class BehaviorPlannerConfig {
+public:
     static const double look_ahead_min_distance{3.0};
     static const double look_ahead_max_distance{50.0};
     static const double steer_control_gain{1.5};
@@ -109,8 +110,8 @@ public:
 
     void print() {
         printf("State time stamp: %lf\n", time_stamp_);
-        printf("State position x: %lf\n", position_.x_);
-        printf("State position y: %lf\n", position_.y_);
+        printf("State position x: %lf\n", position_(0));
+        printf("State position y: %lf\n", position_(1));
         printf("State theta: %lf\n", theta_);
         printf("State curvature: %lf\n", curvature_);
         printf("State velocity: %lf\n", velocity_);
@@ -205,7 +206,7 @@ public:
     FrenetState getFrenetStateFromState(const State& state) const {
         // Get the most nearest lane point information
         std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        size_t start_index_of_lane = Tools::findNearestPositionIndexInCoordination(lane_coordination, state.position_);
+        size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(state.position_);
         PathPlanningUtilities::CoordinationPoint nearest_lane_point = lane_coordination[start_index_of_lane];
         Eigen::Matrix<double, 2, 1> lane_position{nearest_lane_point.worldpos_.position_.x_, nearest_lane_point.worldpos_.position_.y_};
 
@@ -217,7 +218,7 @@ public:
         // Get the arc length
         std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
         TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
-        Eigen::Vector2d start_point_in_world_v2d(state.position_.x_, state.position_.y_);
+        Eigen::Vector2d start_point_in_world_v2d(state.position_(0), state.position_(1));
         Eigen::Vector2d start_point_position_in_frenet;
         Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
         double arc_length = start_point_position_in_frenet(0);
@@ -251,7 +252,7 @@ public:
 
         double delta_theta_derivative = 1.0 / (1.0 + pow(tan_delta_theta, 2)) * (dss * one_minus_curd + curvature * pow(ds, 2)) / pow(one_minus_curd, 2);
 
-        double spp = (s.acceleration - pow(sp, 2) / cn_delta_theta * (one_minus_curd * tan_delta_theta * delta_theta_derivative - (curvature_derivative * d + curvature * ds))) * cn_delta_theta / one_minus_curd;
+        double spp = (state.acceleration_ - pow(sp, 2) / cn_delta_theta * (one_minus_curd * tan_delta_theta * delta_theta_derivative - (curvature_derivative * d + curvature * ds))) * cn_delta_theta / one_minus_curd;
 
         // Construct frenet state
         FrenetState frenet_state;
@@ -281,14 +282,14 @@ public:
 
         double one_minus_curd = 1.0 - curvature * frenet_state.vec_s_[0];
         if (one_minus_curd < MIDDLE_EPS) {
-            printf("[StateTransformer] one_minus_curd not valid for transform.\n")
+            printf("[StateTransformer] one_minus_curd not valid for transform.\n");
         }
 
         // Get tangent vector and normal vector, the norm is set with 1.0
-        double lane_orientation = nearest_lane_point.worldpos_.theta_;
+        double lane_orientation = lane_position.worldpos_.theta_;
         double y = tan(lane_orientation);
         double x = 1.0;
-        Eigen::Matrix<double, 2, 1> vec_tangent{x, y};
+        Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
         lane_tangent_vec /= lane_tangent_vec.norm();
         Eigen::Matrix<double, 2, 1> vec_normal{-lane_tangent_vec(1), lane_tangent_vec(0)};
         double tan_delta_theta = frenet_state.vec_ds_[1] / one_minus_curd;
@@ -365,8 +366,8 @@ public:
     Vehicle vehicle_;
     LateralBehavior lat_beh_;
     LongitudinalBehavior lon_beh_;
-    LaneId nearest_lane_id_{Undefined};
-    LaneId reference_lane_id_{Undefined};
+    LaneId nearest_lane_id_{LaneId::Undefined};
+    LaneId reference_lane_id_{LaneId::Undefined};
     Lane nearest_lane_;
     Lane reference_lane_;
 };
@@ -400,9 +401,9 @@ public:
             for (int beh_index = 0; beh_index < sequence_length_; beh_index++) {
                 for (int lat = 0; lat < static_cast<int>(LateralBehavior::MaxCount); lat++) {
                     // Shield the situation where the corresponding lane doesn't exist 
-                    if (!is_lane_change_left_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeLeft) [
+                    if (!is_lane_change_left_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeLeft) {
                         continue;
-                    ]
+                    }
                     if (!is_lane_change_right_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeRight) {
                         continue;
                     }
@@ -447,13 +448,13 @@ public:
     // Constructor
     MapInterface(const std::unordered_map<LaneId, bool>& lane_exist, const std::unordered_map<LaneId, Lane>& lane_info) {
         // Initialize lane information
-        if (lane_exist[LaneId::CenterLane]) {
+        if (lane_exist.at(LaneId::CenterLane)) {
             center_lane_exist_ = true;
         }
-        if (lane_exist[LaneId::LeftLane]) {
+        if (lane_exist.at(LaneId::LeftLane)) {
             left_lane_exist_ = true;
         }
-        if (lane_exist[LaneId::RightLane]) {
+        if (lane_exist.at(LaneId::RightLane)) {
             right_lane_exist_ = true;
         }
         lane_set_ = lane_info;
@@ -474,13 +475,13 @@ public:
         // Calculate distance to each lane
         std::vector<std::pair<LaneId, double>> lanes_distances{{LaneId::CenterLane, MAX_VALUE}, {LaneId::LeftLane, MAX_VALUE}, {LaneId::RightLane, MAX_VALUE}};
         if (center_lane_exist_) {
-            lanes_distances[LaneId::CenterLane] = center_lane_.calculateDistanceFromPosition(position);
+            lanes_distances[static_cast<int>(LaneId::CenterLane)].second = lane_set_[LaneId::CenterLane].calculateDistanceFromPosition(position);
         }
         if (left_lane_exist_) {
-            lanes_distances[LaneId::LeftLane] = left_lane_.calculateDistanceFromPosition(position);
+            lanes_distances[static_cast<int>(LaneId::LeftLane)].second = lane_set_[LaneId::LeftLane].calculateDistanceFromPosition(position);
         }
         if (right_lane_exist_) {
-            lane_distances[LaneId::RightLane] = right_lane_.calculateDistanceFromPosition(position);
+            lanes_distances[static_cast<int>(LaneId::RightLane)].second = lane_set_[LaneId::RightLane].calculateDistanceFromPosition(position);
         }
 
         std::sort(lanes_distances.begin(), lanes_distances.end(), [&] (const std::pair<LaneId, double>& a, const std::pair<LaneId, double>& b) {return a.second < b.second;});
@@ -576,7 +577,7 @@ public:
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, potential_lateral_behavior);
         Lane reference_lane = lane_set_[reference_lane_id];
 
-        return SemanticVehicle(surround_vehicle, potential_lateral_behavior, LongitudinalBehavior::Normal, nearest_lane_id, nearest_lane, reference_lane_id, reference_lane);
+        return SemanticVehicle(surround_vehicle, potential_lateral_behavior, LongitudinalBehavior::Normal, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
     } 
 
     // Get multiple semantic vehicles
@@ -603,7 +604,7 @@ public:
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, lat_beh);
         Lane reference_lane = lane_set_[reference_lane_id];
 
-        return SemanticVehicle(ego_vehicle, lat_beh, lon_beh, nearest_lane_id, nearest_lane, reference_lane_id, reference_lane);
+        return SemanticVehicle(ego_vehicle, lat_beh, lon_beh, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
     }
 
     // Get leading vehicle state
@@ -650,7 +651,7 @@ public:
         std::vector<double> speed_limits = nearest_lane.getLaneVelocityLimitation();
         
         // Calculate the point index in the lane 
-        size_t point_index = nearest_lane.findCurrenPositionIndexInLane(vehicle.state_);
+        size_t point_index = nearest_lane.findCurrenPositionIndexInLane(vehicle.state_.position_);
 
         return speed_limits[point_index];
     }
@@ -703,7 +704,7 @@ public:
     static double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
         double a_free = cur_velocity <= desired_velocity ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
 
-        double s_alpha = std::max(0.0 + EPS, leading_s - cur_s - vehicle_length_)
+        double s_alpha = std::max(0.0 + EPS, leading_s - cur_s - vehicle_length_);
         double z = (minimum_spacing_ + std::max(0.0, cur_velocity * desired_headaway_time_ + cur_velocity * (cur_velocity - leading_velocity) / (2.0 * sqrt(acceleration_ * comfortable_braking_deceleration_)))) / s_alpha;
 
         // Calculate output acceleration
@@ -803,10 +804,10 @@ public:
         lat_jerk_desired = Tools::truncate(lat_jerk_desired, -max_lat_jerk_, max_lat_jerk_);
         desired_lat_acc_ = lat_jerk_desired * dt + lat_acc_ori;
         desired_lat_acc_ = Tools::truncate(desired_lat_acc_, -max_lat_acc_, max_lat_acc_);
-        control_.first = atan(desired_lat_acc_ * wheelbase_len_ / std::max(pow(self.control_.second, 2.0), 0.1 * BIG_EPS));
-        desired_steer_rate_ = Tools::normalizeAngle(control_.first - state_.steer_) / dt;
+        control_.first = atan(desired_lat_acc_ * wheelbase_len_ / std::max(pow(control_.second, 2.0), 0.1 * BIG_EPS));
+        desired_steer_rate_ = Tools::safeThetaTransform(control_.first - state_.steer_) / dt;
         desired_steer_rate_ = Tools::truncate(desired_steer_rate_, -max_steer_rate_, max_steer_rate_);
-        control_.first = Tools::normalizeAngle(state_.steer_ + desired_steer_rate_ * dt);
+        control_.first = Tools::safeThetaTransform(state_.steer_ + desired_steer_rate_ * dt);
     }
 
     void step(double dt) {
@@ -817,7 +818,7 @@ public:
         control_.first = Tools::truncate(control_.first, -max_steering_angle_, max_steering_angle_);
         truncateControl(dt);
         desired_lon_acc_ = (control_.second - state_.velocity_) / dt;
-        desired_steer_rate_ = Tools::normalizeAngle(control_.first - state_.steer_);
+        desired_steer_rate_ = Tools::safeThetaTransform(control_.first - state_.steer_);
 
         // TODO: use odeint to speed up calculation consumption
         std::function<Eigen::Matrix<double, 5, 1> (Eigen::Matrix<double, 5, 1>, double)> linearPredict = [&](const Eigen::Matrix<double, 5, 1>& cur_state, double t_gap) {
@@ -910,7 +911,7 @@ public:
     static double calculateVelocity(MapInterface* mtf, const SemanticVehicle& cur_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& semantic_vehicles, double dt, double desired_velocity) {
         // Calculate leading vehicle
         Vehicle leading_vehicle;
-        bool leading_vehicle_exist = mtf->getLeadingVehicle(semantic_vehicle, semantic_vehicles, leading_vehicle);
+        bool leading_vehicle_exist = mtf->getLeadingVehicle(cur_semantic_vehicle, semantic_vehicles, leading_vehicle);
 
         double target_velocity = 0.0;
         if (!leading_vehicle_exist) {
@@ -929,7 +930,7 @@ public:
             // Calculate gap distance
             double leading_cur_distance = (static_cast<int>(leading_vehicle_index) - static_cast<int>(cur_vehicle_index)) * 0.1;
 
-            target_velocity = IDM::calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_);
+            target_velocity = IDM::calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_, dt, desired_velocity);
         }
 
         return target_velocity;
@@ -941,7 +942,7 @@ public:
         using Config = BehaviorPlannerConfig;
         IdealSteerModel ideal_steer_model(Config::wheelbase_length, IDM::acceleration_, IDM::hard_braking_deceleration_, Config::max_lon_acc_jerk, Config::max_lon_brake_jerk, Config::max_lat_acceleration_abs, Config::max_lat_jerk_abs, Config::max_steer_angle_abs, Config::max_steer_rate, Config::max_curvature_abs);
         ideal_steer_model.setState(veh.state_);
-        ideal_steer_model.setControl(make_pair(steer, velocity));
+        ideal_steer_model.setControl(std::make_pair(steer, velocity));
         ideal_steer_model.step(dt);
 
         // Calculate preicted state and predict vehicle information
@@ -959,12 +960,12 @@ public:
      * @return current vehicle's extended state
      */   
     // TODO: add detailed logic for ego vehicle state update, which means a different calculation method with surround vehicles 
-    static Vehicle extendState(MapInterface* mtf, const std::unordere_map<int, SemanticVehicle>& semantic_vehicles, int current_vehicle_id, double dt, double desired_velocity) {
+    static Vehicle extendState(MapInterface* mtf, std::unordered_map<int, SemanticVehicle>& semantic_vehicles, int current_vehicle_id, double dt, double desired_velocity) {
         // Load current semantic vehicle 
         SemanticVehicle cur_semantic_vehicle = semantic_vehicles[current_vehicle_id];
 
         // Calculate steer 
-        double steer = calculateSteer(cur_semantic_vehicle);
+        double steer = calculateSteer(&cur_semantic_vehicle);
 
         // Calculate velocity
         double velocity = calculateVelocity(mtf, cur_semantic_vehicle, semantic_vehicles, dt, desired_velocity);
@@ -986,12 +987,21 @@ public:
     }
 
     // Calculate surround vehicle from perception obstacles
-    static std::unordered_map<int, Vehicle> getSurroundVehicles(MapInterface* mtf, const std::vector<Obstacle>& obstacles) {
-        
+    static std::unordered_map<int, Vehicle> getSurroundVehicles(MapInterface* mtf, const std::vector<DecisionMaking::Obstacle>& obstacles) {
+        int sur_veh_index = 1;
+        std::unordered_map<int, Vehicle> surround_vehicles;
+        for (const auto& obs: obstacles) {
+            std::pair<int, Vehicle> sur_veh_info;
+            if (getSingleSurroundVehicle(mtf, obs, sur_veh_index, sur_veh_info)) {
+                surround_vehicles.insert(sur_veh_info);
+                sur_veh_index += 1;
+            }
+        }
+        return surround_vehicles;
     }
 
     // Calculate single surround vehicle
-    bool getSingleSurroundVehicle(MapInterface* mtf, const Obstacle& obstacle, std::pair<int, Vehicle>& sur_veh_info) {
+    static bool getSingleSurroundVehicle(MapInterface* mtf, const DecisionMaking::Obstacle& obstacle, int index, std::pair<int, Vehicle>& sur_veh_info) {
         // Judge whether the position is out of the lane network
         if (!mtf->isInLane(obstacle.getObstaclePosition())) {
             return false;
@@ -1004,7 +1014,20 @@ public:
             return false;
         }
 
+        // Transform data from obstacle
+        Eigen::Matrix<double, 2, 1> position{obstacle.getObstaclePosition().x_, obstacle.getObstaclePosition().y_};
+        double orientation = obstacle.getObstacleOrientation();
+        if (obstacle.getObstacleVelocity() != 0.0) {
+            // Replace vehicle orientation with vehicle speed orientation
+            orientation = Tools::safeThetaTransform(obstacle.getObstacleVelocityDirection());
+        }
 
+        // Construct suround vehicle information 
+        State sur_vehicle_state = State(0.0, position, orientation, 0.0, obstacle.getObstacleVelocity(), 0.0, 0.0);
+        Vehicle sur_vehicle = Vehicle(index, sur_vehicle_state, obstacle.getObstacleLength(), obstacle.getObstacleWidth());
+        sur_veh_info = std::make_pair(index, sur_vehicle);
+
+        return true;
     }
 
 
@@ -1031,7 +1054,7 @@ public:
     }
 
     // Behavior planner runner
-    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory& ego_best_traj, std::unordered<int, Trajectory>& sur_best_trajs) {
+    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory& ego_best_traj, std::unordered_map<int, Trajectory>& sur_best_trajs) {
         // Simulate all policies
         simulateAllBehaviors(ego_vehicle, surround_vehicles);
 
@@ -1052,7 +1075,7 @@ public:
 
     // Evaluate all policies
     void evaluatePolicies(int& winner_index, double& winner_cost) {
-        int sequence_num = behavior_sequence_cost_;
+        int sequence_num = behavior_sequence_cost_.size();
         int win_idx = -1;
         double win_cost = MAX_VALUE;
         for (int i = 0; i < sequence_num; i++) {
@@ -1069,19 +1092,19 @@ public:
     }
 
     // Simulate all situation and store trajectories information
-    void simulateAllBehaviors(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles) const {
+    void simulateAllBehaviors(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles) {
         // Generate all behavior sequences
         BehaviorGenerator* behavior_generator = new BehaviorGenerator(mtf_, static_cast<int>(predict_time_span_ / dt_));
         std::vector<BehaviorSequence> behavior_set = behavior_generator->generateBehaviorSequence();
         delete behavior_generator;
-        int sequence_num = behavior_set.size();
+        int sequence_num = static_cast<int>(behavior_set.size());
 
         // Initialize container
         initializeContainer(sequence_num);
 
         // Multiple threads calculation
         // TODO: use thread pool to balance calculation consumption in difference thread
-        std::vector<thread> thread_set(sequence_num);
+        std::vector<std::thread> thread_set(sequence_num);
         for (int i = 0; i < sequence_num; i++) {
             thread_set[i] = std::thread(&simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
         }
@@ -1095,7 +1118,7 @@ public:
 
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
         SemanticVehicle ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0]);
-        std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = mtf_->getSingleSurroundSemanticVehicle(surround_vehicles);
+        std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = mtf_->getSurroundSemanticVehicles(surround_vehicles);
 
         // Determine desired speed based on longitudinal speed
         // TODO: add logic to calculate the desired speed
@@ -1111,7 +1134,7 @@ public:
         std::unordered_map<int, Trajectory> surround_trajectories;
         ego_trajectory.emplace_back(ego_vehicle);
         for (auto sur_veh: surround_vehicles) {
-            surround_trajectories[sur_veh.first] = sur_veh.second;
+            surround_trajectories[sur_veh.first].emplace_back(sur_veh.second);
         }
 
         // State cache
@@ -1155,12 +1178,15 @@ public:
         sur_veh_trajs_[index] = surround_trajectories;
         
         // Judge whether generate lane change behavior
+        bool lane_change_flag{false};
         for (const VehicleBehavior& veh_beh: behavior_sequence) {
             if (veh_beh.lat_beh_ != LateralBehavior::LaneKeeping) {
-                is_lane_changed_[index] = true;
+                lane_change_flag = true;
                 break;
             }
         }
+        is_lane_changed_[index] = lane_change_flag;
+
 
         // Calculate target speed in nearest lane
         // Calculate ego vehicle's last predict state
@@ -1173,7 +1199,7 @@ public:
         behavior_safety_[index] = PolicyEvaluater::calculateSafe(ego_trajectory, surround_trajectories, speed_limit);
 
         // Calculate policy situation cost
-        behavior_sequence_cost_[index] = PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, is_lane_changed_, speed_limit);
+        behavior_sequence_cost_[index] = PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, lane_change_flag, speed_limit);
 
     }
 
@@ -1187,7 +1213,7 @@ public:
         for (const auto& veh_info: all_semantic_vehicles) {
             // Calculate desired velocity
             double desired_velocity = veh_info.second.vehicle_.state_.velocity_;
-            if (veh_info.fisrt == 0) {
+            if (veh_info.first == 0) {
                 // Ego vehicle
                 if (vehicle_behavior.lon_beh_ == LongitudinalBehavior::Aggressive) {
                     desired_velocity += 10.0;
