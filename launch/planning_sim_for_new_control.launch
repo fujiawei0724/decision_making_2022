@@ -68,6 +68,8 @@
     <param name="movement_topic" value="/planning_input/velocity"/>
     <!-- 订阅当前曲率 -->
     <param name="curvature_topic" value="/planning_input/curvature"/>
+    <!-- Subscribe steer -->
+    <param name="steer_topic" value="/planning_input/steer"/>
     <!-- 订阅控制状态消息-->
     <param name="control_report_topic" value="/vehicle/core_report" />
     <!-- 发布开始任务服务 -->
@@ -94,6 +96,7 @@
     <param name="vis_multi_curve_topic" value="/motion_planning/vis_multi_curve_topic"/>
     <param name="vis_occupation_topic" value="/motion_planning/vis_occupation_topic"/>
     <param name="vis_influence_obstacle_topic" value="/motion_planning/vis_influence_obstacle_topic"/>
+    <param name="vis_behavior_planner_ego_states_topic" value="/behavior_planning/vis_ego_states_topic"/>
     <!-- 变量，是否需要考虑当前曲率 -->
     <param name="current_pose_ignore_orientation" value="false"/>
     <!-- 变量，是否使用红绿灯 -->
@@ -150,7 +153,6 @@
     <param name="odometry_topic" value="/planning_input/localization"/>
     <param name="curvature_topic" value="/planning_input/curvature"/>
     <param name="movement_topic" value="/planning_input/velocity"/>
-    <param name="steer_topic" value="/planning_input/steer">
     <param name="planned_curve_topic" value="/plan_to_control_interface/trajectory"/>
     <param name="current_curve_topic" value="/observe_planning_output/current_curve"/>
     <param name="distance_error_topic" value="/observe_planning_output/distance_error"/>
