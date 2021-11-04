@@ -188,7 +188,7 @@ double safeThetaTransform(double raw_theta);
 double truncate(double val_in, double lower, double upper);
 
 // Calculate target steer 
-double calculateSteer(const double& wheelbase_length, const double& angle_diff, const double& look_ahead_distance);
+double calculateSteer(double wheelbase_length, const double& angle_diff, const double& look_ahead_distance);
 
 // Calculate projection on axis
 std::vector<double> getProjectionOnVertex(const std::vector<PathPlanningUtilities::Point2f>& vertex, const Eigen::Matrix<double, 2, 1>& axis);

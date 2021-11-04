@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-03 20:24:09
+ * @LastEditTime: 2021-11-04 12:45:44
  * @Descripttion: EUDM behavior planner interface with the whole pipeline
  */
 
@@ -62,7 +62,11 @@ bool DecisionMaking::SubVehicle::behaviorPlanning() {
 
     // DEBUG
     // Visualization best policy states predicted by behavior planning
-    
+    if (is_behavior_planning_success) {
+        VisualizationMethods::visualizationEgoPredictState(ego_trajectory_, vis_behavior_planner_ego_states_pub_);
+    } else {
+        printf("[Behavior planner]Behavior planning failed.");
+    }
 
     return is_behavior_planning_success;
 }

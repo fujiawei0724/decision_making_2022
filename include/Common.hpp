@@ -985,6 +985,8 @@ class SubVehicle{
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
 
+    ros::Publisher vis_behavior_planner_ego_states_pub_;
+
     
 };
 
