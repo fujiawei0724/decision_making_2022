@@ -150,6 +150,7 @@
     <param name="odometry_topic" value="/planning_input/localization"/>
     <param name="curvature_topic" value="/planning_input/curvature"/>
     <param name="movement_topic" value="/planning_input/velocity"/>
+    <param name="steer_topic" value="/planning_input/steer">
     <param name="planned_curve_topic" value="/plan_to_control_interface/trajectory"/>
     <param name="current_curve_topic" value="/observe_planning_output/current_curve"/>
     <param name="distance_error_topic" value="/observe_planning_output/distance_error"/>

@@ -115,6 +115,11 @@ void DecisionMaking::SubVehicle::rosInit() {
     this->nh_.getParam("curvature_topic", curvature_topic);
     this->curvature_sub_ = this->nh_.subscribe(curvature_topic, 1, &DecisionMaking::SubVehicle::updateVehicleCurvature, this);
 
+    // Get steer topic 
+    std::string steer_topic;
+    this->nh_.getParam("steer_topic", steer_topic);
+    steer_sub_ = nh_.subscribe(steer_topic, 1, &DecisionMaking::SubVehicle::updateVehicleSteer, this);
+
     // 获取控制状态topic
     std::string control_report_topic;
     this->nh_.getParam("control_report_topic", control_report_topic);
@@ -317,6 +322,13 @@ void DecisionMaking::SubVehicle::updateVehicleCurvature(const std_msgs::Float64:
         LOG(INFO) << "VEHICLE CURVATURE GOT";
     }
     this->vehicle_curvature_ready_flag_mutex_.unlock();
+}
+
+// Update vehicle steer information
+void DecisionMaking::SubVehicle::updateVehicleSteer(const std_msgs::Float64::ConstPtr steer_msg) {
+    current_vehicle_steer_metex_.lock();
+    current_vehicle_steer_ = steer_msg->data;
+    current_vehicle_steer_metex_.unlock();
 }
 
 // 更新控制报告信息
@@ -522,237 +534,243 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             }
         }
 
-        // 首先清空状态机
-        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ initialization for new planning +++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "++++++++++++++++++++++++++++++++++++++++++++++++++ initialization for new planning +++++++++++++++++++++++++++++++++++++++++++++++++++++";
-        // 修改自检测标志位
-        this->SELF_TEST_INIT_ = true;
-        this->SELF_TEST_PLANNING_ = false;
-        this->SELF_TEST_DECISION_MAKING_ = false;
-        this->SELF_TEST_STATE_MAINTAINING_ = false;
+        // Run behavior planner
+        bool is_behavior_planning_success = behaviorPlanning();
 
-        clock_t start_init_time, end_init_time;
-        start_init_time = clock();
-        this->initVehicleStates();
-        std::cout <<"INIT VEHICLE STATE MACHINE SUCCESS" << std::endl;
-        LOG(INFO) << "INIT VEHICLE STATE MACHINE SUCCESS";
-        std::cout << "CURRENT STATE IS " << DIC_STATE_NAME[this->current_state_.getStateName()] << std::endl;
-        LOG(INFO) << "CURRENT STATE IS " << DIC_STATE_NAME[this->current_state_.getStateName()];
-        for (size_t i = 0; i < this->current_state_.getNeighborStates().size(); i++) {
-            std::cout << "NEIGHBOR STATE INCLUDE " << DIC_STATE_NAME[this->current_state_.getNeighborStates()[i]] << std::endl;
-            LOG(INFO) << "NEIGHBOR STATE INCLUDE " << DIC_STATE_NAME[this->current_state_.getNeighborStates()[i]];
-        }
-        end_init_time = clock();
-        std::cout << "++++++++++++++++++++++++++ end of initialization for new planning, time consuming is " << static_cast<double>(end_init_time - start_init_time) * 1000.0 / CLOCKS_PER_SEC << " ms +++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "++++++++++++++++++++++++++ end of initialization for new planning, time consuming is " << static_cast<double>(end_init_time - start_init_time) * 1000.0 / CLOCKS_PER_SEC << " ms +++++++++++++++++++++++++++++++++++";
-        // 进行局部规划，补全状态机（路径，优先度、可行性）
-        std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ motion planning part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ motion planning part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-        // 修改自检测标志位
-        this->SELF_TEST_INIT_ = false;
-        this->SELF_TEST_PLANNING_ = true;
-        this->SELF_TEST_DECISION_MAKING_ = false;
-        this->SELF_TEST_STATE_MAINTAINING_ = false;
 
-        clock_t start_motion_planning_time, end_motion_planning_time;
-        start_motion_planning_time = clock();
-        this->updateStates();
-        // 如果局部规划失败，报错
-        if (!this->center_lane_.getLaneExistance()) {
-            ROS_ERROR("NO LANE OBTAINED FROM MAP");
-            LOG(ERROR) << "NO LANE OBTAINED FROM MAP";
-            continue;
-        }
-        std::cout << "TRAJECTORY GENERATION SUCCESS" << std::endl;
-        LOG(INFO) << "TRAJECTORY GENERATION SUCCESS";
-        end_motion_planning_time = clock();
-        std::cout << "+++++++++++++++++++++++++++++++++++ end of motion planning part, time consuming is " << static_cast<double>(end_motion_planning_time - start_motion_planning_time) * 1000.0 / CLOCKS_PER_SEC  << " ms ++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "+++++++++++++++++++++++++++++++++++ end of motion planning part, time consuming is " << static_cast<double>(end_motion_planning_time - start_motion_planning_time) * 1000.0 / CLOCKS_PER_SEC  << " ms ++++++++++++++++++++++++++++++++++++++++++";
-        // 进行决策，把状态机剩余信息添加（安全性、目标速度）
-        std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ decision making part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ decision making part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-        // 修改自检测标志位
-        this->SELF_TEST_INIT_ = false;
-        this->SELF_TEST_PLANNING_ = false;
-        this->SELF_TEST_DECISION_MAKING_ = true;
-        this->SELF_TEST_STATE_MAINTAINING_ = false;
-
-        clock_t start_decision_making_time, end_decision_making_time;
-        start_decision_making_time = clock();
-        // 进行动态速度规划
-        this->checkStates();
-        std::cout << "SAFETY JUDGEMENT SUCCESS" << std::endl;
-        LOG(INFO) << "SAFETY JUDGEMENT SUCCESS";
-        // // 填充特殊状态信息
-        // this->generateLowPriorityStates();
-        // 进行状态选择，获取目标状态(也就是choosed_state),进行可视化
-        this->chooseStates();
-        std::cout << "STATES CHOOSE SUCCESS" << std::endl;
-        LOG(INFO) << "STATES CHOOSE SUCCESS";
-        end_decision_making_time = clock();
-        std::cout << "+++++++++++++++++++++++++++++++++++ end of decision making part, time consuming is " << static_cast<double>(end_decision_making_time - start_decision_making_time) * 1000.0 / CLOCKS_PER_SEC <<" ms ++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "+++++++++++++++++++++++++++++++++++ end of decision making part, time consuming is " << static_cast<double>(end_decision_making_time - start_decision_making_time) * 1000.0 / CLOCKS_PER_SEC <<" ms ++++++++++++++++++++++++++++++++++++++++++";
-        // 判断规划模块的能力
-        if (this->motionPlanningUncapableJudgement()) {
-            // 任务结束
-            LOG(INFO) << "无法继续自动执行任务";
-            std::cout << "无法继续自动执行任务" << std::endl;
-            continue;
-        }
-        // 进行状态保持，内容包括1.当前状态何时变成目标状态（满足一定条件）2.当前状态是否安全，如果不，则退出状态保持 3.是否完成状态路径，如果是，退出状态保持，进行新的规划
-        // 状态保持判断频率为2hz
-        // 如果期望状态和选中状态不同，则还要判断期望状态是否安全（期望状态只能是换到与直行）
-        std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ state maintain part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ state maintain part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-        // 修改自检测标志位
-        this->SELF_TEST_INIT_ = false;
-        this->SELF_TEST_PLANNING_ = false;
-        this->SELF_TEST_DECISION_MAKING_ = false;
-        this->SELF_TEST_STATE_MAINTAINING_ = true;
-
-        // 进行车辆和障碍物状态更新，判断当前状态是否安全，判断期望状态是否可行，进行动态速度规划。
-        // 当选中的是避障状态时
-        if (this->choosed_state_.getStateName() == StateNames::AVOIDANCE){
-            
-            this->avoidanceStateMaintain();
-        }
-        // 当选中的是停车状态时
-        if (this->choosed_state_.getStateName() == StateNames::STOP) {
-            
-            this->stopStateMaintain();
-        }
-
-        // 当满足三大状态时
-        if (this->choosed_state_.getStateName() == StateNames::FORWARD || this->choosed_state_.getStateName() == StateNames::TURN_LEFT || this->choosed_state_.getStateName() == StateNames::TURN_RIGHT) {
-            this->maintainStates();
-        }
-        // 当选中的是倒车状态时
-        if (this->choosed_state_.getStateName() == StateNames::REVERSE) {
-            // 可视化路径
-            // 清空之前的可视化
-            visualization_msgs::MarkerArray delete_marker_array;
-            delete_marker_array.markers.push_back(VisualizationMethods::visualizedeleteAllMarker(0));
-            this->vis_multi_curve_pub_.publish(delete_marker_array);
-            visualization_msgs::MarkerArray marker_array;
-            std_msgs::ColorRGBA color;
-            color.r = 138.0 / 255.0;
-            color.g = 43.0 / 255.0;
-            color.b = 226.0 / 255.0;
-            color.a = 1.0;
-            marker_array.markers.push_back(VisualizationMethods::visualizeCurvesToMarker(this->choosed_state_.getTotalTrajectory(), color, 0));
-            this->vis_multi_curve_pub_.publish(marker_array);
-            // 发布路径
-            this->choosed_state_.publishCurveMsgPointReach(this->motion_planning_curve_pub_);
-            // 等待直到控制完成
-            this->control_finished_flag_mutex_.lock();
-            this->CONTROL_FINISHED_FLAG_ = false;
-            this->control_finished_flag_mutex_.unlock();
-            // 判断是否完成
-            ros::Rate wait_rate(1);
-            while (true) {
-                // 计算当前位置
-                this->current_vehicle_world_position_mutex_.lock();
-                PathPlanningUtilities::VehicleState current_vehicle_world_position = this->current_vehicle_world_position_;
-                this->current_vehicle_world_position_mutex_.unlock();
-                // 计算距离
-                double distance = PathPlanningUtilities::calcDistance(current_vehicle_world_position.position_, this->choosed_state_.getTotalTrajectory()[this->choosed_state_.getVehicleDynamicPlanningGoalPositionIndexInTrajectory()].position_);
-                LOG(INFO) << "倒车距离误差仍然存在" << distance;
-                // 获取控制是否结束
-                this->control_finished_flag_mutex_.lock();
-                bool is_control_finished = this->CONTROL_FINISHED_FLAG_;
-                this->control_finished_flag_mutex_.unlock();
-                if (is_control_finished) {
-                    LOG(INFO) << "倒车状态完成";
-                    break;
-                }
-                wait_rate.sleep();
-            }
-        }
-        // 选中的是转向状态时
-        if (this->choosed_state_.getStateName() == StateNames::ROTATE) {
-            // 发布目标角度
-            {
-                // 车速为0时,将车辆转向回正
-                path_planning_msgs::MotionPlanningCurve rotate_msgs;
-                rotate_msgs.header.frame_id = "world";
-                rotate_msgs.header.stamp = ros::Time::now();
-                rotate_msgs.mode = path_planning_msgs::MotionPlanningCurve::ROTATE;
-                rotate_msgs.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
-                rotate_msgs.aim_curvature = this->choosed_state_.getTotalTrajectory()[0].kappa_;
-                this->motion_planning_curve_pub_.publish(rotate_msgs);
-                // 判断回正是否完成,完成则结束此状态
-                ros::Rate wait_rate(1);
-                while (true) {
-                    // 计算当前曲率
-                    this->current_vehicle_kappa_mutex_.lock();
-                    double current_curvature = this->current_vehicle_kappa_;
-                    this->current_vehicle_kappa_mutex_.unlock();
-                    if (Tools::isSmall(std::abs(current_curvature - this->choosed_state_.getTotalTrajectory()[0].kappa_), 0.01)) {
-                        LOG(INFO) << "转向完成";
-                        break;
-                    }
-                    wait_rate.sleep();
-                }
-            }
-            // 发布路径
-            {
-                this->choosed_state_.publishCurveMsgPointReach(this->motion_planning_curve_pub_);
-                // 等待直到控制完成
-                this->control_finished_flag_mutex_.lock();
-                this->CONTROL_FINISHED_FLAG_ = false;
-                this->control_finished_flag_mutex_.unlock();
-                // 判断车速的是否为0
-                ros::Rate wait_rate(1);
-                while (true) {
-                    // 计算当前位置
-                    this->current_vehicle_world_position_mutex_.lock();
-                    PathPlanningUtilities::VehicleState current_vehicle_world_position = this->current_vehicle_world_position_;
-                    this->current_vehicle_world_position_mutex_.unlock();
-                    // 计算距离
-                    double distance = PathPlanningUtilities::calcDistance(current_vehicle_world_position.position_, this->choosed_state_.getTotalTrajectory()[this->choosed_state_.getVehicleDynamicPlanningGoalPositionIndexInTrajectory()].position_);
-                    LOG(INFO) << "倒车距离误差仍然存在" << distance;
-                    // 获取控制是否结束
-                    this->control_finished_flag_mutex_.lock();
-                    bool is_control_finished = this->CONTROL_FINISHED_FLAG_;
-                    this->control_finished_flag_mutex_.unlock();
-                    if (is_control_finished) {
-                        LOG(INFO) << "转向到达终点";
-                        break;
-                    }
-                    wait_rate.sleep();
-                }
-            }
-            // 回正
-            {
-                // 车速为0时,将车辆转向回正
-                path_planning_msgs::MotionPlanningCurve rotate_msgs;
-                rotate_msgs.header.frame_id = "world";
-                rotate_msgs.header.stamp = ros::Time::now();
-                rotate_msgs.mode = path_planning_msgs::MotionPlanningCurve::ROTATE;
-                rotate_msgs.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
-                rotate_msgs.aim_curvature = 0.0;
-                this->motion_planning_curve_pub_.publish(rotate_msgs);
-                // 判断回正是否完成,完成则结束此状态
-                ros::Rate wait_rate(1);
-                while (true) {
-                    // 计算当前曲率
-                    this->current_vehicle_kappa_mutex_.lock();
-                    double current_curvature = this->current_vehicle_kappa_;
-                    std::cout << "回正方向盘误差为" << current_curvature << std::endl;
-                    this->current_vehicle_kappa_mutex_.unlock();
-                    if (Tools::isSmall(std::abs(current_curvature), 0.01)) {
-                        LOG(INFO) << "转向完成";
-                        std::cout << "转向完成" << std::endl;
-                        break;
-                    }
-                    wait_rate.sleep();
-                }
-            }
-
-        }
-        std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ old planning finished ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ old planning finished ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
         loop_rate.sleep();
+
+        // // 首先清空状态机
+        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ initialization for new planning +++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "++++++++++++++++++++++++++++++++++++++++++++++++++ initialization for new planning +++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        // // 修改自检测标志位
+        // this->SELF_TEST_INIT_ = true;
+        // this->SELF_TEST_PLANNING_ = false;
+        // this->SELF_TEST_DECISION_MAKING_ = false;
+        // this->SELF_TEST_STATE_MAINTAINING_ = false;
+
+        // clock_t start_init_time, end_init_time;
+        // start_init_time = clock();
+        // this->initVehicleStates();
+        // std::cout <<"INIT VEHICLE STATE MACHINE SUCCESS" << std::endl;
+        // LOG(INFO) << "INIT VEHICLE STATE MACHINE SUCCESS";
+        // std::cout << "CURRENT STATE IS " << DIC_STATE_NAME[this->current_state_.getStateName()] << std::endl;
+        // LOG(INFO) << "CURRENT STATE IS " << DIC_STATE_NAME[this->current_state_.getStateName()];
+        // for (size_t i = 0; i < this->current_state_.getNeighborStates().size(); i++) {
+        //     std::cout << "NEIGHBOR STATE INCLUDE " << DIC_STATE_NAME[this->current_state_.getNeighborStates()[i]] << std::endl;
+        //     LOG(INFO) << "NEIGHBOR STATE INCLUDE " << DIC_STATE_NAME[this->current_state_.getNeighborStates()[i]];
+        // }
+        // end_init_time = clock();
+        // std::cout << "++++++++++++++++++++++++++ end of initialization for new planning, time consuming is " << static_cast<double>(end_init_time - start_init_time) * 1000.0 / CLOCKS_PER_SEC << " ms +++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "++++++++++++++++++++++++++ end of initialization for new planning, time consuming is " << static_cast<double>(end_init_time - start_init_time) * 1000.0 / CLOCKS_PER_SEC << " ms +++++++++++++++++++++++++++++++++++";
+        // // 进行局部规划，补全状态机（路径，优先度、可行性）
+        // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ motion planning part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ motion planning part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        // // 修改自检测标志位
+        // this->SELF_TEST_INIT_ = false;
+        // this->SELF_TEST_PLANNING_ = true;
+        // this->SELF_TEST_DECISION_MAKING_ = false;
+        // this->SELF_TEST_STATE_MAINTAINING_ = false;
+
+        // clock_t start_motion_planning_time, end_motion_planning_time;
+        // start_motion_planning_time = clock();
+        // this->updateStates();
+        // // 如果局部规划失败，报错
+        // if (!this->center_lane_.getLaneExistance()) {
+        //     ROS_ERROR("NO LANE OBTAINED FROM MAP");
+        //     LOG(ERROR) << "NO LANE OBTAINED FROM MAP";
+        //     continue;
+        // }
+        // std::cout << "TRAJECTORY GENERATION SUCCESS" << std::endl;
+        // LOG(INFO) << "TRAJECTORY GENERATION SUCCESS";
+        // end_motion_planning_time = clock();
+        // std::cout << "+++++++++++++++++++++++++++++++++++ end of motion planning part, time consuming is " << static_cast<double>(end_motion_planning_time - start_motion_planning_time) * 1000.0 / CLOCKS_PER_SEC  << " ms ++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "+++++++++++++++++++++++++++++++++++ end of motion planning part, time consuming is " << static_cast<double>(end_motion_planning_time - start_motion_planning_time) * 1000.0 / CLOCKS_PER_SEC  << " ms ++++++++++++++++++++++++++++++++++++++++++";
+        // // 进行决策，把状态机剩余信息添加（安全性、目标速度）
+        // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ decision making part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ decision making part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        // // 修改自检测标志位
+        // this->SELF_TEST_INIT_ = false;
+        // this->SELF_TEST_PLANNING_ = false;
+        // this->SELF_TEST_DECISION_MAKING_ = true;
+        // this->SELF_TEST_STATE_MAINTAINING_ = false;
+
+        // clock_t start_decision_making_time, end_decision_making_time;
+        // start_decision_making_time = clock();
+        // // 进行动态速度规划
+        // this->checkStates();
+        // std::cout << "SAFETY JUDGEMENT SUCCESS" << std::endl;
+        // LOG(INFO) << "SAFETY JUDGEMENT SUCCESS";
+        // // // 填充特殊状态信息
+        // // this->generateLowPriorityStates();
+        // // 进行状态选择，获取目标状态(也就是choosed_state),进行可视化
+        // this->chooseStates();
+        // std::cout << "STATES CHOOSE SUCCESS" << std::endl;
+        // LOG(INFO) << "STATES CHOOSE SUCCESS";
+        // end_decision_making_time = clock();
+        // std::cout << "+++++++++++++++++++++++++++++++++++ end of decision making part, time consuming is " << static_cast<double>(end_decision_making_time - start_decision_making_time) * 1000.0 / CLOCKS_PER_SEC <<" ms ++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "+++++++++++++++++++++++++++++++++++ end of decision making part, time consuming is " << static_cast<double>(end_decision_making_time - start_decision_making_time) * 1000.0 / CLOCKS_PER_SEC <<" ms ++++++++++++++++++++++++++++++++++++++++++";
+        // // 判断规划模块的能力
+        // if (this->motionPlanningUncapableJudgement()) {
+        //     // 任务结束
+        //     LOG(INFO) << "无法继续自动执行任务";
+        //     std::cout << "无法继续自动执行任务" << std::endl;
+        //     continue;
+        // }
+        // // 进行状态保持，内容包括1.当前状态何时变成目标状态（满足一定条件）2.当前状态是否安全，如果不，则退出状态保持 3.是否完成状态路径，如果是，退出状态保持，进行新的规划
+        // // 状态保持判断频率为2hz
+        // // 如果期望状态和选中状态不同，则还要判断期望状态是否安全（期望状态只能是换到与直行）
+        // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ state maintain part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ state maintain part ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        // // 修改自检测标志位
+        // this->SELF_TEST_INIT_ = false;
+        // this->SELF_TEST_PLANNING_ = false;
+        // this->SELF_TEST_DECISION_MAKING_ = false;
+        // this->SELF_TEST_STATE_MAINTAINING_ = true;
+
+        // // 进行车辆和障碍物状态更新，判断当前状态是否安全，判断期望状态是否可行，进行动态速度规划。
+        // // 当选中的是避障状态时
+        // if (this->choosed_state_.getStateName() == StateNames::AVOIDANCE){
+            
+        //     this->avoidanceStateMaintain();
+        // }
+        // // 当选中的是停车状态时
+        // if (this->choosed_state_.getStateName() == StateNames::STOP) {
+            
+        //     this->stopStateMaintain();
+        // }
+
+        // // 当满足三大状态时
+        // if (this->choosed_state_.getStateName() == StateNames::FORWARD || this->choosed_state_.getStateName() == StateNames::TURN_LEFT || this->choosed_state_.getStateName() == StateNames::TURN_RIGHT) {
+        //     this->maintainStates();
+        // }
+        // // 当选中的是倒车状态时
+        // if (this->choosed_state_.getStateName() == StateNames::REVERSE) {
+        //     // 可视化路径
+        //     // 清空之前的可视化
+        //     visualization_msgs::MarkerArray delete_marker_array;
+        //     delete_marker_array.markers.push_back(VisualizationMethods::visualizedeleteAllMarker(0));
+        //     this->vis_multi_curve_pub_.publish(delete_marker_array);
+        //     visualization_msgs::MarkerArray marker_array;
+        //     std_msgs::ColorRGBA color;
+        //     color.r = 138.0 / 255.0;
+        //     color.g = 43.0 / 255.0;
+        //     color.b = 226.0 / 255.0;
+        //     color.a = 1.0;
+        //     marker_array.markers.push_back(VisualizationMethods::visualizeCurvesToMarker(this->choosed_state_.getTotalTrajectory(), color, 0));
+        //     this->vis_multi_curve_pub_.publish(marker_array);
+        //     // 发布路径
+        //     this->choosed_state_.publishCurveMsgPointReach(this->motion_planning_curve_pub_);
+        //     // 等待直到控制完成
+        //     this->control_finished_flag_mutex_.lock();
+        //     this->CONTROL_FINISHED_FLAG_ = false;
+        //     this->control_finished_flag_mutex_.unlock();
+        //     // 判断是否完成
+        //     ros::Rate wait_rate(1);
+        //     while (true) {
+        //         // 计算当前位置
+        //         this->current_vehicle_world_position_mutex_.lock();
+        //         PathPlanningUtilities::VehicleState current_vehicle_world_position = this->current_vehicle_world_position_;
+        //         this->current_vehicle_world_position_mutex_.unlock();
+        //         // 计算距离
+        //         double distance = PathPlanningUtilities::calcDistance(current_vehicle_world_position.position_, this->choosed_state_.getTotalTrajectory()[this->choosed_state_.getVehicleDynamicPlanningGoalPositionIndexInTrajectory()].position_);
+        //         LOG(INFO) << "倒车距离误差仍然存在" << distance;
+        //         // 获取控制是否结束
+        //         this->control_finished_flag_mutex_.lock();
+        //         bool is_control_finished = this->CONTROL_FINISHED_FLAG_;
+        //         this->control_finished_flag_mutex_.unlock();
+        //         if (is_control_finished) {
+        //             LOG(INFO) << "倒车状态完成";
+        //             break;
+        //         }
+        //         wait_rate.sleep();
+        //     }
+        // }
+        // // 选中的是转向状态时
+        // if (this->choosed_state_.getStateName() == StateNames::ROTATE) {
+        //     // 发布目标角度
+        //     {
+        //         // 车速为0时,将车辆转向回正
+        //         path_planning_msgs::MotionPlanningCurve rotate_msgs;
+        //         rotate_msgs.header.frame_id = "world";
+        //         rotate_msgs.header.stamp = ros::Time::now();
+        //         rotate_msgs.mode = path_planning_msgs::MotionPlanningCurve::ROTATE;
+        //         rotate_msgs.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
+        //         rotate_msgs.aim_curvature = this->choosed_state_.getTotalTrajectory()[0].kappa_;
+        //         this->motion_planning_curve_pub_.publish(rotate_msgs);
+        //         // 判断回正是否完成,完成则结束此状态
+        //         ros::Rate wait_rate(1);
+        //         while (true) {
+        //             // 计算当前曲率
+        //             this->current_vehicle_kappa_mutex_.lock();
+        //             double current_curvature = this->current_vehicle_kappa_;
+        //             this->current_vehicle_kappa_mutex_.unlock();
+        //             if (Tools::isSmall(std::abs(current_curvature - this->choosed_state_.getTotalTrajectory()[0].kappa_), 0.01)) {
+        //                 LOG(INFO) << "转向完成";
+        //                 break;
+        //             }
+        //             wait_rate.sleep();
+        //         }
+        //     }
+        //     // 发布路径
+        //     {
+        //         this->choosed_state_.publishCurveMsgPointReach(this->motion_planning_curve_pub_);
+        //         // 等待直到控制完成
+        //         this->control_finished_flag_mutex_.lock();
+        //         this->CONTROL_FINISHED_FLAG_ = false;
+        //         this->control_finished_flag_mutex_.unlock();
+        //         // 判断车速的是否为0
+        //         ros::Rate wait_rate(1);
+        //         while (true) {
+        //             // 计算当前位置
+        //             this->current_vehicle_world_position_mutex_.lock();
+        //             PathPlanningUtilities::VehicleState current_vehicle_world_position = this->current_vehicle_world_position_;
+        //             this->current_vehicle_world_position_mutex_.unlock();
+        //             // 计算距离
+        //             double distance = PathPlanningUtilities::calcDistance(current_vehicle_world_position.position_, this->choosed_state_.getTotalTrajectory()[this->choosed_state_.getVehicleDynamicPlanningGoalPositionIndexInTrajectory()].position_);
+        //             LOG(INFO) << "倒车距离误差仍然存在" << distance;
+        //             // 获取控制是否结束
+        //             this->control_finished_flag_mutex_.lock();
+        //             bool is_control_finished = this->CONTROL_FINISHED_FLAG_;
+        //             this->control_finished_flag_mutex_.unlock();
+        //             if (is_control_finished) {
+        //                 LOG(INFO) << "转向到达终点";
+        //                 break;
+        //             }
+        //             wait_rate.sleep();
+        //         }
+        //     }
+        //     // 回正
+        //     {
+        //         // 车速为0时,将车辆转向回正
+        //         path_planning_msgs::MotionPlanningCurve rotate_msgs;
+        //         rotate_msgs.header.frame_id = "world";
+        //         rotate_msgs.header.stamp = ros::Time::now();
+        //         rotate_msgs.mode = path_planning_msgs::MotionPlanningCurve::ROTATE;
+        //         rotate_msgs.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
+        //         rotate_msgs.aim_curvature = 0.0;
+        //         this->motion_planning_curve_pub_.publish(rotate_msgs);
+        //         // 判断回正是否完成,完成则结束此状态
+        //         ros::Rate wait_rate(1);
+        //         while (true) {
+        //             // 计算当前曲率
+        //             this->current_vehicle_kappa_mutex_.lock();
+        //             double current_curvature = this->current_vehicle_kappa_;
+        //             std::cout << "回正方向盘误差为" << current_curvature << std::endl;
+        //             this->current_vehicle_kappa_mutex_.unlock();
+        //             if (Tools::isSmall(std::abs(current_curvature), 0.01)) {
+        //                 LOG(INFO) << "转向完成";
+        //                 std::cout << "转向完成" << std::endl;
+        //                 break;
+        //             }
+        //             wait_rate.sleep();
+        //         }
+        //     }
+
+        // }
+        // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ old planning finished ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // LOG(INFO) << "+++++++++++++++++++++++++++++++++++++++++++++++++++++ old planning finished ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        // loop_rate.sleep();
     }
 }
 

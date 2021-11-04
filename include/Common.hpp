@@ -655,6 +655,7 @@ class StandardState {
 // 0.初始化车辆和道路信息 1.对状态进行更新（起终点、规划路径、优先级、可行性） 2.判断每一个状态的安全性（加入感知障碍物约束）并补全最终速度
 // 3.判断是否进行超车、确定状态 4.保持状态并监视 5.在此基础上不断更新车辆道路信息。
 class SubVehicle{
+    using Trajectory = std::vector<BehaviorPlanner::Vehicle>;
  public:
     // 构造函数和析构函数
     explicit SubVehicle(const ros::NodeHandle &nh) {
@@ -722,6 +723,9 @@ class SubVehicle{
 
     // 更新车辆曲率
     void updateVehicleCurvature(const std_msgs::Float64::ConstPtr curvature_msg);
+
+    // Update vehicle steer 
+    void updateVehicleSteer(const std_msgs::Float64::ConstPtr steer_msg);
 
     // 更新控制报告信息
     void updateControlReport(const control_msgs::CoreReport::ConstPtr control_report_msg);
@@ -874,6 +878,7 @@ class SubVehicle{
     ros::Subscriber odom_sub_;  // 位置更新节点
     ros::Subscriber movement_sub_;  // 速度更新节点
     ros::Subscriber curvature_sub_;  // 曲率更新节点
+    ros::Subscriber steer_sub_;
     ros::Subscriber control_report_sub_;  // 控制报告节点
     ros::Subscriber obstacle_sub_;  // 障碍物信息更新节点
     ros::Subscriber surround_radar_sub_;  // 毫米波雷达预警节点
@@ -917,6 +922,7 @@ class SubVehicle{
     PathPlanningUtilities::VehicleState current_vehicle_world_position_;  // 车辆位置信息、朝向信息(世界坐标系下)
     PathPlanningUtilities::VehicleMovementState current_vehicle_movement_;  // 车辆的速度信息
     double current_vehicle_kappa_;  // 车辆曲率信息
+    double current_vehicle_steer_;
     geometry_msgs::PoseStamped destination_pose_;  // 行驶的目的地
     PathPlanningUtilities::Curve history_curve_;  // 历史行驶轨迹
 
@@ -958,6 +964,7 @@ class SubVehicle{
     std::mutex current_vehicle_world_position_mutex_;  // 车辆世界坐标系位置锁
     std::mutex current_vehicle_movement_mutex_;  //车辆速度信息锁
     std::mutex current_vehicle_kappa_mutex_;  // 车辆曲率锁
+    std::mutex current_vehicle_steer_metex_;
     std::mutex destination_mutex_;  // 目的地信息锁
     std::mutex mission_start_mutex_;  // 任务开始标志锁
     std::mutex obstacle_mutex_;  // 障碍物锁
@@ -968,6 +975,17 @@ class SubVehicle{
     std::mutex emergency_break_flag_mutex_;  // 紧急停车锁
     std::mutex history_curve_mutex_;  // 历史路径锁
     std::mutex control_finished_flag_mutex_;  // 控制完成标志位锁
+
+    /**
+     * The content below is for trajectory planning 2021, includes EUDM and SSC.
+     */
+
+    bool behaviorPlanning();
+
+    Trajectory ego_trajectory_;
+    std::unordered_map<int, Trajectory> surround_trajectories_;
+
+    
 };
 
 namespace RSS {
@@ -1175,6 +1193,9 @@ visualization_msgs::Marker visualizePosition(double position_x, double position_
 
 // 可视化有效障碍物
 void visualizeInfluenceObstacles(const std::vector<InfluenceObstacle> &influence_obstacles, const ros::Publisher &publisher);
+
+// Visualization for behavior policy
+void visualizationEgoPredictState(const std::vector<BehaviorPlanner::Vehicle>& ego_vehicle_predicted_state, const ros::Publisher &publisher);
 
 }  // namespace VisualizationMethods
 

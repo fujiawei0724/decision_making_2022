@@ -625,3 +625,8 @@ void VisualizationMethods::visualizeInfluenceObstacles(const std::vector<Influen
     }
     publisher.publish(influence_obstacles_marker_array);
 }
+
+// Visualization for behavior policy
+void VisualizationMethods::visualizationEgoPredictState(const std::vector<BehaviorPlanner::Vehicle>& ego_vehicle_predicted_state, const ros::Publisher& publisher) {
+
+}

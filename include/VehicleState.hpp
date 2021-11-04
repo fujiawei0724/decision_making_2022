@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-03 16:59:48
+ * @LastEditTime: 2021-11-03 18:54:26
  * @Descripttion: The class for EUDM behavior planner, such as the vehicle state and vehicle trajectory
  */
 
@@ -1106,9 +1106,6 @@ public:
         mtf_ = mtf;
         predict_time_span_ = predict_time_span;
         dt_ = dt;
-
-
-
     }
     // Destructor
     ~BehaviorPlannerCore() {
