@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-08 11:57:43
+ * @LastEditTime: 2021-11-08 19:05:35
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -83,6 +83,46 @@ public:
     double d_end_;
     double t_start_;
     double t_end_;
+
+};
+
+// Point 3D
+class Point3D {
+public:
+    // Constructor
+    Point3D() = default;
+    Point3D(double s, double d, double t) {
+        s_ = s;
+        d_ = d;
+        t_ = t;
+    }
+    // Destructor
+    ~Point3D() {
+
+    }
+
+    double s_;
+    double d_;
+    double t_;
+};
+
+// The interface between trajectory planner and behavior planner
+class StateInterface {
+
+};
+
+// Semantic cubes generator
+class SemanticCubeGenerator {
+public:
+    using FrenetStateSequence = std::vector<Common::FrenetState>;
+    // Constructor
+    SemanticCubeGenerator(const FrenetStateSequence& cur_fr_states_seq) {
+
+    }
+    // Destructor
+    ~SemanticCubeGenerator() = default;
+
+    
 
 };
 

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-04 12:45:44
+ * @LastEditTime: 2021-11-08 19:01:27
  * @Descripttion: EUDM behavior planner interface with the whole pipeline
  */
 
@@ -14,19 +14,19 @@ bool DecisionMaking::SubVehicle::behaviorPlanning() {
     updateObstacleInformation();
 
     // Contruct map interface for behavior planner
-    std::map<BehaviorPlanner::LaneId, bool> lanes_exist_info{{BehaviorPlanner::LaneId::CenterLane, false}, {BehaviorPlanner::LaneId::LeftLane, false}, {BehaviorPlanner::LaneId::RightLane, false}};
-    std::map<BehaviorPlanner::LaneId, Lane> lanes_info;
+    std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
+    std::map<Common::LaneId, Lane> lanes_info;
     if (center_lane_.getLaneExistance()) {
-        lanes_exist_info[BehaviorPlanner::LaneId::CenterLane] = true;
-        lanes_info[BehaviorPlanner::LaneId::CenterLane] = center_lane_;
+        lanes_exist_info[Common::LaneId::CenterLane] = true;
+        lanes_info[Common::LaneId::CenterLane] = center_lane_;
     }
     if (left_lane_.getLaneExistance()) {
-        lanes_exist_info[BehaviorPlanner::LaneId::LeftLane] = true;
-        lanes_info[BehaviorPlanner::LaneId::LeftLane] = left_lane_;
+        lanes_exist_info[Common::LaneId::LeftLane] = true;
+        lanes_info[Common::LaneId::LeftLane] = left_lane_;
     }
     if (right_lane_.getLaneExistance()) {
-        lanes_exist_info[BehaviorPlanner::LaneId::RightLane] = true;
-        lanes_info[BehaviorPlanner::LaneId::RightLane] = right_lane_;
+        lanes_exist_info[Common::LaneId::RightLane] = true;
+        lanes_info[Common::LaneId::RightLane] = right_lane_;
     }
     BehaviorPlanner::MapInterface map_interface = BehaviorPlanner::MapInterface(lanes_exist_info, lanes_info);
 
@@ -50,8 +50,11 @@ bool DecisionMaking::SubVehicle::behaviorPlanning() {
 
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
-    BehaviorPlanner::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
-    std::unordered_map<int, BehaviorPlanner::Vehicle> surround_vehicles = BehaviorPlanner::VehicleInterface::getSurroundVehicles(&map_interface, obstacles_);
+    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+
+    // Unlaned obstacles are considered in trajectory planner to generate occupied semantic cubes
+    std::vector<DecisionMaking::Obstacle> unlaned_obstacles;
+    std::unordered_map<int, Common::Vehicle> surround_vehicles = BehaviorPlanner::VehicleInterface::getSurroundVehicles(&map_interface, obstacles_, unlaned_obstacles);
 
     // Construct behavior planner core and decision making
     double behavior_planner_time_span = 4.0;
@@ -67,6 +70,8 @@ bool DecisionMaking::SubVehicle::behaviorPlanning() {
     } else {
         printf("[Behavior planner]Behavior planning failed.");
     }
+
+    // TODO: Information cache for trajectory planner
 
     return is_behavior_planning_success;
 }
