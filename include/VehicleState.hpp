@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-09 15:56:44
+ * @LastEditTime: 2021-11-09 21:04:53
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -15,6 +15,9 @@
 #include <algorithm>
 #include <functional>
 #include <stdio.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "Const.hpp"
 #include "Point.hpp"
 #include "Compare.hpp"
@@ -348,6 +351,38 @@ public:
     LaneId reference_lane_id_{LaneId::Undefined};
     Lane nearest_lane_;
     Lane reference_lane_;
+};
+
+
+class Point2i {
+ public:
+    Point2i() = default;
+    Point2i(int x, int y) {
+        x_ = x;
+        y_ = y;
+    }
+    ~Point2i() {
+
+    }
+
+    int x_;
+    int y_;
+};
+
+class ShapeUtils {
+ public:
+    static void getCvPoint2iVecUsingCommonPoint2iVec(const std::vector<Point2i>& pts_in, std::vector<cv::Point2i>& pts_out) {
+        int num = pts_in.size();
+        pts_out.resize(num);
+        for (int i = 0; i < num; i++) {
+            getCvPoint2iUsingCommonPoint2i(pts_in[i], pts_out[i]);
+        }
+    }
+
+    static void getCvPoint2iUsingCommonPoint2i(const Point2i& pt_in, cv::Point2i& pt_out) {
+        pt_out.x = pt_in.x_;
+        pt_out.y = pt_in.y_;
+    }
 };
 
 // The description of vehicle information in frenet state
@@ -762,19 +797,74 @@ class TrajPlanning3DMap {
     }
     ~TrajPlanning3DMap() = default;
 
+    // 
+    
     // Construct 3D map using dynamic obstacles and static obstacles information
-    void contruct3DMap() {
-        fillDynamicObstacles();
+    void contruct3DMap(const std::unordered_map<int, std::vector<FsVehicle>>& surround_trajs) {
+        fillDynamicObstacles(surround_trajs);
         fillStaticObstacles();
     }
 
     // Fill the dynamic obstacles information
-    void fillDynamicObstacles() {
+    void fillDynamicObstacles(const std::unordered_map<int, std::vector<FsVehicle>>& surround_trajs) {
+        for (auto iter = surround_trajs.begin(); iter != surround_trajs.end(); iter++) {
+            fillSingleDynamicObstacle(iter->second);
+        }
+    }
 
+    void fillSingleDynamicObstacle(const std::vector<FsVehicle>& fs_traj) {
+        if (fs_traj.size() == 0) {
+            printf("[TrajPlanning3DMap] trajectory is empty.");
+            return;
+        }
+
+        // TODO: check the density of the trajectory, i.e., if the trajectory is sparse in t dimension, th 3D grid map would not be occupied completely according to the gap of t
+        for (int i = 0; i < static_cast<int>(fs_traj.size()); i++) {
+
+            // Judge the effectness of frenet state vehicle's vertex
+            bool is_valid = true;
+            for (const auto v: fs_traj[i].vertex_) {
+                if (v(0) <= 0) {
+                    is_valid = false;
+                    break;
+                }
+            }
+            if (!is_valid) {
+                continue;
+            }
+
+            double z = fs_traj[i].fs_.time_stamp_;
+            int t_idx = 0;
+            std::vector<Point2i> v_coord;
+            std::array<double, 3> p_w;
+            for (const auto v: fs_traj[i].vertex_) {
+                p_w = {v(0), v(1), z};
+                auto coord = p_3d_grid_->getCoordUsingGlobalPosition(p_w);
+                t_idx = coord[2];
+                if (!p_3d_grid_->checkCoordInRange(coord)) {
+                    is_valid = false;
+                    break;
+                }
+                v_coord.push_back(Point2i(coord[0], coord[1]));
+            }
+            if (!is_valid) {
+                continue;
+            }
+            std::vector<std::vector<cv::Point2i>> vv_coord_cv;
+            std::vector<cv::Point2i> v_coord_cv;
+            ShapeUtils::getCvPoint2iVecUsingCommonPoint2iVec(v_coord, v_coord_cv);
+            vv_coord_cv.emplace_back(v_coord_cv);
+            int w = p_3d_grid_->dims_size()[0];
+            int h = p_3d_grid_->dims_size()[1];
+            int layer_offset = t_idx * w * h;
+            cv::Mat layer_mat = cv::Mat(h, w, CV_MAKE_TYPE(cv::DataType<uint8_t>::type, 1), p_3d_grid_->get_data_ptr() + layer_offset);
+            cv::fillPoly(layer_mat, vv_coord_cv, 100);
+        }
     }
 
     // Fill the static obstacles information
     // Note that in the first version, the static obstacles are not considered here, this is just a empty interface
+    // TODO: add the static obstacles' occupied grid here
     void fillStaticObstacles() {
 
     }

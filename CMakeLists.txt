@@ -32,6 +32,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Glog REQUIRED COMPONENTS system)
+find_package(/opt/ros/kinetic/include/opencv-3.3.1-dev)
+find_package(OpenCV REQUIRED)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -149,6 +152,8 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
+
 )
 
 add_executable(${PROJECT_NAME}_node src/MotionPlanningNode.cpp)
