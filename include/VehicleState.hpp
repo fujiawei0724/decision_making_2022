@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-09 11:00:06
+ * @LastEditTime: 2021-11-09 15:56:44
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <thread>
 #include <map>
+#include <array>
 #include <algorithm>
 #include <functional>
 #include <stdio.h>
@@ -377,19 +378,97 @@ class GridMapND {
     };
 
     // Constructor
-    GridMap3D() = default;
-    GridMap3D(const std::array<int, N_DIM>& dims_size, const std::array<double, N_DIM>& dims_resolution, const std::array<std::string, N_DIM>& dims_name) {
+    GridMapND() = default;
+    GridMapND(const std::array<int, N_DIM>& dims_size, const std::array<double, N_DIM>& dims_resolution, const std::array<std::string, N_DIM>& dims_name) {
         dims_size_ = dims_size;
         dims_resolution_ = dims_resolution;
         dims_name_ = dims_name;
 
         setNDimSteps(dims_size_);
-        setDataSize(dime_size_);
+        setDataSize(dims_size_);
         data_ = std::vector<T>(data_size_, 0);
         origin_.fill(0);
     }
     // Destructor
-    ~GridMap3D() = default;
+    ~GridMapND() = default;
+
+    inline std::array<int, N_DIM> dims_size() const { 
+        return dims_size_; 
+    }
+    inline int dims_size(const int& dim) const { 
+        return dims_size_.at(dim); 
+    }
+    inline std::array<int, N_DIM> dims_step() const { 
+        return dims_step_; 
+    }
+    inline int dims_step(const int& dim) const { 
+        return dims_step_.at(dim); 
+    }
+    inline std::array<double, N_DIM> dims_resolution() const {
+        return dims_resolution_;
+    }
+    inline double dims_resolution(const int& dim) const {
+        return dims_resolution_.at(dim);
+    }
+    inline std::array<std::string, N_DIM> dims_name() const { 
+        return dims_name_; 
+    }
+    inline std::string dims_name(const int& dim) const {
+        return dims_name_.at(dim);
+    }
+    inline std::array<double, N_DIM> origin() const { 
+        return origin_; 
+    }
+    inline int data_size() const { 
+        return data_size_; 
+    }
+    inline const std::vector<T>* data() const {         
+        return &data_; 
+    }
+    inline T data(const int& i) const { 
+        return data_[i];
+    }
+    inline T* get_data_ptr() { 
+        return data_.data(); 
+    }
+    inline const T* data_ptr() const { 
+        return data_.data(); 
+    }
+
+    inline void set_origin(const std::array<double, N_DIM>& origin) {
+        origin_ = origin;
+    }
+    inline void set_dims_size(const std::array<int, N_DIM>& dims_size) {
+        dims_size_ = dims_size;
+        setNDimSteps(dims_size);
+        setDataSize(dims_size);
+    }
+    inline void set_dims_resolution(const std::array<double, N_DIM>& dims_resolution) {
+        dims_resolution_ = dims_resolution;
+    }
+    inline void set_dims_name(const std::array<std::string, N_DIM>& dims_name) {
+        dims_name_ = dims_name;
+    }
+    inline void set_data(const std::vector<T>& in) { 
+        data_ = in; 
+    }
+
+    /**
+     * @brief Set all data in array to 0
+     */
+    inline void clear_data() { 
+        data_ = std::vector<T>(data_size_, 0); 
+    }
+
+    /**
+     * @brief Fill all data in array using value
+     *
+     * @param val input value
+     */
+    inline void fill_data(const T& val) {
+        data_ = std::vector<T>(data_size_, val);
+    }
+
 
     // Calculate data size
     void setDataSize(const std::array<int, N_DIM>& dims_size) {
@@ -411,6 +490,178 @@ class GridMapND {
             dims_step_[i] = step;
             step *= dims_size[i];
         }
+    }
+
+    
+
+    /**
+     * @brief Get the Value Using Coordinate
+     *
+     * @param coord Input coordinate
+     * @param val Output value
+     * @return is success
+     */
+    bool getValueUsingCoordinate(const std::array<int, N_DIM>& coord, T& val) const {
+        if (!checkCoordInRange(coord)) {
+            return false;
+        }
+        int idx = getMonoIdxUsingNDimIdx(coord);
+        val = data_[idx];
+        return true;
+    }
+
+
+    /**
+     * @brief Get the Value Using Global Position
+     *
+     * @param p_w Input global position
+     * @param val Output value
+     * @return is success
+     */
+    bool getValueUsingGlobalPosition(const std::array<double, N_DIM>& p_w, T& val) const {
+        std::array<int, N_DIM> coord = getCoordUsingGlobalPosition(p_w);
+        return getValueUsingCoordinate(coord, val);
+    }
+
+    /**
+     * @brief Check if the input value is equal to the value in map
+     *
+     * @param p_w Input global position
+     * @param val_in Input value
+     * @return result
+     */
+    bool checkIfEqualUsingGlobalPosition(const std::array<double, N_DIM>& p_w, const T& val_in) const {
+        std::array<int, N_DIM> coord = getCoordUsingGlobalPosition(p_w);
+        T val;
+        if (!getValueUsingCoordinate(coord, val)) {
+            return false;
+        }
+        return val == val_in;
+    }
+
+
+
+
+    /**
+     * @brief Check if the input value is equal to the value in map
+     *
+     * @param coord Input coordinate
+     * @param val_in Input value
+     * @return result
+     */
+    bool checkIfEqualUsingCoordinate(const std::array<int, N_DIM>& coord, const T& val_in) {
+        T val;
+        if (!getValueUsingCoordinate(coord, val)) {
+            return false;
+        } 
+
+        return val == val_in;
+        
+    }
+
+
+
+
+
+    /**
+     * @brief Set the Value Using Coordinate
+     * @param coord Coordinate of the map
+     * @param val Input value
+     * @return is success
+     */
+    bool setValueUsingCoordinate(const std::array<int, N_DIM>& coord, const T& val) {
+        if (!checkCoordInRange(coord)) {
+            printf("[GridMapND] Out of range\n");
+            return false;
+        }
+        int idx = getMonoIdxUsingNDimIdx(coord);
+        data_[idx] = val;
+        return true;
+    }
+
+  /**
+   * @brief Set the Value Using Global Position
+   *
+   * @param p_w Global position
+   * @param val Input value
+   * @return is success
+   */
+    bool setValueUsingGlobalPosition(const std::array<double, N_DIM>& p_w, const T& val) {
+        std::array<int, N_DIM> coord = getCoordUsingGlobalPosition(p_w);
+        return setValueUsingCoordinate(coord, val);
+    }
+
+    /**
+     * @brief Get the Coordinate Using Global Position
+     *
+     * @param p_w Input global position
+     * @return std::array<int, N_DIM> Output coordinate
+     */
+    std::array<int, N_DIM> getCoordUsingGlobalPosition(const std::array<double, N_DIM>& p_w) const {
+        std::array<int, N_DIM> coord = {};
+        for (int i = 0; i < N_DIM; i++) {
+            coord[i] = std::round((p_w[i] - origin_[i]) / dims_resolution_[i]);
+        }
+        return coord;
+    }
+
+
+
+    /**
+     * @brief Get the Rounded Position Using Global Position object
+     *
+     * @param p_w Input global position
+     * @return std::array<decimal_t, N_DIM> Output global position
+     */
+    std::array<double, N_DIM> getRoundedPosUsingGlobalPosition(const std::array<double, N_DIM>& p_w) const {
+        std::array<int, N_DIM> coord = {};
+        for (int i = 0; i < N_DIM; i++) {
+            coord[i] = std::round((p_w[i] - origin_[i]) / dims_resolution_[i]);
+        }
+        std::array<double, N_DIM> round_pos = {};
+        for (int i = 0; i < N_DIM; i++) {
+            round_pos[i] = coord[i] * dims_resolution_[i] + origin_[i];
+        }
+        return round_pos;
+    }
+
+    /**
+     * @brief Get the Global Position Using Coordinate
+     *
+     * @param coord Input coordinate
+     * @return Output global position
+     */
+    std::array<double, N_DIM> getGlobalPositionUsingCoordinate(const std::array<int, N_DIM>& coord) const {
+        std::array<double, N_DIM> p_w = {};
+        for (int i = 0; i < N_DIM; i++) {
+            p_w[i] = coord[i] * dims_resolution_[i] + origin_[i];
+        }
+        return p_w;
+    }
+
+    /**
+     * @brief Get the Coordinate Using Global Metric On Single Dimension
+     *
+     * @param metric Input global 1-dim position
+     * @param i Dimension
+     * @return idx Output 1-d coordinate
+     */
+    int getCoordUsingGlobalMetricOnSingleDim(const double& metric, const int& i) {
+        int idx = std::round((metric - origin_[i]) / dims_resolution_[i]);
+        return idx;
+    }
+
+
+    /**
+     * @brief Get the Global Metric Using Coordinate On Single Dim object
+     *
+     * @param idx Input 1-d coordinate
+     * @param i Dimension
+     * @return metric Output 1-d position
+     */
+    double getGloalMetricUsingCoordOnSingleDim(const int& idx, const int& i) {
+        double metric = idx * dims_resolution_[i] + origin_[i];
+        return metric;
     }
 
     /**
@@ -481,6 +732,59 @@ class GridMapND {
 
     int data_size_{0};
     std::vector<T> data_;
+
+};
+
+class TrajPlanning3DMap {
+ public:
+    using GridMap3D = GridMapND<uint8_t, 3>;
+
+    struct Config {
+        std::array<int, 3> map_size = {{1000, 100, 81}};
+        std::array<double, 3> map_resolution = {{0.25, 0.2, 0.1}};
+        std::array<std::string, 3> axis_name = {{"s", "d", "t"}};
+
+        double s_back_len = 0.0;
+        double MaxLongitudinalVel = 50.0;
+        double MinLongitudinalVel = 0.0;
+        double MaxLongitudinalAcc = 3.0;
+        double MaxLongitudinalDecel = -8.0;
+        double MaxLateralVel = 3.0;
+        double MaxLateralAcc = 2.5;
+
+        std::array<int, 6> inflate_steps = {{20, 5, 10, 10, 1, 1}};
+    };
+
+    TrajPlanning3DMap() = default;
+    TrajPlanning3DMap(const Config& config) {
+        config_ = config;
+        p_3d_grid_ = new GridMap3D(config_.map_size, config_.map_resolution, config_.axis_name);
+    }
+    ~TrajPlanning3DMap() = default;
+
+    // Construct 3D map using dynamic obstacles and static obstacles information
+    void contruct3DMap() {
+        fillDynamicObstacles();
+        fillStaticObstacles();
+    }
+
+    // Fill the dynamic obstacles information
+    void fillDynamicObstacles() {
+
+    }
+
+    // Fill the static obstacles information
+    // Note that in the first version, the static obstacles are not considered here, this is just a empty interface
+    void fillStaticObstacles() {
+
+    }
+
+
+    GridMap3D* p_3d_grid_;
+    Config config_;
+    std::unordered_map<int, std::array<bool, 6>> inters_for_cube_;
+    double start_time_;
+    FrenetState initial_fs_;
 
 };
 
