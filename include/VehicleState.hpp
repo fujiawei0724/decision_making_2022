@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-08 18:57:55
+ * @LastEditTime: 2021-11-09 11:00:06
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -347,6 +347,141 @@ public:
     LaneId reference_lane_id_{LaneId::Undefined};
     Lane nearest_lane_;
     Lane reference_lane_;
+};
+
+// The description of vehicle information in frenet state
+class FsVehicle {
+public:
+    // Constructor
+    FsVehicle() = default;
+    FsVehicle(const FrenetState& frenet_state, const std::vector<Eigen::Matrix<double, 2, 1>>& vertex) {
+        fs_ = frenet_state;
+        vertex_ = vertex;
+    }
+    // Destructor
+    ~FsVehicle() = default;
+
+    FrenetState fs_;
+    std::vector<Eigen::Matrix<double, 2, 1>> vertex_;
+};
+
+// Grip map used in 3D lattice representation
+template <typename T, int N_DIM>
+class GridMapND {
+ public:
+    enum ValType{
+        OCCUPIED = 70,
+        FREE = 0,
+        SCANNED_OCCUPIED = 128,
+        UNKNOWN = 0,
+    };
+
+    // Constructor
+    GridMap3D() = default;
+    GridMap3D(const std::array<int, N_DIM>& dims_size, const std::array<double, N_DIM>& dims_resolution, const std::array<std::string, N_DIM>& dims_name) {
+        dims_size_ = dims_size;
+        dims_resolution_ = dims_resolution;
+        dims_name_ = dims_name;
+
+        setNDimSteps(dims_size_);
+        setDataSize(dime_size_);
+        data_ = std::vector<T>(data_size_, 0);
+        origin_.fill(0);
+    }
+    // Destructor
+    ~GridMap3D() = default;
+
+    // Calculate data size
+    void setDataSize(const std::array<int, N_DIM>& dims_size) {
+        int total_ele_num = 1;
+        for (int i = 0; i < N_DIM; i++) {
+            total_ele_num *= dims_size[i];
+        }
+        data_size_ = total_ele_num;
+    }
+
+    /**
+     * @brief Set the steps of N-dim array
+     * @brief E.g. A x-y-z map's steps are {1, x, x*y}
+     * @param dims_size input the size of dimension
+     */  
+    void setNDimSteps(const std::array<int, N_DIM>& dims_size) {
+        int step = 1;
+        for (int i = 0; i < N_DIM; i++) {
+            dims_step_[i] = step;
+            step *= dims_size[i];
+        }
+    }
+
+    /**
+     * @brief Check if the input coordinate is in map range
+     *
+     * @param coord Input coordinate
+     * @return true In range
+     * @return false Out of range
+     */
+    bool checkCoordInRange(const std::array<int, N_DIM>& coord) const {
+        for (int i = 0; i < N_DIM; i++) {
+            if (coord[i] < 0 || coord[i] >= dims_size_[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Check if the input 1-d coordinate is in map range
+     *
+     * @param idx Input 1-d coordinate
+     * @param i Dimension
+     * @return true In range
+     * @return false Out of range
+     */
+    bool checkCoordInRangeOnSingleDim(const int& idx, const int& i) const {
+        return (idx >= 0) && (idx < dims_size_[i]);
+    }
+
+    /**
+     * @brief Get the mono index using N-dim index
+     *
+     * @param idx Input N-dim index
+     * @return int Output 1-dim index
+     */
+    int getMonoIdxUsingNDimIdx(const std::array<int, N_DIM>& idx) const {
+        int mono_idx = 0;
+        for (int i = 0; i < N_DIM; i++) {
+            mono_idx += dims_step_[i] * idx[i];
+        }
+        return mono_idx;
+    }
+
+    /**
+     * @brief Get N-dim index using mono index
+     *
+     * @param idx Input mono index
+     * @return std::array<int, N_DIM> Output N-dim index
+     */
+    std::array<int, N_DIM> getNDimIdxUsingMonoIdx(const int& idx) const {
+        std::array<int, N_DIM> idx_nd = {};
+        int tmp = idx;
+        for (int i = N_DIM - 1; i >= 0; i--) {
+            idx_nd[i] = tmp / dims_step_[i];
+            tmp = tmp % dims_step_[i];
+        }
+        return idx_nd;
+    }
+
+
+
+    std::array<int, N_DIM> dims_size_;
+    std::array<int, N_DIM> dims_step_;
+    std::array<double, N_DIM> dims_resolution_;
+    std::array<std::string, N_DIM> dims_name_;
+    std::array<double, N_DIM> origin_;
+
+    int data_size_{0};
+    std::vector<T> data_;
+
 };
 
 
