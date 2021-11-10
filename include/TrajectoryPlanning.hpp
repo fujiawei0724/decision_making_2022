@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 16:13:18
+ * @LastEditTime: 2021-11-10 17:03:36
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -45,25 +45,58 @@ class TrajPlanning3DMap {
     }
     ~TrajPlanning3DMap() = default;
 
+    /**
+     * @brief Run once to generate the semantic cubes sequence
+     * @return The success of the generation process
+     */    
+    bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_trajs, std::vector<SemanticCube<double>>* semantic_cubes_sequence) {
+        
+        // ~Stage I: Construct 3D grid map
+        contruct3DMap(surround_trajs);
+
+        // ~Stage II: Generate seeds 
+        constructSeeds(ego_traj);
+
+        // ~Stage III: Generate semantic cubes
+        bool is_success = generateSemanticCubes();
+
+        if (!is_success) {
+            return false;
+        }
+        *semantic_cubes_sequence = semantic_cubes_;
+        return true;
+    }
 
     /**
      * @brief Generate semantic cubes using multi thread
+     * @return The result of preliminary judgement of semantic cubes validity
      */
-    void generateSemanticCubes() {
+    bool generateSemanticCubes() {
         // Initialize containers
         int seeds_num = static_cast<int>(seeds_.size());
         // Note that the last seed is valid to generate semantic cube
         semantic_coord_cubes_.resize(seeds_num - 1);
+        semantic_cubes_.resize(seeds_num - 1);
         semantic_coord_cubes_valid_.resize(seeds_num - 1);
         std::vector<std::thread> thread_set(seeds_num - 1);
 
         // Generate semantic cubes using multi thread
         for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
-            thread_set[i] = std::thread();
+            thread_set[i] = std::thread(&TrajPlanning3DMap::generateSingleSemanticCube, this, i);
         }
         for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
             thread_set[i].join();
         }
+
+        // Preliminary judgement of validity
+        bool is_valid = true;
+        for (const bool& cur_valid: semantic_coord_cubes_valid_) {
+            if (!cur_valid) {
+                is_valid = false;
+            }
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -77,18 +110,38 @@ class TrajPlanning3DMap {
 
         // Judge whether the initial semantic cube is free
         if (!checkIfSemanticCubeIsFree(coord_semantic_cube)) {
-            semantic_coord_cubes_valid_[index] = true;
+            semantic_coord_cubes_valid_[index] = false;
             return;
         }
 
         // Initial cube
         inflateCube(&coord_semantic_cube);
 
+        // Transform coord information to global metric inforation 
+        SemanticCube<double> semantic_cube;
+        transformCoordSemCubeToSemCube(coord_semantic_cube, &semantic_cube);
+
         // Cache
         semantic_coord_cubes_[index] = coord_semantic_cube;
-        
-        
+        semantic_cubes_[index] = semantic_cube;
+        semantic_coord_cubes_valid_[index] = true;
     }
+
+    /**
+     * @brief Transform coord semantic cube to semantic cube
+     * @param coord_semantic_cube semantic cube in the formation of coordinate
+     * @param semantic_cube semantic cube in the formation of value
+     */    
+    void transformCoordSemCubeToSemCube(const SemanticCube<int>& coord_semantic_cube, SemanticCube<double>* semantic_cube) {
+        semantic_cube->s_start_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.s_start_, 0);
+        semantic_cube->s_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.s_end_, 0);
+        semantic_cube->d_start_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.d_start_, 1);
+        semantic_cube->d_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.d_end_, 1);
+        semantic_cube->t_start_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.t_start_, 2);
+        semantic_cube->t_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.t_end_, 2);
+        semantic_cube->id_ = coord_semantic_cube.id_;
+    }
+
 
     /**
      * @brief Inflate the cube in 3D grid map until reached to the occupied space
@@ -519,7 +572,8 @@ class TrajPlanning3DMap {
 
     std::vector<Point3i> seeds_; // Seeds information
     std::vector<bool> semantic_coord_cubes_valid_; // Store whether the semantic generated is valid
-    std::vector<SemanticCube<int>> semantic_coord_cubes_; // Cubes information
+    std::vector<SemanticCube<int>> semantic_coord_cubes_; // Cubes coord information
+    std::vector<SemanticCube<double>> semantic_cubes_; // Cubes information
 
 
 };
