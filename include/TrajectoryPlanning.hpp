@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 20:42:21
+ * @LastEditTime: 2021-11-10 21:16:37
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -582,7 +582,8 @@ class TrajPlanning3DMap {
 
 // Interface with optimization library
 class OptimizerInterface {
- 
+ public:
+    
 };
 
 
@@ -602,14 +603,22 @@ class TrajectoryOptimizer {
     }
 
     // Run optimizer
-    void runOnce(std::vector<Point3f>* trajectory_scatter_points) {
+    void runOnce(std::vector<Point3f>* trajectory_scatter_points, bool* res) {
         
         // ~Stage I: check, prepare, and supple data 
         assert(ref_stamps_.size() - 1 == driving_corridor_.size() && static_cast<int>(ref_stamps_.size()) >= 3);
         // Add addtional time stamps to approximate start point and end point 
         std::vector<double> all_ref_stamps = calculateAllRefStamps();
         // Generate unequal constraints for the intermediate points
-        
+        std::array<std::vector<double>, 4> unequal_constraints;
+        bool is_unequal_constraints_generation_success = generateUnequalConstraints(&unequal_constraints);
+        if (!is_unequal_constraints_generation_success) {
+            *res = false;
+            return;
+        }
+
+        // ~Stage II: divide the problem into two dimensions and solute respectively
+        // Construct optimizer
         
     }
 
@@ -642,18 +651,50 @@ class TrajectoryOptimizer {
 
     /**
      * @brief Generate unequal constraints for intermediate points
-     * @return the four vectors in the array represent the lower bounds of s, upper bounds of s, lower bounds of d, and upper bounds of s in order
+     * @param unequal_constraints four vectors in the array represent the lower bounds of s, upper bounds of s, lower bounds of d, and upper bounds of d in order
+     * @return is success
      */    
-    std::array<std::vector<double>, 4> generateUnequalConstraints() {
-        std::array<std::vector<double>, 4> unequal_constraints = {};
+    bool generateUnequalConstraints(std::array<std::vector<double>, 4>* unequal_constraints) {
+        // Initialize
+        std::array<std::vector<double>, 4> tmp_unequal_constraints = {};
+        for (int i = 0; i < 4; i++) {
+            tmp_unequal_constraints[i].resize(static_cast<int>(ref_stamps_.size()) - 2);
+        }
+
         for (int i = 0; i < static_cast<int>(ref_stamps_.size()); i++) {
             if (i == 0 || i == static_cast<int>(ref_stamps_.size()) - 1) {
                 // In the no added status, start point and end point only have equal constraints 
                 continue;
             }
+            double ref_stamp = ref_stamps_[i];
+            
+            // Calculate the first semantic cube affects the point in reference stamp
+            int first_index = std::max(i - 5, 0);
+            // Traverse the affected semantic cubes to generate unequal constraint
+            double s_low = MIN_VALUE;
+            double s_up = MAX_VALUE;
+            double d_low = MIN_VALUE;
+            double d_up = MAX_VALUE;
+            for (int j = first_index; j < i + 1; j++) {
+                if (ref_stamp < driving_corridor_[j].t_start_ || ref_stamp > driving_corridor_[j].t_end_) {
+                    printf("[TrajectoryOptimizer] unequal constraint generation failed.");
+                    return false;
+                }
+                s_low = std::max(s_low, driving_corridor_[j].s_start_);
+                s_up = std::min(s_up, driving_corridor_[j].s_end_);
+                d_low = std::max(d_low, driving_corridor_[j].d_start_);
+                d_up = std::min(d_up, driving_corridor_[j].d_end_);
+            }
 
+            tmp_unequal_constraints[0][i - 1] = s_low;
+            tmp_unequal_constraints[1][i - 1] = s_up;
+            tmp_unequal_constraints[2][i - 1] = d_low;
+            tmp_unequal_constraints[3][i - 1] = d_up; 
             
         }
+
+        *unequal_constraints = tmp_unequal_constraints;
+        return true;
     }
 
     EqualConstraint start_constraint_;
