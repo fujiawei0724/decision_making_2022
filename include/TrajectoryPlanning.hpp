@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 17:03:36
+ * @LastEditTime: 2021-11-10 20:42:21
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -15,6 +15,7 @@ namespace TrajectoryPlanner {
 
 using namespace Common;
 
+// 3d grid map for semantic cudes generation
 class TrajPlanning3DMap {
  public:
     using GridMap3D = GridMapND<uint8_t, 3>;
@@ -51,13 +52,13 @@ class TrajPlanning3DMap {
      */    
     bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_trajs, std::vector<SemanticCube<double>>* semantic_cubes_sequence) {
         
-        // ~Stage I: Construct 3D grid map
+        // ~Stage I: construct 3D grid map
         contruct3DMap(surround_trajs);
 
-        // ~Stage II: Generate seeds 
+        // ~Stage II: generate seeds 
         constructSeeds(ego_traj);
 
-        // ~Stage III: Generate semantic cubes
+        // ~Stage III: generate semantic cubes
         bool is_success = generateSemanticCubes();
 
         if (!is_success) {
@@ -579,25 +580,88 @@ class TrajPlanning3DMap {
 };
 
 
-// The interface between trajectory planner and behavior planner
-class StateInterface {
-
+// Interface with optimization library
+class OptimizerInterface {
+ 
 };
 
-// Semantic cubes generator
-class SemanticCubeGenerator {
-public:
-    using FrenetStateSequence = std::vector<FrenetState>;
-    // Constructor
-    SemanticCubeGenerator(const FrenetStateSequence& cur_fr_states_seq) {
 
+// Trajectory optimizer
+class TrajectoryOptimizer {
+ public:
+    using DrivingCorridor = std::vector<SemanticCube<double>>;
+    TrajectoryOptimizer() = default;
+    ~TrajectoryOptimizer() = default;
+
+    // Load data to optimizer
+    void load(const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const DrivingCorridor& driving_corridor, const std::vector<double>& ref_stamps) {
+        start_constraint_ = start_constraint;
+        end_constraint_ = end_constraint;
+        driving_corridor_ = driving_corridor;
+        ref_stamps_ = ref_stamps;
     }
-    // Destructor
-    ~SemanticCubeGenerator() = default;
 
-    
+    // Run optimizer
+    void runOnce(std::vector<Point3f>* trajectory_scatter_points) {
+        
+        // ~Stage I: check, prepare, and supple data 
+        assert(ref_stamps_.size() - 1 == driving_corridor_.size() && static_cast<int>(ref_stamps_.size()) >= 3);
+        // Add addtional time stamps to approximate start point and end point 
+        std::vector<double> all_ref_stamps = calculateAllRefStamps();
+        // Generate unequal constraints for the intermediate points
+        
+        
+    }
 
+    /**
+     * @brief Add additional points' reference time stamps to construct the whole reference time stamps
+     * @return all referencetime stamps
+     */    
+    std::vector<double> calculateAllRefStamps() {
+        int init_stamps_num = static_cast<int>(ref_stamps_.size());
+        std::vector<double> all_ref_stamps = std::vector<double>(init_stamps_num + 4, 0.0);
+        double add_stamp_1 = 2.0 * ref_stamps_[0] - ref_stamps_[2];
+        double add_stamp_2 = 2.0 * ref_stamps_[0] - ref_stamps_[1];
+        double add_stamp_3 = 2.0 * ref_stamps_[init_stamps_num - 1] - ref_stamps_[init_stamps_num - 2];
+        double add_stamp_4 = 2.0 * ref_stamps_[init_stamps_num - 1] - ref_stamps_[init_stamps_num - 3];
+        for (int i = 0; i < static_cast<int>(all_ref_stamps.size()); i++) {
+            if (i == 0) {
+                all_ref_stamps[i] = add_stamp_1;
+            } else if (i == 1) {
+                all_ref_stamps[i] = add_stamp_2;
+            } else if (i == static_cast<int>(all_ref_stamps.size()) - 2) {
+                all_ref_stamps[i] = add_stamp_3;
+            } else if (i == static_cast<int>(all_ref_stamps.size()) - 1) {
+                all_ref_stamps[i] = add_stamp_4;
+            } else {
+                all_ref_stamps[i] = ref_stamps_[i - 2];
+            }
+        }
+        return all_ref_stamps;
+    }
+
+    /**
+     * @brief Generate unequal constraints for intermediate points
+     * @return the four vectors in the array represent the lower bounds of s, upper bounds of s, lower bounds of d, and upper bounds of s in order
+     */    
+    std::array<std::vector<double>, 4> generateUnequalConstraints() {
+        std::array<std::vector<double>, 4> unequal_constraints = {};
+        for (int i = 0; i < static_cast<int>(ref_stamps_.size()); i++) {
+            if (i == 0 || i == static_cast<int>(ref_stamps_.size()) - 1) {
+                // In the no added status, start point and end point only have equal constraints 
+                continue;
+            }
+
+            
+        }
+    }
+
+    EqualConstraint start_constraint_;
+    EqualConstraint end_constraint_;
+    DrivingCorridor driving_corridor_;
+    std::vector<double> ref_stamps_;
 };
+
 
 
 

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 11:32:03
+ * @LastEditTime: 2021-11-10 20:36:06
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -380,6 +380,21 @@ class Point3i : public Point2i {
     int z_{0};
 };
 
+class Point3f {
+ public:
+    Point3f() = default;
+    Point3f(double x, double y, double z) {
+        x_ = x;
+        y_ = y;
+        z_ = z;
+    }
+    ~Point3f() = default;
+
+    double x_{0.0};
+    double y_{0.0};
+    double z_{0.0};
+};
+
 // The semantic cube to constrain the position of trajectory interpolation points
 template <typename T>
 class SemanticCube {
@@ -484,26 +499,26 @@ public:
     double dd_d_;
 };
 
-// Unequal constraints related to intermediate points' position
-// Note that the unequal constraints are only related to the position
-class UnequalConstraint {
-public:
-    // Constructor
-    UnequalConstraint() = default;
-    UnequalConstraint(double s_low, double s_up, double d_low, double d_up) {
-        s_low_ = s_low;
-        s_up_ = s_up;
-        d_low_ = d_low;
-        d_up_ = d_up;
-    }
-    // Destructor 
-    ~UnequalConstraint() = default;
+// // Unequal constraints related to intermediate points' position
+// // Note that the unequal constraints are only related to the position
+// class UnequalConstraint {
+// public:
+//     // Constructor
+//     UnequalConstraint() = default;
+//     UnequalConstraint(double s_low, double s_up, double d_low, double d_up) {
+//         s_low_ = s_low;
+//         s_up_ = s_up;
+//         d_low_ = d_low;
+//         d_up_ = d_up;
+//     }
+//     // Destructor 
+//     ~UnequalConstraint() = default;
     
-    double s_low_;
-    double s_up_;
-    double d_low_;
-    double d_up_;
-};
+//     double s_low_;
+//     double s_up_;
+//     double d_low_;
+//     double d_up_;
+// };
 
 
 // Grip map used in ND lattice representation
