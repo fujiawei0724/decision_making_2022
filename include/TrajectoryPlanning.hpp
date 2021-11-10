@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 10:39:57
+ * @LastEditTime: 2021-11-10 15:09:30
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -32,6 +32,9 @@ class TrajPlanning3DMap {
         double MaxLateralVel = 3.0;
         double MaxLateralAcc = 2.5;
 
+        int MaxNumOfGridAlongTime = 2;
+
+        // TODO: check this logic, the time inflate steps number may be too small to construct continuous cubes with large overlap to ensure the feasibility of optimization space
         std::array<int, 6> inflate_steps = {{20, 5, 10, 10, 1, 1}};
     };
 
@@ -44,25 +47,163 @@ class TrajPlanning3DMap {
 
 
     /**
-     * @brief 
-     * @param {*}
-     * @return {*}
+     * @brief Generate semantic cubes using multi thread
      */
     void generateSemanticCubes() {
         // Initialize containers
+        int seeds_num = static_cast<int>(seeds_.size());
+        // Note that the last seed is valid to generate semantic cube
+        semantic_coord_cubes_.resize(seeds_num - 1);
+        semantic_coord_cubes_valid_.resize(seeds_num - 1);
+        std::vector<std::thread> thread_set(seeds_num - 1);
+
+        // Generate semantic cubes using multi thread
+        for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
+            thread_set[i] = std::thread();
+        }
+        for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
+            thread_set[i].join();
+        }
+    }
+
+    /**
+     * @brief Generate semantic cube from a seed
+     */    
+    void generateSingleSemanticCube(int index) {
+        // Generate initial semantic cube
+        Point3i cur_seed = seeds_[index];
+        Point3i next_seed = seeds_[index];
+        SemanticCube<int> initial_coord_semantic_cube = ShapeUtils::generateInitialCoordSemanticCube(cur_seed, next_seed, index);
+
+        // Judge whether the initial semantic cube is free
+        if (!checkIfSemanticCubeIsFree(initial_coord_semantic_cube)) {
+            semantic_coord_cubes_valid_[index] = true;
+            return;
+        }
+
+        // Initial cube
+
+        
+        
+    }
+
+    /**
+     * @brief Inflate the cube in 3D grid map until reached to the occupied space
+     * @param init_seman_cube the initial scale of semantic cube
+     */    
+    void inflateCube(SemanticCube<int>* cube) {
+        // Determine the gap of each step
+        int x_p_step = config_.inflate_steps[0];
+        int x_n_step = config_.inflate_steps[1];
+        int y_p_step = config_.inflate_steps[2];
+        int y_n_step = config_.inflate_steps[3];
+        int z_p_step = config_.inflate_steps[4];
+
+        // Calculate rough constraint condition
+        // TODO: check these parameters
+        int t_max_grids = cube->t_start_ + config_.MaxNumOfGridAlongTime;
+
+        double t = t_max_grids * p_3d_grid_->dims_resolution(2);
+        double a_max = config_.MaxLongitudinalAcc;
+        double a_min = config_.MaxLongitudinalDecel;
+        double d_comp = initial_fs_.vec_s_[1] * 1.0;
+
+        double s_u = initial_fs_.vec_s_[0] + initial_fs_.vec_s_[1] * t + 0.5 * a_max * t * t + d_comp;
+        double s_l = initial_fs_.vec_s_[0] + initial_fs_.vec_s_[1] * t + 0.5 * a_min * t * t - d_comp;
+
+        int s_idx_u = p_3d_grid_->getCoordUsingGlobalMetricOnSingleDim(s_u, 0);
+        int s_idx_l = p_3d_grid_->getCoordUsingGlobalMetricOnSingleDim(s_l, 0);
+        s_idx_l = std::max(s_idx_l, static_cast<int>((config_.s_back_len / 2.0) / config_.map_resolution[0]));
+
+        // Inflate in 5 directions
+        // TODO: check this logic, whether inflate in 6 directions is available and better?
+        bool x_p_finish = false;
+        bool x_n_finish = false;
+        bool y_p_finish = false;
+        bool y_n_finish = false;
+        bool z_p_finish = false;
+
+        while (!(x_p_finish && x_n_finish && y_p_finish && y_n_finish)) {
+
+        }
+
+        while (!z_p_finish) {
+            
+        }
+    }
+
+    /**
+     * @brief Judge whether the semantic cube is free 
+     * @param semantic_coord_cube cube needs to judge
+     * @return is free
+     */    
+    bool checkIfSemanticCubeIsFree(const SemanticCube<int>& semantic_coord_cube) {
+        int coord_s_min = semantic_coord_cube.s_start_;
+        int coord_s_max = semantic_coord_cube.s_end_;
+        int coord_d_min = semantic_coord_cube.d_start_;
+        int coord_d_max = semantic_coord_cube.d_end_;
+        int coord_t_min = semantic_coord_cube.t_start_;
+        int coord_t_max = semantic_coord_cube.t_end_;
+
+        int i, j, k;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (i = coord_s_min; i <= coord_s_max; i++) {
+            for (j = coord_d_min; j <= coord_d_max; j++) {
+                for (k = coord_t_min; k <= coord_t_max; k++) {
+                    coord = {i, j, k};
+                    is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                    if (!is_free) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Inflate cube in x positive direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnXPosAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int x = cube->s_end_ + 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(x, 0)) {
+                return true;
+            } else {
+
+            }
+        }
 
     }
 
     /**
-     * @brief
-     * @param {*}
-     * @return {*}
+     * @brief Check if plane is free on X axis
+     * @param x coord in x
+     * @param cube cube needs to be judge
+     * @return is free
      */    
-    void generateSingleSemanticCube() {
-        
+    bool checkIfPlaneIsFreeOnXAxis(const SemanticCube<int>& cube, const int& x) {
+        int f0_min = cube.d_start_;
+        int f0_max = cube.d_end_;
+        int f1_min = cube.t_start_;
+        int f1_max = cube.t_end_;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (int i = f0_min; i <= f0_max; i++) {
+            for (int j = f1_min; j <= f1_max; j++) {
+                coord = {x, i, j};
+                is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                if (!is_free) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
-
-
 
 
 
@@ -203,7 +344,8 @@ class TrajPlanning3DMap {
     FrenetState initial_fs_;
 
     std::vector<Point3i> seeds_; // Seeds information
-
+    std::vector<bool> semantic_coord_cubes_valid_; // Store whether the semantic generated is valid
+    std::vector<SemanticCube<int>> semantic_coord_cubes_; // Cubes information
 
 
 };

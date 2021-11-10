@@ -2,25 +2,13 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-08 19:01:48
+ * @LastEditTime: 2021-11-10 10:51:41
  * @Descripttion: Behavior planner core.
  */
 
 #pragma once
 
-#include <unordered_map>
-#include <thread>
-#include <map>
-#include <algorithm>
-#include <functional>
-#include <stdio.h>
 #include "Const.hpp"
-#include "Point.hpp"
-#include "Compare.hpp"
-#include "Tools.hpp"
-#include "Lane.hpp"
-#include "Rectangle.hpp"
-#include "Obstacle.hpp"
 #include "VehicleState.hpp"
 
 namespace BehaviorPlanner {

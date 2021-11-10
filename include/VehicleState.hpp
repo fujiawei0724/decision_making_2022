@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 10:39:12
+ * @LastEditTime: 2021-11-10 11:32:03
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -380,6 +380,33 @@ class Point3i : public Point2i {
     int z_{0};
 };
 
+// The semantic cube to constrain the position of trajectory interpolation points
+template <typename T>
+class SemanticCube {
+public:
+    // Constructor
+    SemanticCube() = default;
+    SemanticCube(int id, T s_start, T s_end, T d_start, T d_end, T t_start, T t_end) {
+        id_ = id;
+        s_start_ = s_start;
+        s_end_ = s_end;
+        d_start_ = d_start;
+        d_end_ = d_end;
+        t_start_ = t_start;
+        t_end_ = t_end;
+    }
+    // Destructor
+    ~SemanticCube() = default;
+
+    T s_start_;
+    T s_end_;
+    T d_start_;
+    T d_end_;
+    T t_start_;
+    T t_end_;
+    int id_{-1}; // Means ego index in a cubes sequence, start from 0
+};
+
 class ShapeUtils {
  public:
     static void getCvPoint2iVecUsingCommonPoint2iVec(const std::vector<Point2i>& pts_in, std::vector<cv::Point2i>& pts_out) {
@@ -394,6 +421,27 @@ class ShapeUtils {
         pt_out.x = pt_in.x_;
         pt_out.y = pt_in.y_;
     }
+
+    /**
+     * @brief Generate initial semantic cubes using two continuous seeds
+     * @param seed input seeds
+     * @param index semantic cube index
+     * @return the constructed semantic cube
+     */   
+    static SemanticCube<int> generateInitialCoordSemanticCube(const Point3i& seed_1, const Point3i& seed_2, const int& index) {
+        SemanticCube<int> semantic_cube;
+        semantic_cube.s_start_ = std::min(seed_1.x_, seed_2.x_);
+        semantic_cube.s_end_ = std::max(seed_1.x_, seed_2.x_);
+        semantic_cube.d_start_ = std::min(seed_1.y_, seed_1.y_);
+        semantic_cube.d_end_ = std::max(seed_1.y_, seed_2.y_);
+        semantic_cube.t_start_ = std::min(seed_1.z_, seed_2.z_);
+        semantic_cube.t_end_ = std::max(seed_1.z_, seed_2.z_);
+        semantic_cube.id_ = index;
+        
+        return semantic_cube;
+    } 
+
+
 };
 
 // The description of vehicle information in frenet state
@@ -457,51 +505,6 @@ public:
     double d_up_;
 };
 
-
-// The semantic cube to constrain the position of trajectory interpolation points
-class SemanticCube {
-public:
-    // Constructor
-    SemanticCube() = default;
-    SemanticCube(double s_start, double s_end, double d_start, double d_end, double t_start, double t_end) {
-        s_start_ = s_start;
-        s_end_ = s_end;
-        d_start_ = d_start;
-        d_end_ = d_end;
-        t_start_ = t_start;
-        t_end_ = t_end;
-    }
-    // Destructor
-    ~SemanticCube() = default;
-
-    double s_start_;
-    double s_end_;
-    double d_start_;
-    double d_end_;
-    double t_start_;
-    double t_end_;
-
-};
-
-// Point 3D
-class Point3D {
-public:
-    // Constructor
-    Point3D() = default;
-    Point3D(double s, double d, double t) {
-        s_ = s;
-        d_ = d;
-        t_ = t;
-    }
-    // Destructor
-    ~Point3D() {
-
-    }
-
-    double s_;
-    double d_;
-    double t_;
-};
 
 // Grip map used in ND lattice representation
 template <typename T, int N_DIM>
@@ -629,8 +632,6 @@ class GridMapND {
         }
     }
 
-    
-
     /**
      * @brief Get the Value Using Coordinate
      *
@@ -676,9 +677,6 @@ class GridMapND {
         return val == val_in;
     }
 
-
-
-
     /**
      * @brief Check if the input value is equal to the value in map
      *
@@ -695,10 +693,6 @@ class GridMapND {
         return val == val_in;
         
     }
-
-
-
-
 
     /**
      * @brief Set the Value Using Coordinate
@@ -741,8 +735,6 @@ class GridMapND {
         }
         return coord;
     }
-
-
 
     /**
      * @brief Get the Rounded Position Using Global Position object
