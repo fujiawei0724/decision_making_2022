@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 15:09:30
+ * @LastEditTime: 2021-11-10 16:13:18
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -73,16 +73,19 @@ class TrajPlanning3DMap {
         // Generate initial semantic cube
         Point3i cur_seed = seeds_[index];
         Point3i next_seed = seeds_[index];
-        SemanticCube<int> initial_coord_semantic_cube = ShapeUtils::generateInitialCoordSemanticCube(cur_seed, next_seed, index);
+        SemanticCube<int> coord_semantic_cube = ShapeUtils::generateInitialCoordSemanticCube(cur_seed, next_seed, index);
 
         // Judge whether the initial semantic cube is free
-        if (!checkIfSemanticCubeIsFree(initial_coord_semantic_cube)) {
+        if (!checkIfSemanticCubeIsFree(coord_semantic_cube)) {
             semantic_coord_cubes_valid_[index] = true;
             return;
         }
 
         // Initial cube
+        inflateCube(&coord_semantic_cube);
 
+        // Cache
+        semantic_coord_cubes_[index] = coord_semantic_cube;
         
         
     }
@@ -123,12 +126,40 @@ class TrajPlanning3DMap {
         bool y_n_finish = false;
         bool z_p_finish = false;
 
+        // Inflate on s and d dimension
         while (!(x_p_finish && x_n_finish && y_p_finish && y_n_finish)) {
+            if (!x_p_finish) {
+                x_p_finish = inflateCubeOnXPosAxis(x_p_step, cube);
+            }
+            if (!x_n_finish) {
+                x_n_finish = inflateCubeOnXNegAxis(x_n_step, cube);
+            }
+            if (!y_p_finish) {
+                y_p_finish = inflateCubeOnYPosAxis(y_p_step,cube);
+            }
+            if (!y_n_finish) {
+                y_n_finish = inflateCubeOnYNegAxis(y_n_step, cube);
+            }
 
+            // Rough constraints
+            if (cube->s_end_ >= s_idx_u) {
+                x_p_finish = true;
+            }
+            if (cube->s_start_ <= s_idx_l) {
+                x_n_finish = true;
+            }
         }
 
+        // Inflate on t dimension
         while (!z_p_finish) {
-            
+            if (!z_p_finish) {
+                z_p_finish = inflateCubeOnZPosAxis(z_p_step, cube);
+            }
+
+            // // TODO: check this t dimension inflate constraint condition, if it is too harsh
+            // if (cube->t_end_ - cube->t_start_ >= config_.MaxNumOfGridAlongTime) {
+            //     z_p_finish = true;
+            // }
         }
     }
 
@@ -174,11 +205,106 @@ class TrajPlanning3DMap {
             if (!p_3d_grid_->checkCoordInRangeOnSingleDim(x, 0)) {
                 return true;
             } else {
-
+                if (checkIfPlaneIsFreeOnXAxis(*cube, x)) {
+                    cube->s_end_ = x;
+                } else {
+                    return true;
+                }
             }
         }
-
+        return false;
     }
+
+
+
+    /**
+     * @brief Inflate cube in x negative direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnXNegAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int x = cube->s_start_ - 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(x, 0)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnXAxis(*cube, x)) {
+                    cube->s_start_ = x;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Inflate cube in Y positive direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnYPosAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int y = cube->d_end_ + 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(y, 1)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnYAxis(*cube, y)) {
+                    cube->d_end_ = y;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Inflate cube in Y negative direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnYNegAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int y = cube->d_start_ - 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(y, 1)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnYAxis(*cube, y)) {
+                    cube->d_start_ = y;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Inflate cube in Z positive direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnZPosAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int z = cube->t_end_ + 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(z, 2)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnZAxis(*cube, z)) {
+                    cube->t_end_ = z;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     /**
      * @brief Check if plane is free on X axis
@@ -186,7 +312,7 @@ class TrajPlanning3DMap {
      * @param cube cube needs to be judge
      * @return is free
      */    
-    bool checkIfPlaneIsFreeOnXAxis(const SemanticCube<int>& cube, const int& x) {
+    bool checkIfPlaneIsFreeOnXAxis(const SemanticCube<int>& cube, const int& x) const {
         int f0_min = cube.d_start_;
         int f0_max = cube.d_end_;
         int f1_min = cube.t_start_;
@@ -205,6 +331,55 @@ class TrajPlanning3DMap {
         return true;
     }
 
+    /**
+     * @brief Check if plane is free on Y axis
+     * @param y coord in y
+     * @param cube cube needs to be judge
+     * @return is free
+     */     
+    bool checkIfPlaneIsFreeOnYAxis(const SemanticCube<int>& cube, const int& y) const {
+        int f0_min = cube.s_start_;
+        int f0_max = cube.s_end_;
+        int f1_min = cube.t_start_;
+        int f1_max = cube.t_end_;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (int i = f0_min; i <= f0_max; i++) {
+            for (int j = f1_min; j <= f1_max; j++) {
+                coord = {i, y, j};
+                is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                if (!is_free) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Check if plane is free on Z axis
+     * @param z coord in z
+     * @param cube cube needs to be judge
+     * @return is free
+     */     
+    bool checkIfPlaneIsFreeOnZAxis(const SemanticCube<int>& cube, const int& z) const {
+        int f0_min = cube.s_start_;
+        int f0_max = cube.s_end_;
+        int f1_min = cube.d_start_;
+        int f1_max = cube.d_end_;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (int i = f0_min; i <= f0_max; i++) {
+            for (int j = f1_min; j <= f1_max; j++) {
+                coord = {i, j, z};
+                is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                if (!is_free) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
 
     /**
@@ -339,7 +514,6 @@ class TrajPlanning3DMap {
 
     GridMap3D* p_3d_grid_;
     Config config_;
-    std::unordered_map<int, std::array<bool, 6>> inters_for_cube_;
     double start_time_;
     FrenetState initial_fs_;
 
