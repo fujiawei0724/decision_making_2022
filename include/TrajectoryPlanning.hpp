@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-11 17:09:20
+ * @LastEditTime: 2021-11-11 19:30:18
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -627,9 +627,24 @@ class OptimizerInterface {
     /**
      * @brief Multi thread optimize trajectory scatter points in s and d dimensions synchronous
      */    
-    void runOnce() {
+    void runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
+        // Prepare data for s and d dimensions
+        std::array<double, 3> s_start_constraints = start_constraint_.toDimensionS();
+        std::array<double, 3> s_end_constraints = end_constraint_.toDimensionS();
+        std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
+        std::array<double, 3> d_start_constraints = start_constraint_.toDimensionD();
+        std::array<double, 3> d_end_constraints = end_constraint_.toDimensionD();
+        std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
+        // Multi thread calculation
+        std::thread s_thread(&OptimizerInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+        std::thread d_thread(&OptimizerInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+        s_thread.join();
+        d_thread.join();
 
+        // Cache information
+        *optimized_s = optimized_data_["s"];
+        *optimized_d = optimized_data_["d"];
     }
 
     /**
@@ -772,12 +787,16 @@ class OptimizerInterface {
      * @brief Optimize trajectory scatter points in 2d 
      * @param single_start_constraints start constraints' disintegration in single dimension (s/d)
      * @param single_end_constraints end constraints' disintegration in single dimension (s/d)
+     * @param single_lower_boundaries lower boundaries in single dimension (s/d)
+     * @param single_upper_bounaries upper boundaries in single dimension (s/d)
+     * @param dimension_name "s" or "d"
      */
-    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints) {
+    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
         // ~Stage I: calculate D and c matrices (objective function)
         std::vector<double*> D;
         double* c = nullptr;
         calculateDcMatrix(&D, &c);
+        double c0 = 0.0;
 
         // ~Stage II: calculate start and end points equal constraints
         CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
@@ -786,11 +805,28 @@ class OptimizerInterface {
         calculateAbMatrix(single_start_constraints, single_end_constraints, &A, &b);
 
         // ~Stage III: calculate low and up boundaries for intermediate points
+        bool* fl = nullptr;
+        double* l = nullptr;
+        bool* fu = nullptr;
+        double* u = nullptr;
+        calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
+
+        // ~Stage IV: optimization and transform the formation of optimization result
+        int variables_num = static_cast<int>(all_ref_stamps_.size());
+        int constraints_num = 8;
+        Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
+        Solution s = CGAL::solve_quadratic_program(qp, ET());
+        // Convert data
+        std::vector<double> optimized_values;
+        for (auto iter = s.variable_values_begin(); iter != s.variable_values_end(); iter++) {
+            double value = CGAL::to_double(*iter);
+            optimized_values.emplace_back(value);
+        }
+        // Truncate data to delete the addtional points
+        std::vector<double> truncated_optimized_data{optimized_values.begin() + 2, optimized_values.end() - 2};
         
-
-        // ~Stage IV: optimization
-
         // ~Stage V: store information
+        optimized_data_[dimension_name] = truncated_optimized_data;
     }
 
 
@@ -799,6 +835,7 @@ class OptimizerInterface {
     EqualConstraint start_constraint_;
     EqualConstraint end_constraint_;
     std::array<std::vector<double>, 4> unequal_constraints_;
+    std::unordered_map<std::string, std::vector<double>> optimized_data_;
 };
 
 
