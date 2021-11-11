@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 21:16:37
+ * @LastEditTime: 2021-11-11 16:33:50
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -579,11 +579,173 @@ class TrajPlanning3DMap {
 
 };
 
+// Optimization tools 
+class OptimizationUtils {
+ public:
+
+    static double calculateStartTime(const std::vector<double>& segment_ref_stamps) {
+        return (1.0 / 120.0) * segment_ref_stamps[0] + (26.0 / 120.0) * segment_ref_stamps[1] + (33.0 / 60.0) * segment_ref_stamps[2] + (13.0 / 60.0) * segment_ref_stamps[3] + (1.0 / 120.0) * segment_ref_stamps[4];
+    }
+
+    static double calculateEndTime(const std::vector<double>& segment_ref_stamps) {
+        return (1.0 / 120.0) * segment_ref_stamps[1] + (13.0 / 60.0) * segment_ref_stamps[2] + (33.0 / 60.0) * segment_ref_stamps[3] + (26.0 / 120.0) * segment_ref_stamps[4] + (1.0 / 120.0) * segment_ref_stamps[5];
+    }
+
+    static double calculateTimeSpan(const std::vector<double>& segment_ref_stamps) {
+        return calculateEndTime(segment_ref_stamps) - calculateStartTime(segment_ref_stamps);
+    }
+};
+
 
 // Interface with optimization library
 class OptimizerInterface {
  public:
+    using ET = CGAL::Gmpz;
+    using Program = CGAL::Quadratic_program_from_iterators<
+                        std::vector<double*>::iterator,                            // For A
+                        double*,                                                   // For b
+                        CGAL::Const_oneset_iterator<CGAL::Comparison_result>,      // For r
+                        bool*,                                                     // For fl
+                        double*,                                                   // For l
+                        bool*,                                                     // For fu
+                        double*,                                                   // For u
+                        std::vector<double*>::iterator,                            // For D
+                        double*>;                                                  // For c
+    using Solution = CGAL::Quadratic_program_solution<ET>;
+
+    OptimizerInterface() = default;
+    ~OptimizerInterface() = default;
+
+    // Load data 
+    void load(const std::vector<double>& all_ref_stamps, const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const std::array<std::vector<double>, 4>& unequal_constraints) {
+        all_ref_stamps_ = all_ref_stamps;
+        start_constraint_ = start_constraint;
+        end_constraint_ = end_constraint;
+        unequal_constraints_ = unequal_constraints;
+    }
+
+    /**
+     * @brief Multi thread optimize trajectory scatter points in s and d dimensions synchronous
+     */    
+    void runOnce() {
+
+
+    }
+
+    /**
+     * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
+     * @param D 
+     * @param c
+     */
+    void calculateDcMatrix(std::vector<double*>* D, double** c) {
+        // Initialize D matrix
+        int points_num = static_cast<int>(all_ref_stamps_.size());
+        Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(points_num, points_num);
+        int segment_number = points_num - 5;
+
+        // Calculate D matrix
+        for (int i = 0; i < segment_number; i++) {
+            // Calculate time span
+            std::vector<double> cur_segment_ref_stamps{all_ref_stamps_.begin() + i, all_ref_stamps_.begin() + i + 6};
+            double time_span = OptimizationUtils::calculateTimeSpan(cur_segment_ref_stamps);
+            // TODO: check this logic, the exponent is "-3" or "-5"?
+            double time_coefficient = pow(time_span, -3);
+
+            // Intergrate to objective function
+            D_matrix.block(i, i, 6, 6) += HessianMatrix * time_coefficient;
+        }
+
+        // Convert the eigen data to double**
+        std::vector<double*> tmp_D(points_num);
+        for (int i = 0; i < points_num; i++) {
+            double* a_col = new double[points_num];
+            for (int j = 0; j <= i; j++) {
+                *(a_col + j) = D_matrix(i, j);
+            }
+            tmp_D[i] = a_col;
+        }
+
+        // Generate b information, all zeros
+        double* tmp_c = new double[points_num];
+
+        // TODO: check this parameters transformation process
+        *D = tmp_D;
+        *c = tmp_c;
+    }
+
+    /**
+     * @brief Caclculate equal constraints in the start point and end point 
+     * @param A
+     * @param b
+     * @param single_start_constraints start constraints in one dimension (s/d)
+     * @param single_end_constraints end constraints in one dimension (s/d) 
+     */  
+    void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, std::vector<double*>* A, double** b) {
+        // Construct matrix A and b to load information
+        int points_num = static_cast<int>(all_ref_stamps_.size());
+        Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(8, points_num);
+        Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(8, 1);
+
+        // Added points constraint conditions
+        A_matrix(0, 0) = 1.0, A_matrix(0, 2) = -2.0, A_matrix(0, 4) = 1.0;
+        A_matrix(1, 1) = 1.0, A_matrix(1, 2) = -2.0, A_matrix(1, 3) = 1.0;
+        A_matrix(2, points_num - 1) = 1.0, A_matrix(2, points_num - 3) = -2.0, A_matrix(2, points_num - 5) = 1.0;
+        A_matrix(3, points_num - 2) = 1.0, A_matrix(3, points_num - 3) = -2.0, A_matrix(3, points_num - 4) = 1.0;
+
+        // Start point and end point position constraint conditions
+        A_matrix(4, 2) = 1.0, A_matrix(5, points_num - 3) = 1.0;
+        b_matrix(4, 0) = single_start_constraints[0], b_matrix(5, 0) = single_end_constraints[0];
+
+        // Start point and end point velocity constraint conditions
+        std::vector<double> start_segment_ref_stamps{all_ref_stamps_.begin(), all_ref_stamps_.begin() + 6};
+        double start_segment_time_span = OptimizationUtils::calculateTimeSpan(start_segment_ref_stamps);
+        A_matrix(6, 0) = -1.0 / 24.0, A_matrix(6, 1) = -5.0 / 12.0, A_matrix(6, 3) = 5.0 / 12.0, A_matrix(6, 4) = 1.0 / 24.0;
+        b_matrix(6, 0) = single_start_constraints[1] * start_segment_time_span;
+        std::vector<double> end_segment_ref_stamps{all_ref_stamps_.begin() + points_num - 6, all_ref_stamps_.begin() + points_num};
+        double end_segment_time_span = OptimizationUtils::calculateTimeSpan(end_segment_ref_stamps);
+        A_matrix(7, points_num - 5) = -1.0 / 24.0, A_matrix(7, points_num - 4) = -5.0 / 12.0, A_matrix(7, points_num - 2) = 5.0 / 12.0, A_matrix(7, points_num - 1) = -1.0 / 24.0;
+        b_matrix(7, 0) = single_end_constraints[1] * end_segment_time_span;
+
+        // TODO: for quintic B-spline, the acceleration of the start point and point must be set to zero, add an algorithm to handle this problem
+
+        // Transform the structure of data
+        std::vector<double*> tmp_A(points_num);
+        
+    }
+
     
+
+
+
+
+
+    /**
+     * @brief Optimize trajectory scatter points in 2d 
+     * @param 
+     */
+    void optimizeSingleDim() {
+        // ~Stage I: calculate D and c matrices (objective function)
+        std::vector<double*> D;
+        double* c = nullptr;
+        calculateDcMatrix(&D, &c);
+
+        // ~Stage II: calculate start and end points equal constraints
+        CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
+
+
+        // ~Stage III: calculate low and up boundaries for intermediate points
+
+        // ~Stage IV: optimization
+
+        // ~Stage V: store information
+    }
+
+
+    
+    std::vector<double> all_ref_stamps_;
+    EqualConstraint start_constraint_;
+    EqualConstraint end_constraint_;
+    std::array<std::vector<double>, 4> unequal_constraints_;
 };
 
 

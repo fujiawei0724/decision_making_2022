@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 20:36:06
+ * @LastEditTime: 2021-11-11 10:33:01
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -18,6 +18,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <CGAL/QP_models.h>
+#include <CGAL/QP_functions.h>
+#include <CGAL/Gmpzf.h>
 #include "Const.hpp"
 #include "Point.hpp"
 #include "Compare.hpp"
@@ -486,17 +489,29 @@ public:
         d_ = d;
         d_d_ = d_d;
         dd_d_ = dd_d;
+        s_info_ = {s, d_s, dd_s};
+        d_info_ = {d, d_d, dd_d};
     }
     // Destructor
     ~EqualConstraint() = default;
 
+    std::array<double, 3> tosDimension() const {
+        return s_info_;
+    }
+
+    std::array<double, 3> todDimension() const {
+        return d_info_;
+    }
+
     // s means the longitudinal dimension, d means the latitudinal dimension, d_ means the first derivative, dd_ denotes the second derivative
-    double s_;
-    double d_s_;
-    double dd_s_;
-    double d_;
-    double d_d_;
-    double dd_d_;
+    double s_{};
+    double d_s_{};
+    double dd_s_{};
+    double d_{};
+    double d_d_{};
+    double dd_d_{};
+    std::array<double, 3> s_info_{};
+    std::array<double, 3> d_info_{};
 };
 
 // // Unequal constraints related to intermediate points' position

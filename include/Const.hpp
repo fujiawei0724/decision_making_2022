@@ -155,4 +155,13 @@ static std::vector<std::string> DIC_STATE_NAME = {"STOP", "TURN_LEFT", "TURN_RIG
 // 车辆引导方向映射
 static std::map<int, std::string> GUIDE_TYPE_NAME = {{1, "CHANGE_LEFT"}, {2, "KEEP_CENTER"}, {4, "CHANGE_RIGHT"}, {3, "CENTER_LEFT"}, {6, "CENTER_RIGHT"}, {7, "ALL_AVAILABLE"}};
 
+// Initial Hessian matrix for quintic B-spline optimization
+static Eigen::Matrix<double, 6, 6> HessianMatrix = (Eigen::Matrix<double, 6, 6>() <<
+        1.0 / 10.0, -1.0 / 12.0, -1.0 / 3.0, 1.0 / 2.0, -1.0 / 6.0, -1.0 / 60.0,
+        -1.0 / 12.0, 1.0 / 2.0, -5.0 / 6.0, 1.0 / 3.0, 1.0 / 4.0, -1.0 / 6.0,
+        -1.0 / 3.0, -5.0 / 6.0, 4.0, -11.0 / 3.0, 1.0 / 3.0, 1.0 / 2.0,
+        1.0 / 2.0, 1.0 / 3.0, -11.0 / 3.0, 4.0, -5.0 / 6.0, -1.0 / 3.0,
+        -1.0 / 6.0, 1.0 / 4.0, 1.0 / 3.0, -5.0 / 6.0, 1.0 / 2.0, -1.0 / 12.0,
+        -1.0 / 60.0, -1.0 / 6.0, 1.0 / 2.0, -1.0 / 3.0, -1.0 / 12.0, 1.0 / 10.0).finished();
+
 #endif

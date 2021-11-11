@@ -34,6 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Glog REQUIRED COMPONENTS system)
 find_package(/opt/ros/kinetic/include/opencv-3.3.1-dev)
 find_package(OpenCV REQUIRED)
+find_package(CGAL)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -195,6 +196,10 @@ target_link_libraries(${PROJECT_NAME}_node
   glog
   ${PROJECT_NAME}_lib
   # obstacle_utilities
+)
+
+target_link_libraries(
+  CGAL::CGAL
 )
 
 #############
