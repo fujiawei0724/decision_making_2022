@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-11 16:33:50
+ * @LastEditTime: 2021-11-11 17:09:20
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -638,6 +638,7 @@ class OptimizerInterface {
      * @param c
      */
     void calculateDcMatrix(std::vector<double*>* D, double** c) {
+        
         // Initialize D matrix
         int points_num = static_cast<int>(all_ref_stamps_.size());
         Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(points_num, points_num);
@@ -658,11 +659,11 @@ class OptimizerInterface {
         // Convert the eigen data to double**
         std::vector<double*> tmp_D(points_num);
         for (int i = 0; i < points_num; i++) {
-            double* a_col = new double[points_num];
+            double* d_col = new double[points_num];
             for (int j = 0; j <= i; j++) {
-                *(a_col + j) = D_matrix(i, j);
+                *(d_col + j) = D_matrix(i, j);
             }
-            tmp_D[i] = a_col;
+            tmp_D[i] = d_col;
         }
 
         // Generate b information, all zeros
@@ -681,6 +682,7 @@ class OptimizerInterface {
      * @param single_end_constraints end constraints in one dimension (s/d) 
      */  
     void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, std::vector<double*>* A, double** b) {
+        
         // Construct matrix A and b to load information
         int points_num = static_cast<int>(all_ref_stamps_.size());
         Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(8, points_num);
@@ -710,20 +712,68 @@ class OptimizerInterface {
 
         // Transform the structure of data
         std::vector<double*> tmp_A(points_num);
-        
+        for (int i = 0; i < points_num; i++) {
+            double* a_col = new double[8];
+            for (int j = 0; j < 8; j++) {
+                *(a_col + j) = A_matrix(j, i);
+            } 
+            tmp_A[i] = a_col;
+        }
+        double* tmp_b = new double[8];
+        for (int i = 0; i < 8; i++) {
+            *(tmp_b + i) = b_matrix(i, 0);
+        }
+
+
+        // TODO: check this parameters transformation process
+        *A = tmp_A;
+        *b = tmp_b;
     }
 
-    
+    /**
+     * @brief Calculate lower and upper boundaries (provided by semantic cubes) for intermedite points 
+     * @param single_lower_boundaries lower boundaries for intermediate points in single dimension
+     * @param single_upper_boundaries upper boundaries for intermediate points in single dimension
+     * @param fl for each variable, is lower boundary valid
+     * @param l lower bounds for each variable 
+     * @param fu for each variable, is upper boundary valid
+     * @param u upper bounds for each variable
+     */    
+    void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
 
+        
+        int points_num = static_cast<int>(all_ref_stamps_.size());
+        bool* tmp_fl = new bool[points_num];
+        double* tmp_l = new double[points_num];
+        bool* tmp_fu = new bool[points_num];
+        double* tmp_u = new double[points_num];
 
+        for (int i = 0; i < points_num; i++) {
+            if (i <= 2 || i >= points_num - 3) {
+                // For the first three points and last three points, the unequal constraints are invalid
+                *(tmp_fl + i) = false;
+                *(tmp_fu + i) = false;
+            } else {
+                *(tmp_fl + i) = true;
+                *(tmp_fu + i) = true;
+                *(tmp_l + i) = single_lower_boundaries[i - 2];
+                *(tmp_u + i) = single_upper_boundaries[i - 2];
+            }
+        }
 
-
+        // TODO: check this parameters transformation process
+        *fl = tmp_fl;
+        *l = tmp_l;
+        *fu = tmp_fu;
+        *u = tmp_u;
+    }
 
     /**
      * @brief Optimize trajectory scatter points in 2d 
-     * @param 
+     * @param single_start_constraints start constraints' disintegration in single dimension (s/d)
+     * @param single_end_constraints end constraints' disintegration in single dimension (s/d)
      */
-    void optimizeSingleDim() {
+    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints) {
         // ~Stage I: calculate D and c matrices (objective function)
         std::vector<double*> D;
         double* c = nullptr;
@@ -731,9 +781,12 @@ class OptimizerInterface {
 
         // ~Stage II: calculate start and end points equal constraints
         CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
-
+        std::vector<double*> A;
+        double* b = nullptr;
+        calculateAbMatrix(single_start_constraints, single_end_constraints, &A, &b);
 
         // ~Stage III: calculate low and up boundaries for intermediate points
+        
 
         // ~Stage IV: optimization
 
