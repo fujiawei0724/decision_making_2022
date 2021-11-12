@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 15:07:49
+ * @LastEditTime: 2021-11-12 19:40:20
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -200,16 +200,16 @@ public:
         vertice_.resize(4);
         Eigen::Matrix<double, 2, 1> vertex_1, vertex_2, vertex_3, vertex_4;
         vertex_1(0) = state_.position_(0) + length_ * 0.5 * cos(state_.theta_) - width_ * 0.5 * sin(state_.theta_);
-        vertex_1(1) = state_.position_(1) + length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta);
+        vertex_1(1) = state_.position_(1) + length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta_);
         vertice_[0] = vertex_1;
         vertex_2(0) = state_.position_(0) + length_ * 0.5 * cos(state_.theta_) + width_ * 0.5 * sin(state_.theta_);
-        vertex_2(1) = state_.position_(1) + length_ * 0.5 * sin(state_.theta_) - width_ * 0.5 * cos(state_.theta);
+        vertex_2(1) = state_.position_(1) + length_ * 0.5 * sin(state_.theta_) - width_ * 0.5 * cos(state_.theta_);
         vertice_[1] = vertex_2;
         vertex_3(0) = state_.position_(0) - length_ * 0.5 * cos(state_.theta_) + width_ * 0.5 * sin(state_.theta_);
-        vertex_3(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) - width_ * 0.5 * cos(state_.theta);
+        vertex_3(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) - width_ * 0.5 * cos(state_.theta_);
         vertice_[2] = vertex_3;
         vertex_4(0) = state_.position_(0) - length_ * 0.5 * cos(state_.theta_) - width_ * 0.5 * sin(state_.theta_);
-        vertex_4(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta);
+        vertex_4(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta_);
         vertice_[3] = vertex_4;
     }
 
@@ -307,8 +307,14 @@ public:
         // Construct frenet state
         FrenetState frenet_state;
         frenet_state.load(Eigen::Matrix<double, 3, 1>(arc_length, sp, spp), Eigen::Matrix<double, 3, 1>(d, ds, dss));
+        frenet_state.time_stamp_ = state.time_stamp_;
 
         return frenet_state;
+    }
+
+    // Transform frenet position to world position
+    Eigen::Matrix<double, 2, 1> getPointFromFrenetPoint(const Eigen::Matrix<double, 2, 1>& frenet_point) {
+        
     }
 
     // Get state 
@@ -374,7 +380,7 @@ public:
         }
         
         FsVehicle fs_vehicle = FsVehicle(frenet_state, fs_vertice);
-        return fs_vertice;
+        return fs_vehicle;
     }
 
     // Transform trajectory to frenet trajectory
@@ -533,6 +539,15 @@ public:
     // Destructor
     ~EqualConstraint() = default;
 
+    void load(const FsVehicle& fs_veh) {
+        s_ = fs_veh.fs_.vec_s_[0];
+        d_s_ = fs_veh.fs_.vec_s_[1];
+        dd_s_ = fs_veh.fs_.vec_s_[2];
+        d_ = fs_veh.fs_.vec_dt_[0];
+        d_d_ = fs_veh.fs_.vec_dt_[1];
+        dd_d_ = fs_veh.fs_.vec_dt_[2];
+    }
+
     std::array<double, 3> toDimensionS() const {
         return s_info_;
     }
@@ -542,12 +557,12 @@ public:
     }
 
     // s means the longitudinal dimension, d means the latitudinal dimension, d_ means the first derivative, dd_ denotes the second derivative
-    double s_{};
-    double d_s_{};
-    double dd_s_{};
-    double d_{};
-    double d_d_{};
-    double dd_d_{};
+    double s_{0.0};
+    double d_s_{0.0};
+    double dd_s_{0.0};
+    double d_{0.0};
+    double d_d_{0.0};
+    double dd_d_{0.0};
     std::array<double, 3> s_info_{};
     std::array<double, 3> d_info_{};
 };

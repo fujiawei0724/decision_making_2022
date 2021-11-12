@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 17:21:15
+ * @LastEditTime: 2021-11-12 19:35:19
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -50,10 +50,11 @@ class TrajPlanning3DMap {
      * @brief Run once to generate the semantic cubes sequence
      * @return The success of the generation process
      */    
-    bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_trajs, std::vector<SemanticCube<double>>* semantic_cubes_sequence) {
+    bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_laned_trajs, const std::unordered_map<int, std::vector<FsVehicle>>& surround_unlaned_obs_trajs, std::vector<SemanticCube<double>>* semantic_cubes_sequence) {
         
         // ~Stage I: construct 3D grid map
-        contruct3DMap(surround_trajs);
+        contruct3DMap(surround_laned_trajs);
+        contruct3DMap(surround_unlaned_obs_trajs);
 
         // ~Stage II: generate seeds 
         constructSeeds(ego_traj);
@@ -977,6 +978,16 @@ class BpTpBridge {
     }
     ~BpTpBridge() = default;
 
+    // Transform trajectory from frenet to world
+    std::vector<Point3f> getTrajFromTrajFs(const std::vector<Point3f>& traj_fs) {
+        
+    }
+
+    // Transform ego state (update after behavior planning)
+    FsVehicle getFsVehicle(const Vehicle& vehicle) {
+        return state_trans_itf_->getFsVehicleFromVehicle(vehicle);
+    }
+
     // Transform ego trajectory 
     std::vector<FsVehicle> getEgoFrenetTrajectory(const std::vector<Vehicle>& ego_traj) {
         return state_trans_itf_->getFrenetTrajectoryFromTrajectory(ego_traj);
@@ -1045,6 +1056,77 @@ class TrajectoryPlanningCore {
  public:
     TrajectoryPlanningCore() = default;
     ~TrajectoryPlanningCore() = default;
+
+    // Load data
+    void load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<DecisionMaking::Obstacle>& sur_unlaned_obs) {
+        current_vehicle_state_ = cur_vehicle_state;
+        reference_lane_ = reference_lane;
+        ego_traj_ = ego_traj;
+        sur_laned_veh_trajs_ = sur_laned_veh_trajs;
+        sur_unlaned_obs_ = sur_unlaned_obs;
+    }
+
+    // Run trajectory planner
+    void runOnce(bool* result) {
+        // ~Stage I: construct bridge and transform information
+        bridge_itf_ = new BpTpBridge(reference_lane_);
+        FsVehicle current_vehicle_state_fs = bridge_itf_->getFsVehicle(current_vehicle_state_);
+        std::vector<FsVehicle> ego_traj_fs = bridge_itf_->getEgoFrenetTrajectory(ego_traj_);
+        std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
+        std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
+
+        // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
+        traj_planning_3d_map_itf_ = new TrajPlanning3DMap();
+        std::vector<SemanticCube<double>> semantic_cubes_sequence;
+        bool is_map_constructed_success = traj_planning_3d_map_itf_->runOnce(ego_traj_fs, sur_laned_trajs_fs, sur_unlaned_trajs_fs, &semantic_cubes_sequence);
+        if (!is_map_constructed_success) {
+            printf("[TrajectoryPlanningCore] traj planning 3d grid map constructed failed.\n");
+            *result = false;
+            return;
+        }
+
+        // ~Stage III: determine constraints conditions and do optimization
+        EqualConstraint start_constraints, end_constraints;
+        start_constraints.load(current_vehicle_state_fs);
+        end_constraints.load(ego_traj_fs.back());
+        std::vector<double> ref_stamps;
+        for (const auto& ego_state : ego_traj_fs) {
+            ref_stamps.emplace_back(ego_state.fs_.time_stamp_);
+        }
+        traj_opt_itf_ = new TrajectoryOptimizer();
+        traj_opt_itf_->load(start_constraints, end_constraints, semantic_cubes_sequence, ref_stamps);
+        std::vector<double> optimized_s, optimized_d, t;
+        bool is_optimization_success = false;
+        traj_opt_itf_->runOnce(&optimized_s, &optimized_d, &t, &is_optimization_success);
+        if (!is_optimization_success) {
+            printf("[TrajectoryPlanningCore] traj optimization failed.\n");
+            *result = false;
+            return;
+        }
+
+        // ~Stage IV: calculate quintic B-spline trajectory in frenet frame
+        B_spline_traj_itf_ = new QuinticBSplineTrajectory(optimized_s, optimized_d, t);
+        std::vector<Point3f> traj_fs = B_spline_traj_itf_->generateTraj(0.01);
+
+        // ~Stage V: transform the trajectory from frenet to world
+
+        
+
+        
+
+    }
+
+    QuinticBSplineTrajectory* B_spline_traj_itf_{nullptr};
+    TrajPlanning3DMap* traj_planning_3d_map_itf_{nullptr};
+    BpTpBridge* bridge_itf_{nullptr};
+    TrajectoryOptimizer* traj_opt_itf_{nullptr};
+
+    Vehicle current_vehicle_state_;
+    Lane reference_lane_;
+    std::vector<Vehicle> ego_traj_;
+    std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
+    std::vector<DecisionMaking::Obstacle> sur_unlaned_obs_;
+    
 };
 
 
