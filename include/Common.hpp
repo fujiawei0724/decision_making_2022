@@ -72,6 +72,7 @@
 #include "AvoidancePath.hpp"
 #include "VehicleState.hpp"
 #include "BehaviorPlanner.hpp"
+#include "TrajectoryPlanning.hpp"
 
 // extern bool GLOBAL_IS_IN_GROUND_;
 // extern std::mutex GLOBAL_IN_GROUND_MUTEX_;
@@ -984,9 +985,12 @@ class SubVehicle{
 
     bool behaviorPlanning();
 
+    void trajectoryPlanning();
+
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
     std::vector<Obstacle> unlaned_obstacles_;
+    Lane reference_lane_;
 
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;

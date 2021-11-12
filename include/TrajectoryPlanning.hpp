@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 19:35:19
+ * @LastEditTime: 2021-11-12 20:13:52
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -980,7 +980,16 @@ class BpTpBridge {
 
     // Transform trajectory from frenet to world
     std::vector<Point3f> getTrajFromTrajFs(const std::vector<Point3f>& traj_fs) {
-        
+        int length = static_cast<int>(traj_fs.size());
+        std::vector<Point3f> traj(length);
+
+        for (int i = 0; i < length; i++) {
+            Eigen::Matrix<double, 2, 1> point_fs{traj_fs[i].x_, traj_fs[i].y_};
+            Eigen::Matrix<double, 2, 1> point = state_trans_itf_->getPointFromFrenetPoint(point_fs);
+            traj[i] = Point3f(point(0), point(1), traj_fs[i].z_); 
+        }
+
+        return traj;
     }
 
     // Transform ego state (update after behavior planning)
@@ -1067,7 +1076,7 @@ class TrajectoryPlanningCore {
     }
 
     // Run trajectory planner
-    void runOnce(bool* result) {
+    void runOnce(bool* result, std::vector<Point3f>* trajectory) {
         // ~Stage I: construct bridge and transform information
         bridge_itf_ = new BpTpBridge(reference_lane_);
         FsVehicle current_vehicle_state_fs = bridge_itf_->getFsVehicle(current_vehicle_state_);
@@ -1109,11 +1118,10 @@ class TrajectoryPlanningCore {
         std::vector<Point3f> traj_fs = B_spline_traj_itf_->generateTraj(0.01);
 
         // ~Stage V: transform the trajectory from frenet to world
+        std::vector<Point3f> traj = bridge_itf_->getTrajFromTrajFs(traj_fs);
 
-        
-
-        
-
+        *trajectory = traj;
+        *result = true;
     }
 
     QuinticBSplineTrajectory* B_spline_traj_itf_{nullptr};

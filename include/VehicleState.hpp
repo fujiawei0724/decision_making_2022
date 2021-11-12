@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 19:40:20
+ * @LastEditTime: 2021-11-12 20:08:10
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -314,7 +314,26 @@ public:
 
     // Transform frenet position to world position
     Eigen::Matrix<double, 2, 1> getPointFromFrenetPoint(const Eigen::Matrix<double, 2, 1>& frenet_point) {
-        
+        // Determine the nearest position to frenet state
+        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        PathPlanningUtilities::CoordinationPoint lane_position;
+        for (const PathPlanningUtilities::CoordinationPoint& lane_point: lane_coordination) {
+            if (lane_point.station_ > frenet_point(0)) {
+                lane_position = lane_point;
+                break;
+            }
+        }
+        Eigen::Matrix<double, 2, 1> lane_pos{lane_position.worldpos_.position_.x_, lane_position.worldpos_.position_.y_};
+
+        // Get tangent vector and normal vector, the norm is set with 1.0
+        double lane_orientation = lane_position.worldpos_.theta_;
+        double y = tan(lane_orientation);
+        double x = 1.0;
+        Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
+        lane_tangent_vec /= lane_tangent_vec.norm();
+        Eigen::Matrix<double, 2, 1> vec_normal{-lane_tangent_vec(1), lane_tangent_vec(0)};
+        Eigen::Matrix<double, 2, 1> point = vec_normal * frenet_point(1) + lane_pos;
+        return point;
     }
 
     // Get state 

@@ -2,13 +2,13 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 16:17:34
+ * @LastEditTime: 2021-11-12 20:38:27
  * @Descripttion: EUDM behavior planner interface with the whole pipeline
  */
 
 #include "Common.hpp"
 
-bool DecisionMaking::SubVehicle::behaviorPlanning() {
+void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     // Update information for behavior planning
     updateMapInformation();
     updateObstacleInformation();
@@ -67,17 +67,16 @@ bool DecisionMaking::SubVehicle::behaviorPlanning() {
     double behavior_planner_dt = 0.4;
     bool is_behavior_planning_success = false;
     BehaviorPlanner::BehaviorPlannerCore behavior_planner = BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt);
-    is_behavior_planning_success = behavior_planner.runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_);
+    is_behavior_planning_success = behavior_planner.runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_, &reference_lane_);
 
     // DEBUG
     // Visualization best policy states predicted by behavior planning
     if (is_behavior_planning_success) {
         VisualizationMethods::visualizationEgoPredictState(ego_trajectory_, vis_behavior_planner_ego_states_pub_);
     } else {
-        printf("[Behavior planner]Behavior planning failed.");
+        printf("[MainPipeline] Behavior planning failed.\n");
     }
 
-    // TODO: Information cache for trajectory planner
+    *result = is_behavior_planning_success;
 
-    return is_behavior_planning_success;
 }

@@ -540,7 +540,12 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         }
 
         // Run behavior planner
-        bool is_behavior_planning_success = behaviorPlanning();
+        bool is_behavior_planning_success;
+        behaviorPlanning(&is_behavior_planning_success);
+
+        // Run trajectory planning
+        bool is_trajectory_planning_success;
+        trajectoryPlanning(is_trajectory_planning_success);
 
 
         loop_rate.sleep();

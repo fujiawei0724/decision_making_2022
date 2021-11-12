@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 15:24:05
+ * @LastEditTime: 2021-11-12 20:32:22
  * @Descripttion: Behavior planner core.
  */
 
@@ -780,7 +780,7 @@ public:
     }
 
     // Behavior planner runner
-    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs) {
+    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, Lane* target_behavior_reference_lane) {
         // Simulate all policies
         simulateAllBehaviors(ego_vehicle, surround_vehicles);
 
@@ -795,6 +795,7 @@ public:
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];
+        *target_behavior_reference_lane = mtf_->lane_set_[final_reference_lane_id_[winner_index]];
         return true;
 
     }
@@ -902,6 +903,7 @@ public:
         // Store trajectories information
         ego_traj_[index] = ego_trajectory;
         sur_veh_trajs_[index] = surround_trajectories;
+        final_reference_lane_id_[index] = ego_semantic_vehicle.reference_lane_id_;
         
         // Judge whether generate lane change behavior
         bool lane_change_flag{false};
@@ -971,6 +973,7 @@ public:
         target_position_velocity_limit_.resize(length);
         ego_traj_.resize(length);
         sur_veh_trajs_.resize(length);
+        final_reference_lane_id_.resize(length);
     }
 
     MapInterface* mtf_{nullptr};
@@ -982,6 +985,7 @@ public:
     std::vector<double> behavior_sequence_cost_;
     std::vector<bool> behavior_safety_;
     // Store the trajectory information
+    std::vector<LaneId> final_reference_lane_id_;
     std::vector<bool> is_lane_changed_;
     std::vector<double> target_position_velocity_limit_;
     std::vector<Trajectory> ego_traj_;
