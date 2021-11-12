@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-11 20:38:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 11:11:57
+ * @LastEditTime: 2021-11-12 11:37:24
  * @Descripttion: Quintic B-spline in 3D dimension.
  */
 
@@ -118,7 +118,15 @@ class QuinticBSplineTrajectory {
      * @return the final trajectory
      */    
     std::vector<Point3f> generateTraj(double sample_gap) {
+        int sample_num = static_cast<int>(static_cast<double>(segment_num_) / sample_gap);
+        std::vector<double> samples = Tools::linspace(0.0, static_cast<double>(segment_num_), sample_num);
+        std::vector<Point3f> trajectory;
 
+        for (const auto sample : samples) {
+            trajectory.emplace_back(generateTrajPoint(sample));
+        }
+
+        return trajectory;
     }
 
 

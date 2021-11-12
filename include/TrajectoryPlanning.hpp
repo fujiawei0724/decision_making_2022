@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-11 19:30:18
+ * @LastEditTime: 2021-11-12 11:54:15
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -637,6 +637,7 @@ class OptimizerInterface {
         std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
         // Multi thread calculation
+        // TODO: add logic to handle the situation where the optimization process is failed
         std::thread s_thread(&OptimizerInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
         std::thread d_thread(&OptimizerInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
         s_thread.join();
@@ -843,7 +844,9 @@ class OptimizerInterface {
 class TrajectoryOptimizer {
  public:
     using DrivingCorridor = std::vector<SemanticCube<double>>;
-    TrajectoryOptimizer() = default;
+    TrajectoryOptimizer() {
+        opt_itf_ = new OptimizerInterface();
+    }
     ~TrajectoryOptimizer() = default;
 
     // Load data to optimizer
@@ -855,7 +858,7 @@ class TrajectoryOptimizer {
     }
 
     // Run optimizer
-    void runOnce(std::vector<Point3f>* trajectory_scatter_points, bool* res) {
+    void runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t, bool* res) {
         
         // ~Stage I: check, prepare, and supple data 
         assert(ref_stamps_.size() - 1 == driving_corridor_.size() && static_cast<int>(ref_stamps_.size()) >= 3);
@@ -869,8 +872,18 @@ class TrajectoryOptimizer {
             return;
         }
 
-        // ~Stage II: divide the problem into two dimensions and solute respectively
-        // Construct optimizer
+        // ~Stage II: load data and optimization
+        // TODO: handle the optimization failed situation
+        std::vector<double> optimized_s;
+        std::vector<double> optimized_d;
+        opt_itf_->load(all_ref_stamps, start_constraint_, end_constraint_, unequal_constraints);
+        opt_itf_->runOnce(&optimized_s, &optimized_d);
+
+        // ~Stage III: data return
+        *s = optimized_s;
+        *d = optimized_d;
+        *t = ref_stamps_;
+        *res = true;
         
     }
 
@@ -949,10 +962,23 @@ class TrajectoryOptimizer {
         return true;
     }
 
+    OptimizerInterface* opt_itf_{nullptr};
     EqualConstraint start_constraint_;
     EqualConstraint end_constraint_;
     DrivingCorridor driving_corridor_;
     std::vector<double> ref_stamps_;
+};
+
+// The data bridge between behavior planner and trajectory planner
+class BpTpBridge {
+
+};
+
+// Trajectory planning core
+class TrajectoryPlanningCore {
+ public:
+    TrajectoryPlanningCore() = default;
+    ~TrajectoryPlanningCore() = default;
 };
 
 
