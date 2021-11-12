@@ -983,9 +983,9 @@ class SubVehicle{
      * The content below is for trajectory planning 2021, includes EUDM and SSC.
      */
 
-    bool behaviorPlanning();
+    void behaviorPlanning(bool* result);
 
-    void trajectoryPlanning();
+    void trajectoryPlanning(bool* trajectory_planning_result);
 
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
