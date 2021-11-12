@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 10:41:36
+ * @LastEditTime: 2021-11-12 15:07:49
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -156,6 +156,71 @@ public:
     
 };
 
+// The description of vehicle information in frenet state
+class FsVehicle {
+public:
+    // Constructor
+    FsVehicle() = default;
+    FsVehicle(const FrenetState& frenet_state, const std::vector<Eigen::Matrix<double, 2, 1>>& vertex) {
+        fs_ = frenet_state;
+        vertex_ = vertex;
+    }
+    // Destructor
+    ~FsVehicle() = default;
+
+    FrenetState fs_;
+    std::vector<Eigen::Matrix<double, 2, 1>> vertex_;
+};
+
+class Vehicle {
+public:
+    // Constructor
+    Vehicle() = default;
+    Vehicle(int id, const State& state, double length, double width) {
+        id_ = id;
+        state_ = state;
+        length_ = length;
+        width_ = width;
+        generateRectangle();
+        generateVertice();
+    }
+
+    // Destructor
+    ~Vehicle() {
+
+    }
+
+    // Generate rectangle
+    void generateRectangle() {
+        rectangle_ = Rectangle(state_.position_(0), state_.position_(1), state_.theta_, width_, length_);
+    }
+
+    // Generate four vertice
+    void generateVertice() {
+        vertice_.resize(4);
+        Eigen::Matrix<double, 2, 1> vertex_1, vertex_2, vertex_3, vertex_4;
+        vertex_1(0) = state_.position_(0) + length_ * 0.5 * cos(state_.theta_) - width_ * 0.5 * sin(state_.theta_);
+        vertex_1(1) = state_.position_(1) + length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta);
+        vertice_[0] = vertex_1;
+        vertex_2(0) = state_.position_(0) + length_ * 0.5 * cos(state_.theta_) + width_ * 0.5 * sin(state_.theta_);
+        vertex_2(1) = state_.position_(1) + length_ * 0.5 * sin(state_.theta_) - width_ * 0.5 * cos(state_.theta);
+        vertice_[1] = vertex_2;
+        vertex_3(0) = state_.position_(0) - length_ * 0.5 * cos(state_.theta_) + width_ * 0.5 * sin(state_.theta_);
+        vertex_3(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) - width_ * 0.5 * cos(state_.theta);
+        vertice_[2] = vertex_3;
+        vertex_4(0) = state_.position_(0) - length_ * 0.5 * cos(state_.theta_) - width_ * 0.5 * sin(state_.theta_);
+        vertex_4(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta);
+        vertice_[3] = vertex_4;
+    }
+
+    int id_{0};
+    State state_;
+    double length_{0.0};
+    double width_{0.0};
+    Rectangle rectangle_;
+    std::vector<Eigen::Matrix<double, 2, 1>> vertice_{};
+};
+
 // Transform between world state and frenet state
 class StateTransformer {
 public:
@@ -296,37 +361,35 @@ public:
         return state;
     }
 
+    // Transform vehicle to frenet vehicle
+    FsVehicle getFsVehicleFromVehicle(const Vehicle& vehicle) {
+        // Transform state information 
+        FrenetState frenet_state = getFrenetStateFromState(vehicle.state_);
+        
+        // Transform four vertice from world frame to frenet frame
+        std::vector<Eigen::Matrix<double, 2, 1>> fs_vertice;
+        for (const auto& world_vertex : vehicle.vertice_) {
+            Eigen::Matrix<double, 2, 1> fs_vertex = getFrenetPointFromPoint(world_vertex);
+            fs_vertice.emplace_back(fs_vertex);
+        }
+        
+        FsVehicle fs_vehicle = FsVehicle(frenet_state, fs_vertice);
+        return fs_vertice;
+    }
+
+    // Transform trajectory to frenet trajectory
+    std::vector<FsVehicle> getFrenetTrajectoryFromTrajectory(const std::vector<Vehicle>& traj) {
+        int traj_size = static_cast<int>(traj.size());
+        std::vector<FsVehicle> fs_traj(traj_size);
+        for (int i = 0; i < traj_size; i++) {
+            fs_traj[i] = getFsVehicleFromVehicle(traj[i]);
+        }
+        return fs_traj;
+    }
+
     Lane lane_;
 };
 
-class Vehicle {
-public:
-    // Constructor
-    Vehicle() = default;
-    Vehicle(int id, const State& state, double length, double width) {
-        id_ = id;
-        state_ = state;
-        length_ = length;
-        width_ = width;
-        generateRectangle();
-    }
-
-    // Destructor
-    ~Vehicle() {
-
-    }
-
-    // Generate rectangle
-    void generateRectangle() {
-        rectangle_ = Rectangle(state_.position_(0), state_.position_(1), state_.theta_, width_, length_);
-    }
-
-    int id_{0};
-    State state_;
-    double length_{0.0};
-    double width_{0.0};
-    Rectangle rectangle_;
-};
 
 // Vehicle state with semantic information, such as current lane and reference lane
 class SemanticVehicle {
@@ -449,21 +512,9 @@ class ShapeUtils {
 
 };
 
-// The description of vehicle information in frenet state
-class FsVehicle {
-public:
-    // Constructor
-    FsVehicle() = default;
-    FsVehicle(const FrenetState& frenet_state, const std::vector<Eigen::Matrix<double, 2, 1>>& vertex) {
-        fs_ = frenet_state;
-        vertex_ = vertex;
-    }
-    // Destructor
-    ~FsVehicle() = default;
 
-    FrenetState fs_;
-    std::vector<Eigen::Matrix<double, 2, 1>> vertex_;
-};
+
+
 // Equal constraints related to start point and end point
 class EqualConstraint {
 public:

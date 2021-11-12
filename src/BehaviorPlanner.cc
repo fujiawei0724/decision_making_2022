@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-08 19:01:27
+ * @LastEditTime: 2021-11-12 16:17:34
  * @Descripttion: EUDM behavior planner interface with the whole pipeline
  */
 
@@ -52,16 +52,22 @@ bool DecisionMaking::SubVehicle::behaviorPlanning() {
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
 
+    // Clear information
+    unlaned_obstacles_.clear();
+    ego_trajectory_.clear();
+    surround_trajectories_.clear();
+
     // Unlaned obstacles are considered in trajectory planner to generate occupied semantic cubes
     std::vector<DecisionMaking::Obstacle> unlaned_obstacles;
     std::unordered_map<int, Common::Vehicle> surround_vehicles = BehaviorPlanner::VehicleInterface::getSurroundVehicles(&map_interface, obstacles_, unlaned_obstacles);
+    unlaned_obstacles_ = unlaned_obstacles;
 
     // Construct behavior planner core and decision making
     double behavior_planner_time_span = 4.0;
     double behavior_planner_dt = 0.4;
     bool is_behavior_planning_success = false;
     BehaviorPlanner::BehaviorPlannerCore behavior_planner = BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt);
-    is_behavior_planning_success = behavior_planner.runBehaviorPlanner(ego_vehicle, surround_vehicles, ego_trajectory_, surround_trajectories_);
+    is_behavior_planning_success = behavior_planner.runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_);
 
     // DEBUG
     // Visualization best policy states predicted by behavior planning

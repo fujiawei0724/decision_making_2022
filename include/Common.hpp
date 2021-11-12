@@ -656,7 +656,8 @@ class StandardState {
 // 0.初始化车辆和道路信息 1.对状态进行更新（起终点、规划路径、优先级、可行性） 2.判断每一个状态的安全性（加入感知障碍物约束）并补全最终速度
 // 3.判断是否进行超车、确定状态 4.保持状态并监视 5.在此基础上不断更新车辆道路信息。
 class SubVehicle{
-    using Trajectory = std::vector<BehaviorPlanner::Vehicle>;
+    using Trajectory = std::vector<Common::Vehicle>;
+    using FsTrajectory = std::vector<Common::Vehicle>;
  public:
     // 构造函数和析构函数
     explicit SubVehicle(const ros::NodeHandle &nh) {
@@ -985,6 +986,8 @@ class SubVehicle{
 
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
+    std::vector<Obstacle> unlaned_obstacles_;
+
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;
 

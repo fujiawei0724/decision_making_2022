@@ -192,20 +192,24 @@ void DecisionMaking::SubVehicle::updateObstaclePredictedInformation(Obstacle* ob
     // 障碍物id
     size_t id = obstacle->getID();
     // 地图服务所需参数，计算长度，长度为障碍物以当前速度行驶3秒的距离(vt + (v*t + v^2/2a + constant_distance) + constant_distance)
-    double distance;
-    // 障碍物速度不为0时，取障碍物的刹车距离
-    if (obstacle->getObstacleClass() == vec_map_cpp_msgs::GetPredictedTrajectory::Request::PEDESTRIAN) {
-        distance = CONSTANT_DISTANCE;
-    } else {
-        distance = Tools::normalObstacleVehicleOccupationDistance(obstacle->getObstacleVelocity(), COMMON_DECCELERATION);
-    }
+    // double distance;
+    // // 障碍物速度不为0时，取障碍物的刹车距离
+    // if (obstacle->getObstacleClass() == vec_map_cpp_msgs::GetPredictedTrajectory::Request::PEDESTRIAN) {
+    //     distance = CONSTANT_DISTANCE;
+    // } else {
+    //     distance = Tools::normalObstacleVehicleOccupationDistance(obstacle->getObstacleVelocity(), COMMON_DECCELERATION);
+    // }
+
+    // TODO: the distance and point margin values are the same with behavior planner parameters
+
+    double distance = 4.0 * obstacle->getObstacleVelocity();
     // 地图服务所需参数，形状
     double width = obstacle->getObstacleWidth();
     double length = obstacle->getObstacleLength();
     // 地图服务所需参数，速度方向
     double direction = obstacle->getObstacleVelocityDirection();
     // 地图服务所需参数，点间距
-    double point_margin = OBSTACLE_MARGIN;
+    double point_margin = distance / 10.0;
     // 地图服务所需参数，类别(TOFIX)
     double obstacle_class = obstacle->getObstacleClass();
 

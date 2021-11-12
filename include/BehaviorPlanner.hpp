@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-10 10:51:41
+ * @LastEditTime: 2021-11-12 15:24:05
  * @Descripttion: Behavior planner core.
  */
 
@@ -780,7 +780,7 @@ public:
     }
 
     // Behavior planner runner
-    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory& ego_best_traj, std::unordered_map<int, Trajectory>& sur_best_trajs) {
+    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs) {
         // Simulate all policies
         simulateAllBehaviors(ego_vehicle, surround_vehicles);
 
@@ -793,8 +793,8 @@ public:
             return false;
         }
 
-        ego_best_traj = ego_traj_[winner_index];
-        sur_best_trajs = sur_veh_trajs_[winner_index];
+        *ego_best_traj = ego_traj_[winner_index];
+        *sur_best_trajs = sur_veh_trajs_[winner_index];
         return true;
 
     }
