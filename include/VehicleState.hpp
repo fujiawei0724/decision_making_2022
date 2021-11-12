@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-11 19:21:36
+ * @LastEditTime: 2021-11-12 10:41:36
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -28,6 +28,7 @@
 #include "Lane.hpp"
 #include "Rectangle.hpp"
 #include "Obstacle.hpp"
+#include "QuinticBSpline.hpp"
 
 namespace Common {
 
@@ -383,20 +384,6 @@ class Point3i : public Point2i {
     int z_{0};
 };
 
-class Point3f {
- public:
-    Point3f() = default;
-    Point3f(double x, double y, double z) {
-        x_ = x;
-        y_ = y;
-        z_ = z;
-    }
-    ~Point3f() = default;
-
-    double x_{0.0};
-    double y_{0.0};
-    double z_{0.0};
-};
 
 // The semantic cube to constrain the position of trajectory interpolation points
 template <typename T>
