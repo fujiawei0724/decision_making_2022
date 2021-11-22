@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 20:13:52
+ * @LastEditTime: 2021-11-22 16:30:01
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -11,6 +11,7 @@
 #include "Const.hpp"
 #include "VehicleState.hpp"
 
+// Trajectory planning based on quintic B-spline
 namespace TrajectoryPlanner {
 
 using namespace Common;
