@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-22 16:30:01
+ * @LastEditTime: 2021-11-23 21:07:09
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -568,7 +568,7 @@ class TrajPlanning3DMap {
     }
 
 
-    GridMap3D* p_3d_grid_;
+    GridMap3D* p_3d_grid_{nullptr};
     Config config_;
     double start_time_;
     FrenetState initial_fs_;
