@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-25 14:52:42
+ * @LastEditTime: 2021-11-25 15:00:22
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -106,6 +106,79 @@ class SscPlanning3DMap {
     }
 
     /**
+     * @brief Inflate the cube in 3D grid map until reached to the occupied space
+     * @param init_seman_cube the initial scale of semantic cube
+     */    
+    void inflateCube(SemanticCube<int>* cube) {
+        // Determine the gap of each step
+        int x_p_step = config_.inflate_steps[0];
+        int x_n_step = config_.inflate_steps[1];
+        int y_p_step = config_.inflate_steps[2];
+        int y_n_step = config_.inflate_steps[3];
+        int z_p_step = config_.inflate_steps[4];
+
+        // Calculate rough constraint condition
+        // TODO: check these parameters
+        int t_max_grids = cube->t_start_ + config_.MaxNumOfGridAlongTime;
+
+        double t = t_max_grids * p_3d_grid_->dims_resolution(2);
+        double a_max = config_.MaxLongitudinalAcc;
+        double a_min = config_.MaxLongitudinalDecel;
+        double d_comp = initial_fs_.vec_s_[1] * 1.0;
+
+        double s_u = initial_fs_.vec_s_[0] + initial_fs_.vec_s_[1] * t + 0.5 * a_max * t * t + d_comp;
+        double s_l = initial_fs_.vec_s_[0] + initial_fs_.vec_s_[1] * t + 0.5 * a_min * t * t - d_comp;
+
+        int s_idx_u = p_3d_grid_->getCoordUsingGlobalMetricOnSingleDim(s_u, 0);
+        int s_idx_l = p_3d_grid_->getCoordUsingGlobalMetricOnSingleDim(s_l, 0);
+        s_idx_l = std::max(s_idx_l, static_cast<int>((config_.s_back_len / 2.0) / config_.map_resolution[0]));
+
+        // Inflate in 5 directions
+        // TODO: check this logic, whether inflate in 6 directions is available and better?
+        bool x_p_finish = false;
+        bool x_n_finish = false;
+        bool y_p_finish = false;
+        bool y_n_finish = false;
+        bool z_p_finish = false;
+
+        // Inflate on s and d dimension
+        while (!(x_p_finish && x_n_finish && y_p_finish && y_n_finish)) {
+            if (!x_p_finish) {
+                x_p_finish = inflateCubeOnXPosAxis(x_p_step, cube);
+            }
+            if (!x_n_finish) {
+                x_n_finish = inflateCubeOnXNegAxis(x_n_step, cube);
+            }
+            if (!y_p_finish) {
+                y_p_finish = inflateCubeOnYPosAxis(y_p_step,cube);
+            }
+            if (!y_n_finish) {
+                y_n_finish = inflateCubeOnYNegAxis(y_n_step, cube);
+            }
+
+            // Rough constraints
+            if (cube->s_end_ >= s_idx_u) {
+                x_p_finish = true;
+            }
+            if (cube->s_start_ <= s_idx_l) {
+                x_n_finish = true;
+            }
+        }
+
+        // Inflate on t dimension
+        while (!z_p_finish) {
+            if (!z_p_finish) {
+                z_p_finish = inflateCubeOnZPosAxis(z_p_step, cube);
+            }
+
+            // // TODO: check this t dimension inflate constraint condition, if it is too harsh
+            // if (cube->t_end_ - cube->t_start_ >= config_.MaxNumOfGridAlongTime) {
+            //     z_p_finish = true;
+            // }
+        }
+    }
+
+    /**
      * @brief Judge whether the semantic cube is free 
      * @param semantic_coord_cube cube needs to judge
      * @return is free
@@ -129,6 +202,194 @@ class SscPlanning3DMap {
                     if (!is_free) {
                         return false;
                     }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Inflate cube in x positive direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnXPosAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int x = cube->s_end_ + 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(x, 0)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnXAxis(*cube, x)) {
+                    cube->s_end_ = x;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+
+    /**
+     * @brief Inflate cube in x negative direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnXNegAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int x = cube->s_start_ - 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(x, 0)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnXAxis(*cube, x)) {
+                    cube->s_start_ = x;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Inflate cube in Y positive direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnYPosAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int y = cube->d_end_ + 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(y, 1)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnYAxis(*cube, y)) {
+                    cube->d_end_ = y;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Inflate cube in Y negative direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnYNegAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int y = cube->d_start_ - 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(y, 1)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnYAxis(*cube, y)) {
+                    cube->d_start_ = y;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Inflate cube in Z positive direction
+     * @param n_step max number of movement step
+     * @param cube cube needs to be inflated
+     * @return is finished
+     */    
+    bool inflateCubeOnZPosAxis(const int& n_step, SemanticCube<int>* cube) {
+        for (int i = 0; i < n_step; i++) {
+            int z = cube->t_end_ + 1;
+            if (!p_3d_grid_->checkCoordInRangeOnSingleDim(z, 2)) {
+                return true;
+            } else {
+                if (checkIfPlaneIsFreeOnZAxis(*cube, z)) {
+                    cube->t_end_ = z;
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * @brief Check if plane is free on X axis
+     * @param x coord in x
+     * @param cube cube needs to be judge
+     * @return is free
+     */    
+    bool checkIfPlaneIsFreeOnXAxis(const SemanticCube<int>& cube, const int& x) const {
+        int f0_min = cube.d_start_;
+        int f0_max = cube.d_end_;
+        int f1_min = cube.t_start_;
+        int f1_max = cube.t_end_;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (int i = f0_min; i <= f0_max; i++) {
+            for (int j = f1_min; j <= f1_max; j++) {
+                coord = {x, i, j};
+                is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                if (!is_free) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Check if plane is free on Y axis
+     * @param y coord in y
+     * @param cube cube needs to be judge
+     * @return is free
+     */     
+    bool checkIfPlaneIsFreeOnYAxis(const SemanticCube<int>& cube, const int& y) const {
+        int f0_min = cube.s_start_;
+        int f0_max = cube.s_end_;
+        int f1_min = cube.t_start_;
+        int f1_max = cube.t_end_;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (int i = f0_min; i <= f0_max; i++) {
+            for (int j = f1_min; j <= f1_max; j++) {
+                coord = {i, y, j};
+                is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                if (!is_free) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Check if plane is free on Z axis
+     * @param z coord in z
+     * @param cube cube needs to be judge
+     * @return is free
+     */     
+    bool checkIfPlaneIsFreeOnZAxis(const SemanticCube<int>& cube, const int& z) const {
+        int f0_min = cube.s_start_;
+        int f0_max = cube.s_end_;
+        int f1_min = cube.d_start_;
+        int f1_max = cube.d_end_;
+        std::array<int, 3> coord;
+        bool is_free;
+        for (int i = f0_min; i <= f0_max; i++) {
+            for (int j = f1_min; j <= f1_max; j++) {
+                coord = {i, j, z};
+                is_free = p_3d_grid_->checkIfEqualUsingCoordinate(coord, 0);
+                if (!is_free) {
+                    return false;
                 }
             }
         }
