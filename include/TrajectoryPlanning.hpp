@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-23 21:07:09
+ * @LastEditTime: 2021-11-25 14:02:57
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -449,7 +449,7 @@ class TrajPlanning3DMap {
             return false;
         }
 
-        std::vector<Point3i> tmp_seeds_;
+        std::vector<Point3i> tmp_seeds;
         bool first_seed_determined = false;
 
         // Note that the last trajectory is not responsible for generate semantic cube
@@ -476,8 +476,8 @@ class TrajPlanning3DMap {
                 }
 
                 first_seed_determined = true;
-                tmp_seeds_.emplace_back(Point3i(coord_0[0], coord_0[1], coord_0[2]));
-                tmp_seeds_.emplace_back(Point3i(coord_1[0], coord_1[1], coord_1[2]));
+                tmp_seeds.emplace_back(Point3i(coord_0[0], coord_0[1], coord_0[2]));
+                tmp_seeds.emplace_back(Point3i(coord_1[0], coord_1[1], coord_1[2]));
             } else {
                 double s = ego_traj[k].fs_.vec_s_[0];
                 double d = ego_traj[k].fs_.vec_dt_[0];
@@ -488,12 +488,12 @@ class TrajPlanning3DMap {
                 if (!p_3d_grid_->checkCoordInRange(coord)) {
                     continue;
                 }
-                tmp_seeds_.emplace_back(Point3i(coord[0], coord[1], coord[2]));
+                tmp_seeds.emplace_back(Point3i(coord[0], coord[1], coord[2]));
             }
         }
 
         // Cache 
-        seeds_ = tmp_seeds_;
+        seeds_ = tmp_seeds;
 
     }
     
