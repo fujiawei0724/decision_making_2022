@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-25 15:00:22
+ * @LastEditTime: 2021-11-25 20:17:38
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -58,11 +58,69 @@ class SscPlanning3DMap {
     ~SscPlanning3DMap() = default;
     
     /**
-     * @brief Construct corridors using initial trajectory 
-     * @param 
-     * @return
+     * @brief Run once to generate the semantic cubes sequence
+     * @param {*}
+     * @return {*}
+     */
+    bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_laned_trajs, const std::unordered_map<int, std::vector<FsVehicle>>& surround_unlaned_obs_trajs, std::vector<SemanticCube<double>>* semantic_cubes_sequence) {
+        // ~Stage I: construct 3D grid map
+        contruct3DMap(surround_laned_trajs);
+        contruct3DMap(surround_unlaned_obs_trajs);
+
+        // ~Stage II: generate corridor in coord frame
+        DrivingCorridor driving_corridor;
+        bool is_success = generateCorridor(ego_traj, &driving_corridor);
+        if (!is_success) {
+            return false;
+        }
+
+        // ~Stage III: transform to world metric
+        std::vector<SemanticCube<double>> semantic_cubes;
+        getFinalGlobalMetricCubesList(driving_corridor, &semantic_cubes);
+        *semantic_cubes_sequence = semantic_cubes;
+
+        return true;
+    }    
+
+    /**
+     * @brief Get final global metric cube list
+     * @param driving_corridor description of semantic cubes in coord index
+     * @param semantic_cubes final cubes list
      */    
-    bool generateCorridor(const std::vector<FsVehicle>& ego_traj, std::vector<SemanticCube<double>>* corridor) {
+    void getFinalGlobalMetricCubesList(const DrivingCorridor& driving_corridor, std::vector<SemanticCube<double>>* semantic_cubes) {
+        std::vector<SemanticCube<double>> tmp_semantic_cubes;
+        for (int i = 0; i < static_cast<int>(driving_corridor.cubes.size()); i++) {
+            SemanticCube<double> cur_semantic_cube;
+            transformCoordSemCubeToSemCube(driving_corridor.cubes[i].cube, &cur_semantic_cube);
+            tmp_semantic_cubes.emplace_back(cur_semantic_cube);
+        }
+        *semantic_cubes = tmp_semantic_cubes;
+    }
+
+
+    /**
+     * @brief Transform coord semantic cube to semantic cube
+     * @param coord_semantic_cube semantic cube in the formation of coordinate
+     * @param semantic_cube semantic cube in the formation of value
+     */    
+    void transformCoordSemCubeToSemCube(const SemanticCube<int>& coord_semantic_cube, SemanticCube<double>* semantic_cube) {
+        semantic_cube->s_start_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.s_start_, 0);
+        semantic_cube->s_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.s_end_, 0);
+        semantic_cube->d_start_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.d_start_, 1);
+        semantic_cube->d_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.d_end_, 1);
+        semantic_cube->t_start_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.t_start_, 2);
+        semantic_cube->t_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.t_end_, 2);
+        semantic_cube->id_ = coord_semantic_cube.id_;
+    }
+
+
+    /**
+     * @brief Construct corridors using initial trajectory 
+     * @param ego_traj ego vehicle's scatter trajectory state
+     * @param corridor generated corridor 
+     * @return is success
+     */    
+    bool generateCorridor(const std::vector<FsVehicle>& ego_traj, DrivingCorridor* corridor) {
         // Generate seeds
         std::vector<Point3i> traj_seeds;
         if (!constructSeeds(ego_traj, &traj_seeds)) {
@@ -84,7 +142,7 @@ class SscPlanning3DMap {
             if (i == 0) {
                 SemanticCube<int> coord_semantic_cube = ShapeUtils::generateInitialCoordSemanticCube(traj_seeds[i], traj_seeds[i + 1], i);
                 if (!checkIfSemanticCubeIsFree(coord_semantic_cube)) {
-                    printf("[Ssc planning] initial cube is not free.\n");
+                    printf("[Ssc planning] initial cube is not free, seed id: %d.\n", i);
 
                     DrivingCube driving_cube;
                     driving_cube.cube = coord_semantic_cube;
@@ -97,13 +155,79 @@ class SscPlanning3DMap {
                     break;
                 }
 
-                
+                inflateCube(&coord_semantic_cube);
+                DrivingCube driving_cube;
+                driving_cube.cube = coord_semantic_cube;
+                driving_cube.seeds.emplace_back(traj_seeds[i]);
+                driving_corridor.cubes.emplace_back(driving_cube);
+            } else {
+                if (checkIfCubeContainsSeed(driving_corridor.cubes.back().cube, traj_seeds[i])) {
+                    driving_corridor.cubes.back().seeds.emplace_back(traj_seeds[i]);
+                    continue;
+                } else {
+                    // Get the last seed in cube 
+                    Point3i seed_r = driving_corridor.cubes.back().seeds.back();
+                    driving_corridor.cubes.back().seeds.pop_back();
+                    // Cut cube on time axis
+                    driving_corridor.cubes.back().cube.t_end_ = seed_r.z_;
+                    i = i - 1;
+
+                    // TODO: check the id order of cube in ssc planning
+                    SemanticCube<int> cube = ShapeUtils::generateInitialCoordSemanticCube(traj_seeds[i], traj_seeds[i + 1]);
+
+                    if (!checkIfSemanticCubeIsFree(cube)) {
+                        printf("[Ssc planning] initial cube is not free, seed id: %d.\n", i);
+                        
+                        DrivingCube driving_cube;
+                        driving_cube.cube = cube;
+                        driving_cube.seeds.emplace_back(traj_seeds[i]);
+                        driving_cube.seeds.emplace_back(traj_seeds[i + 1]);
+                        driving_corridor.cubes.emplace_back(driving_cube);
+
+                        driving_corridor.is_valid = false;
+                        is_valid = false;
+                        break;
+                    }
+
+                    inflateCube(&cube);
+                    DrivingCube driving_cube;
+                    driving_cube.cube = cube;
+                    driving_cube.seeds.emplace_back(traj_seeds[i]);
+                    driving_corridor.cubes.emplace_back(driving_cube);
+                }
             }
         }
 
+        if (is_valid) {
+            // Limit the last cube's time upper bound
+            driving_corridor.cubes.back().cube.t_end_ = traj_seeds.back().z_;
+            driving_corridor.is_valid = true;
+        }
 
-
+        *corridor = driving_corridor;
+        return true;
     }
+
+    /**
+     * @brief Judge whether semantic cube contains seed
+     * @param cube semantic cube need to judge
+     * @param seed trajectory seed need to judge
+     * @return result
+     */    
+    bool checkIfCubeContainsSeed(const SemanticCube<int>& cube, const Point3i& seed) {
+        if (cube.s_start_ > seed.x_ || cube.s_end_ < seed.x_) {
+            return false;
+        }
+        if (cube.d_start_ > seed.y_ || cube.d_end_ < seed.y_) {
+            return false;
+        }
+        if (cube.t_start_ > seed.z_ || cube.t_end_ < seed.z_) {
+            return false;
+        }
+        return true;
+    }
+
+
 
     /**
      * @brief Inflate the cube in 3D grid map until reached to the occupied space

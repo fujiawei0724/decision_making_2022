@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-25 14:02:57
+ * @LastEditTime: 2021-11-25 20:10:09
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -1086,7 +1086,8 @@ class TrajectoryPlanningCore {
         std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
 
         // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
-        traj_planning_3d_map_itf_ = new TrajPlanning3DMap();
+        TrajPlanning3DMap::Config config;
+        traj_planning_3d_map_itf_ = new TrajPlanning3DMap(config);
         std::vector<SemanticCube<double>> semantic_cubes_sequence;
         bool is_map_constructed_success = traj_planning_3d_map_itf_->runOnce(ego_traj_fs, sur_laned_trajs_fs, sur_unlaned_trajs_fs, &semantic_cubes_sequence);
         if (!is_map_constructed_success) {

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 20:08:10
+ * @LastEditTime: 2021-11-25 19:36:21
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -521,7 +521,7 @@ class ShapeUtils {
      * @param index semantic cube index
      * @return the constructed semantic cube
      */   
-    static SemanticCube<int> generateInitialCoordSemanticCube(const Point3i& seed_1, const Point3i& seed_2, const int& index) {
+    static SemanticCube<int> generateInitialCoordSemanticCube(const Point3i& seed_1, const Point3i& seed_2, const int& index = -1) {
         SemanticCube<int> semantic_cube;
         semantic_cube.s_start_ = std::min(seed_1.x_, seed_2.x_);
         semantic_cube.s_end_ = std::max(seed_1.x_, seed_2.x_);
