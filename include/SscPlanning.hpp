@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-25 20:17:38
+ * @LastEditTime: 2021-11-26 17:39:22
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -596,7 +596,7 @@ class SscPlanning3DMap {
 
     void fillSingleDynamicObstacle(const std::vector<FsVehicle>& fs_traj) {
         if (fs_traj.size() == 0) {
-            printf("[TrajPlanning3DMap] trajectory is empty.");
+            printf("[TrajPlanning3DMap] trajectory is empty.\n");
             return;
         }
 
@@ -657,6 +657,24 @@ class SscPlanning3DMap {
 
     FrenetState initial_fs_;
 
+
+};
+
+// Optimization interface, based on CGAL
+class SscOptimizationInterface {
+ public:
+    
+};
+
+// Optimization trajectory parameters 
+class SscOptimizer {
+ public:
+    
+};
+
+// Trajectory planning core
+class SscTrajectoryPlanningCore {
+ public:
 
 };
 

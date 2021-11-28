@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-25 20:10:09
+ * @LastEditTime: 2021-11-25 20:19:56
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -512,7 +512,7 @@ class TrajPlanning3DMap {
 
     void fillSingleDynamicObstacle(const std::vector<FsVehicle>& fs_traj) {
         if (fs_traj.size() == 0) {
-            printf("[TrajPlanning3DMap] trajectory is empty.");
+            printf("[TrajPlanning3DMap] trajectory is empty.\n");
             return;
         }
 
