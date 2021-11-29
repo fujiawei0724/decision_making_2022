@@ -156,12 +156,21 @@ static std::vector<std::string> DIC_STATE_NAME = {"STOP", "TURN_LEFT", "TURN_RIG
 static std::map<int, std::string> GUIDE_TYPE_NAME = {{1, "CHANGE_LEFT"}, {2, "KEEP_CENTER"}, {4, "CHANGE_RIGHT"}, {3, "CENTER_LEFT"}, {6, "CENTER_RIGHT"}, {7, "ALL_AVAILABLE"}};
 
 // Initial Hessian matrix for quintic B-spline optimization
-static Eigen::Matrix<double, 6, 6> HessianMatrix = (Eigen::Matrix<double, 6, 6>() <<
+static Eigen::Matrix<double, 6, 6> BSplineHessianMatrix = (Eigen::Matrix<double, 6, 6>() <<
         1.0 / 10.0, -1.0 / 12.0, -1.0 / 3.0, 1.0 / 2.0, -1.0 / 6.0, -1.0 / 60.0,
         -1.0 / 12.0, 1.0 / 2.0, -5.0 / 6.0, 1.0 / 3.0, 1.0 / 4.0, -1.0 / 6.0,
         -1.0 / 3.0, -5.0 / 6.0, 4.0, -11.0 / 3.0, 1.0 / 3.0, 1.0 / 2.0,
         1.0 / 2.0, 1.0 / 3.0, -11.0 / 3.0, 4.0, -5.0 / 6.0, -1.0 / 3.0,
         -1.0 / 6.0, 1.0 / 4.0, 1.0 / 3.0, -5.0 / 6.0, 1.0 / 2.0, -1.0 / 12.0,
         -1.0 / 60.0, -1.0 / 6.0, 1.0 / 2.0, -1.0 / 3.0, -1.0 / 12.0, 1.0 / 10.0).finished();
+
+// Initial Hessian matrix for piecewise bezier curves
+static Eigen::Matrix<double, 6, 6> BezierCurveHessianMatrix = (Eigen::Matrix<double, 6, 6>() <<
+        720.0, -1800.0, 1200.0, 0.0, 0.0, -120.0, 
+        -1800.0, 4800.0, -3600.0, 0.0, 600.0, 0.0,
+        1200.0, -3600.0, 3600.0, -1200.0, 0.0, 0.0,
+        0.0, 0.0, -1200.0, 3600.0, -3600.0, 1200.0,
+        0.0, 600.0, 0.0, -3600.0, 4800.0, -1800.0,
+        -120.0, 0.0, 0.0, 1200.0, -1800.0, 720.0).finished();
 
 #endif

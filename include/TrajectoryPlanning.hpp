@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-25 20:19:56
+ * @LastEditTime: 2021-11-29 17:43:50
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -671,7 +671,7 @@ class OptimizerInterface {
             double time_coefficient = pow(time_span, -3);
 
             // Intergrate to objective function
-            D_matrix.block(i, i, 6, 6) += HessianMatrix * time_coefficient;
+            D_matrix.block(i, i, 6, 6) += BSplineHessianMatrix * time_coefficient;
         }
 
         // Convert the eigen data to double**

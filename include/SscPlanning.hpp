@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-26 17:39:22
+ * @LastEditTime: 2021-11-29 18:31:54
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -21,10 +21,19 @@ struct DrivingCube {
     SemanticCube<int> cube;
 };
 
+struct DrivingCubeWorldMetric {
+    std::vector<Point3f> seeds;
+    SemanticCube<double> cube;
+};
+
 struct DrivingCorridor {
-    int id;
     bool is_valid;
     std::vector<DrivingCube> cubes;
+};
+
+struct DrivingCorridorWorldMetric {
+    bool is_valid;
+    std::vector<DrivingCubeWorldMetric> cubes;
 };
 
 // Ssc map
@@ -62,7 +71,7 @@ class SscPlanning3DMap {
      * @param {*}
      * @return {*}
      */
-    bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_laned_trajs, const std::unordered_map<int, std::vector<FsVehicle>>& surround_unlaned_obs_trajs, std::vector<SemanticCube<double>>* semantic_cubes_sequence) {
+    bool runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_laned_trajs, const std::unordered_map<int, std::vector<FsVehicle>>& surround_unlaned_obs_trajs, DrivingCorridorWorldMetric* semantic_cubes_sequence) {
         // ~Stage I: construct 3D grid map
         contruct3DMap(surround_laned_trajs);
         contruct3DMap(surround_unlaned_obs_trajs);
@@ -75,7 +84,7 @@ class SscPlanning3DMap {
         }
 
         // ~Stage III: transform to world metric
-        std::vector<SemanticCube<double>> semantic_cubes;
+        DrivingCorridorWorldMetric semantic_cubes;
         getFinalGlobalMetricCubesList(driving_corridor, &semantic_cubes);
         *semantic_cubes_sequence = semantic_cubes;
 
@@ -87,16 +96,36 @@ class SscPlanning3DMap {
      * @param driving_corridor description of semantic cubes in coord index
      * @param semantic_cubes final cubes list
      */    
-    void getFinalGlobalMetricCubesList(const DrivingCorridor& driving_corridor, std::vector<SemanticCube<double>>* semantic_cubes) {
-        std::vector<SemanticCube<double>> tmp_semantic_cubes;
+    void getFinalGlobalMetricCubesList(const DrivingCorridor& driving_corridor, DrivingCorridorWorldMetric* driving_corridor_world_metric) {
+        driving_corridor_world_metric->is_valid = driving_corridor.is_valid;
         for (int i = 0; i < static_cast<int>(driving_corridor.cubes.size()); i++) {
-            SemanticCube<double> cur_semantic_cube;
-            transformCoordSemCubeToSemCube(driving_corridor.cubes[i].cube, &cur_semantic_cube);
-            tmp_semantic_cubes.emplace_back(cur_semantic_cube);
+            DrivingCubeWorldMetric current_driving_cube_world_metric;
+            transformCoordCubeToWorldMetric(driving_corridor.cubes[i], &current_driving_cube_world_metric);
+            driving_corridor_world_metric->cubes.emplace_back(current_driving_cube_world_metric);
         }
-        *semantic_cubes = tmp_semantic_cubes;
     }
 
+    /**
+     * @brief Transform cube from coordination to world metric
+     * @param {*}
+     * @return {*}
+     */    
+    void transformCoordCubeToWorldMetric(const DrivingCube& driving_cube, DrivingCubeWorldMetric* cube_world_metric) {
+        // Transform cube information
+        SemanticCube<double> semantic_cube_world;
+        transformCoordSemCubeToSemCube(driving_cube.cube, &semantic_cube_world);
+        
+        // Transform point information
+        std::vector<Point3f> world_points;
+        for (int i = 0; i < static_cast<int>(driving_cube.seeds.size()); i++) {
+            Point3f current_point;
+            transformCoordToWorldMetric(driving_cube.seeds[i], &current_point);
+            world_points.emplace_back(current_point);
+        }
+
+        cube_world_metric->cube = semantic_cube_world;
+        cube_world_metric->seeds = world_points;
+    }
 
     /**
      * @brief Transform coord semantic cube to semantic cube
@@ -112,6 +141,17 @@ class SscPlanning3DMap {
         semantic_cube->t_end_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_semantic_cube.t_end_, 2);
         semantic_cube->id_ = coord_semantic_cube.id_;
     }
+
+    /**
+     * @brief Transform coord point3i to world metric point3f
+     * @param {*}
+     * @return {*}
+     */
+    void transformCoordToWorldMetric(const Point3i& coord_point, Point3f* world_point) {
+        world_point->x_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_point.x_, 0);
+        world_point->y_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_point.y_, 1);
+        world_point->z_ = p_3d_grid_->getGloalMetricUsingCoordOnSingleDim(coord_point.z_, 2);
+    } 
 
 
     /**
@@ -669,7 +709,92 @@ class SscOptimizationInterface {
 // Optimization trajectory parameters 
 class SscOptimizer {
  public:
-    
+    SscOptimizer() = default;
+    ~SscOptimizer() = default;
+
+    // Load data
+    void load(const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const DrivingCorridorWorldMetric& driving_corridor) {
+        start_constraint_ = start_constraint;
+        end_constraint_ = end_constraint;
+        driving_corridor_ = driving_corridor;
+    }
+
+    /**
+     * @brief Run optimizer to generate optimized variables 
+     * @param {*}
+     * @return {*}
+     */
+    void runOnce() {
+        // ~Stage I: calculate time stamps of split point (include start point and end point)
+        std::vector<double> ref_stamps;
+        for (int i = 0; i < static_cast<int>(driving_corridor_.cubes.size()); i++) {
+            if (i == 0) {
+                ref_stamps.emplace_back(driving_corridor_.cubes[i].cube.t_start_);
+            }
+            ref_stamps.emplace_back(driving_corridor_.cubes[i].cube.t_end_);
+        }
+        
+        // ~Stage II: calculate unequal constraints for variables (except start point and end point)
+        int variables_num = (static_cast<int>(ref_stamps.size()) - 1) * 5 + 1;
+        int unequal_constraint_variables_num = variables_num - 2;
+        std::array<std::vector<double>, 4> unequal_constraints;
+
+
+    }
+
+    /**
+     * @brief Generate unequal constraints for intermediate variables 
+     * @param unequal_constraints constraints generated 
+     */    
+    void generateUnequalConstraints(std::array<std::vector<double>, 4>* unequal_constraints) {
+        // Initialize
+        int unequal_constraints_variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 5 - 1;
+        std::array<std::vector<double>, 4> tmp_unequal_constraints = {};
+        for (int i = 0; i < 4; i++) {
+            tmp_unequal_constraints[i].resize(static_cast<int>(unequal_constraints_variables_num));
+        } 
+
+        // Calculate unequal constraints
+        for (int i = 0; i < unequal_constraints_variables_num + 2; i++) {
+            if (i == 0 || i == unequal_constraints_variables_num + 1) {
+                // Delete unequal constraints for start point and end point
+                continue;
+            }
+            if (i % 5 == 0) {
+                // Points in intersection which have two constraint cubes 
+                int next_corridor_index = i / 5;
+                DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[next_corridor_index - 1];
+                DrivingCubeWorldMetric next_cube = driving_corridor_.cubes[next_corridor_index];
+                tmp_unequal_constraints[0][i - 1] = std::max(current_cube.cube.s_start_, next_cube.cube.s_start_); // s_low
+                tmp_unequal_constraints[1][i - 1] = std::min(current_cube.cube.s_end_, next_cube.cube.s_end_); // s_up
+                tmp_unequal_constraints[2][i - 1] = std::max(current_cube.cube.d_start_, next_cube.cube.d_start_); // d_start
+                tmp_unequal_constraints[3][i - 1] = std::min(current_cube.cube.d_end_, next_cube.cube.d_end_); // d_end
+            } else {
+                // Normal points which only have one constraint cube
+                int current_corridor_index = i / 5;
+                DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[current_corridor_index];
+                tmp_unequal_constraints[0][i - 1] = current_cube.cube.s_start_;
+                tmp_unequal_constraints[1][i - 1] = current_cube.cube.s_end_;
+                tmp_unequal_constraints[2][i - 1] = current_cube.cube.d_start_;
+                tmp_unequal_constraints[3][i - 1] = current_cube.cube.d_end_;
+            }
+        }
+
+        *unequal_constraints = tmp_unequal_constraints;
+    }
+
+    /**
+     * @brief Generate equal constraints that were deployed to ensure the continuity in the intersection in each two cubes
+     * @param {*}
+     * @return {*}
+     */  
+    void generateEqualConstraints() {
+        
+    } 
+
+    EqualConstraint start_constraint_;
+    EqualConstraint end_constraint_;
+    DrivingCorridorWorldMetric driving_corridor_;
 };
 
 // Trajectory planning core
