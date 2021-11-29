@@ -703,6 +703,98 @@ class SscPlanning3DMap {
 // Optimization interface, based on CGAL
 class SscOptimizationInterface {
  public:
+    using ET = CGAL::Gmpz;
+    using Program = CGAL::Quadratic_program_from_iterators<
+                        std::vector<double*>::iterator,                            // For A
+                        double*,                                                   // For b
+                        CGAL::Const_oneset_iterator<CGAL::Comparison_result>,      // For r
+                        bool*,                                                     // For fl
+                        double*,                                                   // For l
+                        bool*,                                                     // For fu
+                        double*,                                                   // For u
+                        std::vector<double*>::iterator,                            // For D
+                        double*>;                                                  // For c
+    using Solution = CGAL::Quadratic_program_solution<ET>;
+    
+    SscOptimizationInterface() = default;
+    ~SscOptimizationInterface() = default;
+
+    /**
+     * @brief load data
+     * @param ref_stamps time stamps of the point in in the intersection of two cubes
+     * @param start_constraints start points' constraints
+     * @param end_constraints end points' constraints
+     * @param unequal_constraints position limit of each point
+     * @param equal_constraints ensure the continuity of the connections between each two cubes
+     */    
+    void load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints) {
+        ref_stamps_ = ref_stamps;
+        start_constraints_ = start_constraints;
+        end_constraints_ = end_constraints;
+        unequal_constraints_ = unequal_constraints;
+        equal_constraints_ = equal_constraints;
+    }
+
+    void runOnce() {
+
+    }
+
+    /**
+     * @brief optimize in single dimension
+     * @param {*}
+     */
+    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, const std::vector<std::vector<double>>& equal_constraints, std::string dimension_name) {
+
+    }
+
+    /**
+     * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
+     * @param D 
+     * @param c
+     */
+    void calculateDcMatrix(std::vector<double*>* D, double** c) {
+        
+        // Initialize D matrix
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
+        Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(variables_num, variables_num);
+
+        // Calculate D matrix
+        for (int i = 0; i < static_cast<int>(ref_stamps_.size()) - 1; i++) {
+            // Calculate time span
+            double time_span = ref_stamps_[i + 1] - ref_stamps_[i];
+            double time_coefficient = pow(time_span, -3);
+
+            // Intergrate to objective function
+            int influenced_variable_index = i * 5;
+            D_matrix.block(i, i, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
+        }
+
+        // Convert the eigen data to double**
+        std::vector<double*> tmp_D(variables_num);
+        for (int i = 0; i < variables_num; i++) {
+            double* d_col = new double[variables_num];
+            for (int j = 0; j <= i; j++) {
+                *(d_col + j) = D_matrix(i, j);
+            }
+            tmp_D[i] = d_col;
+        }
+
+        // Generate b information, all zeros
+        double* tmp_c = new double[variables_num];
+
+        // TODO: check this parameters transformation process
+        *D = tmp_D;
+        *c = tmp_c;
+    }
+
+    std::vector<double> ref_stamps_;
+    EqualConstraint start_constraints_;
+    EqualConstraint end_constraints_;
+    std::array<std::vector<double>, 4> unequal_constraints_;
+    std::vector<std::vector<double>> equal_constraints_;
+
+    std::unordered_map<std::string, std::vector<double>> optimized_data_;
+
     
 };
 
@@ -712,7 +804,12 @@ class SscOptimizer {
     SscOptimizer() = default;
     ~SscOptimizer() = default;
 
-    // Load data
+    /**
+     * @brief load data
+     * @param start_constraint
+     * @param end_constraint
+     * @param driving_corridor
+     */    
     void load(const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const DrivingCorridorWorldMetric& driving_corridor) {
         start_constraint_ = start_constraint;
         end_constraint_ = end_constraint;
@@ -735,10 +832,15 @@ class SscOptimizer {
         }
         
         // ~Stage II: calculate unequal constraints for variables (except start point and end point)
-        int variables_num = (static_cast<int>(ref_stamps.size()) - 1) * 5 + 1;
-        int unequal_constraint_variables_num = variables_num - 2;
         std::array<std::vector<double>, 4> unequal_constraints;
+        generateUnequalConstraints(&unequal_constraints);
 
+        // ~Stage III: calculate equal constraints to ensure the continuity
+        std::vector<std::vector<double>> equal_constraints;
+        generateEqualConstraints(&equal_constraints);
+
+        // Optimization interface
+        
 
     }
 
@@ -748,15 +850,15 @@ class SscOptimizer {
      */    
     void generateUnequalConstraints(std::array<std::vector<double>, 4>* unequal_constraints) {
         // Initialize
-        int unequal_constraints_variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 5 - 1;
+        int variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 5 + 1;
         std::array<std::vector<double>, 4> tmp_unequal_constraints = {};
         for (int i = 0; i < 4; i++) {
-            tmp_unequal_constraints[i].resize(static_cast<int>(unequal_constraints_variables_num));
+            tmp_unequal_constraints[i].resize(static_cast<int>(variables_num));
         } 
 
         // Calculate unequal constraints
-        for (int i = 0; i < unequal_constraints_variables_num + 2; i++) {
-            if (i == 0 || i == unequal_constraints_variables_num + 1) {
+        for (int i = 0; i < variables_num; i++) {
+            if (i == 0 || i == variables_num - 1) {
                 // Delete unequal constraints for start point and end point
                 continue;
             }
@@ -765,18 +867,18 @@ class SscOptimizer {
                 int next_corridor_index = i / 5;
                 DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[next_corridor_index - 1];
                 DrivingCubeWorldMetric next_cube = driving_corridor_.cubes[next_corridor_index];
-                tmp_unequal_constraints[0][i - 1] = std::max(current_cube.cube.s_start_, next_cube.cube.s_start_); // s_low
-                tmp_unequal_constraints[1][i - 1] = std::min(current_cube.cube.s_end_, next_cube.cube.s_end_); // s_up
-                tmp_unequal_constraints[2][i - 1] = std::max(current_cube.cube.d_start_, next_cube.cube.d_start_); // d_start
-                tmp_unequal_constraints[3][i - 1] = std::min(current_cube.cube.d_end_, next_cube.cube.d_end_); // d_end
+                tmp_unequal_constraints[0][i] = std::max(current_cube.cube.s_start_, next_cube.cube.s_start_); // s_low
+                tmp_unequal_constraints[1][i] = std::min(current_cube.cube.s_end_, next_cube.cube.s_end_); // s_up
+                tmp_unequal_constraints[2][i] = std::max(current_cube.cube.d_start_, next_cube.cube.d_start_); // d_start
+                tmp_unequal_constraints[3][i] = std::min(current_cube.cube.d_end_, next_cube.cube.d_end_); // d_end
             } else {
                 // Normal points which only have one constraint cube
                 int current_corridor_index = i / 5;
                 DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[current_corridor_index];
-                tmp_unequal_constraints[0][i - 1] = current_cube.cube.s_start_;
-                tmp_unequal_constraints[1][i - 1] = current_cube.cube.s_end_;
-                tmp_unequal_constraints[2][i - 1] = current_cube.cube.d_start_;
-                tmp_unequal_constraints[3][i - 1] = current_cube.cube.d_end_;
+                tmp_unequal_constraints[0][i] = current_cube.cube.s_start_;
+                tmp_unequal_constraints[1][i] = current_cube.cube.s_end_;
+                tmp_unequal_constraints[2][i] = current_cube.cube.d_start_;
+                tmp_unequal_constraints[3][i] = current_cube.cube.d_end_;
             }
         }
 
@@ -785,11 +887,50 @@ class SscOptimizer {
 
     /**
      * @brief Generate equal constraints that were deployed to ensure the continuity in the intersection in each two cubes
-     * @param {*}
-     * @return {*}
+     * @param equal_constraints equal constraints generated
      */  
-    void generateEqualConstraints() {
-        
+    void generateEqualConstraints(std::vector<std::vector<double>>* equal_constraints) {
+        // Initialize 
+        std::vector<std::vector<double>> tmp_equal_constraints;
+        int variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 5 + 1;
+
+        // Calculate equal constraints
+        for (int i = 0; i < static_cast<int>(driving_corridor_.cubes.size()) - 1; i++) {
+            // Calculate two related cubes and their time span
+            int current_cube_index = i;
+            int next_cube_index = i + 1;
+            DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[current_cube_index];
+            DrivingCubeWorldMetric next_cube = driving_corridor_.cubes[next_cube_index];
+            double current_cube_time_span = current_cube.cube.t_end_ - current_cube.cube.t_start_;
+            double next_cube_time_span = next_cube.cube.t_end_ - next_cube.cube.t_start_;
+
+            // Initialize equal constraints
+            int current_cube_start_index = i * 5;
+            int next_cube_start_index = (i + 1) * 5;
+            std::vector<double> current_velocity_equal_constraints(variables_num, 0.0);
+            std::vector<double> current_acceleration_equal_constraints(variables_num, 0.0);
+
+            // Supple velocity constraints 
+            current_velocity_equal_constraints[current_cube_start_index + 4] = -5.0 / current_cube_time_span;
+            current_velocity_equal_constraints[current_cube_start_index + 5] = 5.0 / current_cube_time_span;
+            current_velocity_equal_constraints[next_cube_start_index] = -5.0 / next_cube_time_span;
+            current_velocity_equal_constraints[next_cube_start_index + 1] = 5.0 / next_cube_time_span;
+
+            // Supple acceleration constraints 
+            current_acceleration_equal_constraints[current_cube_start_index + 3] = 20.0 / current_cube_time_span;
+            current_acceleration_equal_constraints[current_cube_start_index + 4] = -40.0 / current_cube_time_span;
+            current_acceleration_equal_constraints[current_cube_start_index + 5] = 20.0 / current_cube_time_span;
+            current_acceleration_equal_constraints[next_cube_start_index] = 20.0 / next_cube_time_span;
+            current_acceleration_equal_constraints[next_cube_start_index + 1] = -40.0 / next_cube_time_span;
+            current_acceleration_equal_constraints[next_cube_start_index + 2] = 20.0 / next_cube_time_span;
+
+            // Cache
+            tmp_equal_constraints.emplace_back(current_velocity_equal_constraints);
+            tmp_equal_constraints.emplace_back(current_acceleration_equal_constraints);
+
+        }
+
+        *equal_constraints = tmp_equal_constraints;
     } 
 
     EqualConstraint start_constraint_;
