@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-11-30 18:07:06
+ * @LastEditTime: 2021-11-30 19:16:53
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -1109,7 +1109,29 @@ class BezierPiecewiseCurve {
         ref_stamps_ = ref_stamps;
         segment_num_ = static_cast<int>(ref_stamps.size()) - 1;
 
-        // Calculate 
+        // Calculate coefficient for both s dimension and d dimension
+        s_coefficients_.resize(segment_num_);
+        d_coefficients_.resize(segment_num_);
+
+        for (int i = 0; i < segment_num_; i++) {
+            s_coefficients_[i].resize(6);
+            d_coefficients_[i].resize(6);
+            
+            // Supple coefficients
+            int start_influenced_index = i * 5;
+            s_coefficients_[i][0] = s[start_influenced_index];
+            s_coefficients_[i][1] = s[start_influenced_index + 1];
+            s_coefficients_[i][2] = s[start_influenced_index + 2];
+            s_coefficients_[i][3] = s[start_influenced_index + 3];
+            s_coefficients_[i][4] = s[start_influenced_index + 4];
+            s_coefficients_[i][5] = s[start_influenced_index + 5];
+            d_coefficients_[i][0] = d[start_influenced_index];
+            d_coefficients_[i][1] = d[start_influenced_index + 1];
+            d_coefficients_[i][2] = d[start_influenced_index + 2];
+            d_coefficients_[i][3] = d[start_influenced_index + 3];
+            d_coefficients_[i][4] = d[start_influenced_index + 4];
+            d_coefficients_[i][5] = d[start_influenced_index + 5];
+        }
 
     }
     ~BezierPiecewiseCurve() = default;
@@ -1122,12 +1144,28 @@ class BezierPiecewiseCurve {
     std::vector<Point3f> generateTraj(double sample_gap=0.01) {
         // Initialize
         std::vector<Point3f> traj;
+
         // Calculate point for each segment
         // Note that for each segment, the sample gap is the same, which means the sample points' number is different according to the segment's time span
         for (int segment_index = 0; segment_index < segment_num_; segment_index++) {
             double time_span = ref_stamps_[segment_index + 1] - ref_stamps_[segment_index];
-            
+            int sample_num = static_cast<int>(time_span / sample_gap);
+            // Calculate seeds in this segment
+            std::vector<double> segment_seeds;
+            if (segment_index == segment_num_ - 1) {
+                segment_seeds = Tools::linspace(0.0, 1.0, sample_num);
+            } else {
+                segment_seeds = Tools::linspace(0.0, 1.0, sample_num, false);
+            }
+
+            // For each seed, generate a point
+            for (const auto& current_seed : segment_seeds) {
+                double time_stamp = ref_stamps_[segment_index] + (time_span * current_seed);
+                traj.emplace_back(generatePoint(segment_index, current_seed, time_stamp));
+            }
         }
+
+        return traj;
         
     }
 
@@ -1136,23 +1174,13 @@ class BezierPiecewiseCurve {
      * @param {*}
      * @return {*}
      */    
-    Point3f generatePoint(double seed) {
-        // Get seed information
-        std::pair<int, double> seed_info = validSeed(seed);
-        
-    }
+    Point3f generatePoint(int segment_index, double remain, double time_stamp) {
+        // Calculate s and d value
+        double s_value = s_coefficients_[segment_index][0] * pow(1.0 - remain, 5) + 5.0 * s_coefficients_[segment_index][1] * remain * pow(1.0 - remain, 4) + 10.0 * s_coefficients_[segment_index][2] * pow(remain, 2) * pow(1.0 - remain, 3) + 10.0 * s_coefficients_[segment_index][3] * pow(remain, 3) * pow(1.0 - remain, 2) + 5.0 * s_coefficients_[segment_index][4] * pow(remain, 4) * (1.0 - remain) + s_coefficients_[segment_index][5] * pow(remain, 5);
+        double d_value = d_coefficients_[segment_index][0] * pow(1.0 - remain, 5) + 5.0 * d_coefficients_[segment_index][1] * remain * pow(1.0 - remain, 4) + 10.0 * d_coefficients_[segment_index][2] * pow(remain, 2) * pow(1.0 - remain, 3) + 10.0 * d_coefficients_[segment_index][3] * pow(remain, 3) * pow(1.0 - remain, 2) + 5.0 * d_coefficients_[segment_index][4] * pow(remain, 4) * (1.0 - remain) + d_coefficients_[segment_index][5] * pow(remain, 5);
 
-    /**
-     * @brief Valid seed value
-     * @param seed sample seed
-     * @return segment index and valid seed in this segment
-     */    
-    std::pair<int, double> validSeed(double seed) {
-        int seed_index = static_cast<int>(std::floor(seed));
-        double remain = seed - static_cast<double>(seed_index);
-        return std::make_pair(seed_index, remain);
+        return Point3f(s_value, d_value, time_stamp);
     }
-
 
     int segment_num_;
     std::vector<double> ref_stamps_;
