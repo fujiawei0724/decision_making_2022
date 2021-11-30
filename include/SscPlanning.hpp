@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
- * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-29 18:31:54
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2021-11-30 11:49:32
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -740,10 +740,93 @@ class SscOptimizationInterface {
     }
 
     /**
-     * @brief optimize in single dimension
+     * @brief Optimize in single dimension
      * @param {*}
      */
     void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, const std::vector<std::vector<double>>& equal_constraints, std::string dimension_name) {
+        // ~Stage I: calculate D and c matrices (objective function)
+        std::vector<double*> D;
+        double* c = nullptr;
+        calculateDcMatrix(&D, &c);
+        double c0 = 0.0;
+
+        // ~Stage II: calculate equal constraints, includes start point constraints, end point constraints and continuity constraints
+        CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
+        std::vector<double*> A;
+        double* b = nullptr;
+        calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints, &A, &b);
+
+        // ~Stage III: calculate low and up boundaries for intermediate points
+
+    }
+
+    /**
+     * @brief Calculate boundaries for intermediate points
+     * @param {*}
+     */    
+    void calculateBoundariesForIntermediatePoints() {
+
+    }
+
+    /**
+     * @brief Calculate equal constraints, note that position constraints in the connection don't need to be considered
+     * @param {*}
+     */
+    void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, std::vector<double*>* A, double** b) {
+        
+        // Calculate dimensions and initialize
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
+        int equal_constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 2;
+        double start_cube_time_span = ref_stamps_[1] - ref_stamps_[0];
+        double end_cube_time_span = ref_stamps_[ref_stamps_.size() - 1] - ref_stamps_[ref_stamps_.size() - 2];
+        Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
+        Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, 1);
+
+        // Supple start point and end point position constraints 
+        A_matrix(0, 0) = 1.0, A_matrix(1, variables_num - 1) = 1.0;
+        b_matrix(0, 0) = single_start_constraints[0], b_matrix(1, 0) = single_end_constraints[0];
+
+        // Supple start point and end point velocity constraints
+        A_matrix(2, 0) = -5.0, A_matrix(2, 1) = 5.0;
+        b_matrix(2, 0) = single_start_constraints[1] * start_cube_time_span;
+        A_matrix(3, variables_num - 2) = -5.0, A_matrix(3, variables_num - 1) = 5.0;
+        b_matrix(3, 0) = single_end_constraints[1] * end_cube_time_span;
+
+        // Supple start point and end point acceleration constraints
+        A_matrix(4, 0) = 20.0, A_matrix(4, 1) = -40.0, A_matrix(4, 2) = 20.0;
+        b_matrix(4, 0) = single_start_constraints[2] * start_cube_time_span;
+        A_matrix(5, variables_num - 3) = 20.0, A_matrix(5, variables_num - 2) = -40.0, A_matrix(5, variables_num - 1) = 20.0;
+        b_matrix(5, 0) = single_end_constraints[2] * end_cube_time_span;
+
+        // Supple continuity ensurance constraints
+        for (int i = 0; i < static_cast<int>(equal_constraints.size()); i++) {
+            int constraint_index = i + 6;
+            for (int j = 0; j < variables_num; j++) {
+                
+                // DEBUG: check this logic
+                assert(static_cast<int>(equal_constraints[i].size()) == variables_num);
+                // END DEBUG
+
+                A_matrix(constraint_index, j) = equal_constraints[i][j];
+            }
+        }
+
+        // Transform data structure 
+        std::vector<double*> tmp_A;
+        for (int i = 0; i < variables_num; i++) {
+            double* a_col = new double[equal_constraints_num];
+            for (int j = 0; j < equal_constraints_num; j++) {
+                *(a_col + j) = A_matrix(j, i);
+            }
+            tmp_A[i] = a_col;
+        }
+        double* tmp_b = new double[equal_constraints_num];
+        for (int i = 0; i < equal_constraints_num; i++) {
+            *(tmp_b + i) = b_matrix(i, 0);
+        }
+
+        *A = tmp_A;
+        *b = tmp_b;
 
     }
 
@@ -766,7 +849,7 @@ class SscOptimizationInterface {
 
             // Intergrate to objective function
             int influenced_variable_index = i * 5;
-            D_matrix.block(i, i, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
+            D_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
         }
 
         // Convert the eigen data to double**
@@ -779,7 +862,7 @@ class SscOptimizationInterface {
             tmp_D[i] = d_col;
         }
 
-        // Generate b information, all zeros
+        // Generate c information, all zeros
         double* tmp_c = new double[variables_num];
 
         // TODO: check this parameters transformation process
