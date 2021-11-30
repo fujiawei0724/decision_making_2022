@@ -200,7 +200,7 @@ double getOverlapLength(const std::vector<double>& proj_1, const std::vector<dou
 bool isCollision(Rectangle* rec_1, Rectangle* rec_2);
 
 template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in);
+std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear=true);
 
 };  // namespace Tools
 

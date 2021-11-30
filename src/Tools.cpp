@@ -911,7 +911,7 @@ bool Tools::isCollision(Rectangle* rec_1, Rectangle* rec_2) {
 }
 
 template<typename T>
-std::vector<double> Tools::linspace(T start_in, T end_in, int num_in)
+std::vector<double> Tools::linspace(T start_in, T end_in, int num_in, bool include_rear)
 {
 
     std::vector<double> linspaced;
@@ -931,6 +931,8 @@ std::vector<double> Tools::linspace(T start_in, T end_in, int num_in)
     for(int i=0; i < num-1; ++i){
         linspaced.push_back(start + delta * i);
     }
-    linspaced.push_back(end);
+    if (include_rear) {
+        linspaced.push_back(end);
+    }
     return linspaced;
 }

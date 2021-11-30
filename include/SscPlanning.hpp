@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-11-30 15:29:35
+ * @LastEditTime: 2021-11-30 18:07:06
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -1105,9 +1105,12 @@ class BezierPiecewiseCurve {
         assert(s.size() == d.size());
         assert((static_cast<int>(ref_stamps.size()) - 1) * 5 + 1 == static_cast<int>(s.size()));
 
-        s_ = s;
-        d_ = d;
+        // Calculate segments number
         ref_stamps_ = ref_stamps;
+        segment_num_ = static_cast<int>(ref_stamps.size()) - 1;
+
+        // Calculate 
+
     }
     ~BezierPiecewiseCurve() = default;
 
@@ -1117,8 +1120,14 @@ class BezierPiecewiseCurve {
      * @return {*}
      */    
     std::vector<Point3f> generateTraj(double sample_gap=0.01) {
-        // Generate sample seeds
-        std::vector<double> seeds = Tools::linspace(0.0, static_cast<double>(ref_stamps_.size()) - 1.0, sample_gap);
+        // Initialize
+        std::vector<Point3f> traj;
+        // Calculate point for each segment
+        // Note that for each segment, the sample gap is the same, which means the sample points' number is different according to the segment's time span
+        for (int segment_index = 0; segment_index < segment_num_; segment_index++) {
+            double time_span = ref_stamps_[segment_index + 1] - ref_stamps_[segment_index];
+            
+        }
         
     }
 
@@ -1128,23 +1137,28 @@ class BezierPiecewiseCurve {
      * @return {*}
      */    
     Point3f generatePoint(double seed) {
-
+        // Get seed information
+        std::pair<int, double> seed_info = validSeed(seed);
+        
     }
 
     /**
      * @brief Valid seed value
-     * @param {*}
-     * @return {*}
+     * @param seed sample seed
+     * @return segment index and valid seed in this segment
      */    
-    double validSeed(double seed) {
-        
+    std::pair<int, double> validSeed(double seed) {
+        int seed_index = static_cast<int>(std::floor(seed));
+        double remain = seed - static_cast<double>(seed_index);
+        return std::make_pair(seed_index, remain);
     }
 
 
-
-    std::vector<double> s_;
-    std::vector<double> d_;
+    int segment_num_;
     std::vector<double> ref_stamps_;
+
+    std::vector<std::vector<double>> s_coefficients_;
+    std::vector<std::vector<double>> d_coefficients_;
 };
 
 // Trajectory planning core
