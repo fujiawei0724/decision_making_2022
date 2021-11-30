@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-11-30 19:16:53
+ * @LastEditTime: 2021-11-30 20:58:22
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -1141,7 +1141,7 @@ class BezierPiecewiseCurve {
      * @param {*}
      * @return {*}
      */    
-    std::vector<Point3f> generateTraj(double sample_gap=0.01) {
+    std::vector<Point3f> generateTraj(double sample_gap = 0.01) {
         // Initialize
         std::vector<Point3f> traj;
 
@@ -1192,7 +1192,71 @@ class BezierPiecewiseCurve {
 // Trajectory planning core
 class SscTrajectoryPlanningCore {
  public:
+    SscTrajectoryPlanningCore() = default;
+    ~SscTrajectoryPlanningCore() = default;
 
+    // Load data
+    void load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<DecisionMaking::Obstacle>& sur_unlaned_obs) {
+        current_vehicle_state_ = cur_vehicle_state;
+        reference_lane_ = reference_lane;
+        ego_traj_ = ego_traj;
+        sur_laned_veh_trajs_ = sur_laned_veh_trajs;
+        sur_unlaned_obs_ = sur_unlaned_obs;
+    }
+
+    // Generate trajectory
+    void runOnce(bool* result, std::vector<Point3f>* trajectory) {
+        // ~Stage I: construct bridge and transform information
+        bridge_itf_ = new BpTpBridge(reference_lane_);
+        FsVehicle current_vehicle_state_fs = bridge_itf_->getFsVehicle(current_vehicle_state_);
+        std::vector<FsVehicle> ego_traj_fs = bridge_itf_->getEgoFrenetTrajectory(ego_traj_);
+        std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
+        std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
+
+        // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
+        SscPlanning3DMap::Config config;
+        ssc_3d_map_itf_ = new SscPlanning3DMap(config);
+        DrivingCorridorWorldMetric driving_corridor;
+        bool is_map_constructed_success = ssc_3d_map_itf_->runOnce(ego_traj_fs, sur_laned_trajs_fs, sur_unlaned_trajs_fs, &driving_corridor);
+        if (!is_map_constructed_success) {
+            printf("[SscTrajectoryPlanningCore] ssc planning 3d grid map constructed failed.\n");
+            *result = false;
+            return;
+        }
+
+        // ~Stage III: determine constraints conditions and do optimization
+        EqualConstraint start_constraints, end_constraints;
+        start_constraints.load(current_vehicle_state_fs);
+        end_constraints.load(ego_traj_fs.back());
+        ssc_opt_itf_ = new SscOptimizer();
+        ssc_opt_itf_->load(start_constraints, end_constraints, driving_corridor);
+        std::vector<double> s, d, t;
+        // TODO: add logic to handle the situation where the optimization is failed
+        ssc_opt_itf_->runOnce(&s, &d, &t);
+        
+        // ~Stage IV: calculate piecewise bezier curve in frenet frame
+        bezier_curve_traj_itf_ = new BezierPiecewiseCurve(s, d, t);
+        std::vector<Point3f> traj_fs = bezier_curve_traj_itf_->generateTraj(0.01);
+
+        // ~Stage V: transform the trajectory from frenet to world
+        std::vector<Point3f> traj = bridge_itf_->getTrajFromTrajFs(traj_fs);
+
+        *result = true;
+        *trajectory = traj;
+    
+    }
+
+    BezierPiecewiseCurve* bezier_curve_traj_itf_{nullptr};
+    SscPlanning3DMap* ssc_3d_map_itf_{nullptr};
+    BpTpBridge* bridge_itf_{nullptr};
+    SscOptimizer* ssc_opt_itf_{nullptr};
+
+
+    Vehicle current_vehicle_state_;
+    Lane reference_lane_;
+    std::vector<Vehicle> ego_traj_;
+    std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
+    std::vector<DecisionMaking::Obstacle> sur_unlaned_obs_;
 };
 
 } // End of namespace ssc planner

@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
- * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-29 17:43:50
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2021-11-30 20:30:50
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -971,95 +971,7 @@ class TrajectoryOptimizer {
     std::vector<double> ref_stamps_;
 };
 
-// The data bridge between behavior planner and trajectory planner
-class BpTpBridge {
- public:
-    BpTpBridge(const Lane& ego_reference_lane) {
-        state_trans_itf_ = new StateTransformer(ego_reference_lane);
-    }
-    ~BpTpBridge() = default;
 
-    // Transform trajectory from frenet to world
-    std::vector<Point3f> getTrajFromTrajFs(const std::vector<Point3f>& traj_fs) {
-        int length = static_cast<int>(traj_fs.size());
-        std::vector<Point3f> traj(length);
-
-        for (int i = 0; i < length; i++) {
-            Eigen::Matrix<double, 2, 1> point_fs{traj_fs[i].x_, traj_fs[i].y_};
-            Eigen::Matrix<double, 2, 1> point = state_trans_itf_->getPointFromFrenetPoint(point_fs);
-            traj[i] = Point3f(point(0), point(1), traj_fs[i].z_); 
-        }
-
-        return traj;
-    }
-
-    // Transform ego state (update after behavior planning)
-    FsVehicle getFsVehicle(const Vehicle& vehicle) {
-        return state_trans_itf_->getFsVehicleFromVehicle(vehicle);
-    }
-
-    // Transform ego trajectory 
-    std::vector<FsVehicle> getEgoFrenetTrajectory(const std::vector<Vehicle>& ego_traj) {
-        return state_trans_itf_->getFrenetTrajectoryFromTrajectory(ego_traj);
-    }
-
-    // Transform trajectories of surround vehicles that on lane network
-    std::unordered_map<int, std::vector<FsVehicle>> getSurFrenetTrajectories(const std::unordered_map<int, std::vector<Vehicle>>& sur_trajs) {
-        std::unordered_map<int, std::vector<FsVehicle>> sur_trajs_fs;
-        for (const auto& sur_traj : sur_trajs) {
-            sur_trajs_fs.insert({sur_traj.first, state_trans_itf_->getFrenetTrajectoryFromTrajectory(sur_traj.second)});
-        }
-        return sur_trajs_fs;
-    }
-
-    // Transform trajectories of unlaned obstacles from simple prediction
-    // TODO: distinguish the unlaned obstacles from laned vehicles
-    std::unordered_map<int, std::vector<FsVehicle>> getUnlanedSurFrenetTrajectories(const std::vector<DecisionMaking::Obstacle>& unlaned_obstacles) {
-        int unlaned_obstacle_index = 10001;
-        std::unordered_map<int, std::vector<Vehicle>> sur_unlaned_trajs;
-        for (const auto& obs : unlaned_obstacles) {
-            if (obs.getObstacleVelocity() == 0.0) {
-                // Static obstacles are not handled here
-                continue;
-            }
-            
-            // Determine current position
-            Eigen::Matrix<double, 2, 1> cur_position{obs.getObstaclePosition().x_, obs.getObstaclePosition().y_};
-            State cur_state = State(0.0, cur_position, obs.getObstacleOrientation(), 0.0, obs.getObstacleVelocity(), 0.0, 0.0);
-
-            // Traverse each predicted path for single unlaned obstacles
-            // If an obstacle has two or more predicted trajectories, it will be calculated as two obstacles
-            for (const auto& pred_traj : obs.getPredictedTrajectorySet()) {
-                // Initialize predicted pathes
-                std::vector<Vehicle> unlaned_obs_traj;
-                unlaned_obs_traj.emplace_back(Vehicle(unlaned_obstacle_index, cur_state, obs.getObstacleLength(), obs.getObstacleWidth()));
-
-                // Supple predicted information 
-                for (int i = 1; i < static_cast<int>(pred_traj.size()); i++) {
-                    Eigen::Matrix<double, 2, 1> this_position{pred_traj[i].position_.x_, pred_traj[i].position_.y_};
-                    State this_state = State(i * 0.4, this_position, pred_traj[i].theta_, pred_traj[i].kappa_, obs.getObstacleVelocity(), 0.0, 0.0);
-                    unlaned_obs_traj.emplace_back(Vehicle(unlaned_obstacle_index, this_state, obs.getObstacleLength(), obs.getObstacleWidth()));
-                }
-
-                // Cache
-                sur_unlaned_trajs[unlaned_obstacle_index] = unlaned_obs_traj;
-
-                unlaned_obstacle_index += 1;
-            }
-        }
-
-        // Transform to frenet state
-        std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs;
-        for (const auto& sur_unlaned_traj : sur_unlaned_trajs) {
-            sur_unlaned_trajs_fs.insert({sur_unlaned_traj.first, state_trans_itf_->getFrenetTrajectoryFromTrajectory(sur_unlaned_traj.second)});
-        }
-
-        return sur_unlaned_trajs_fs;
-    }
-
-    StateTransformer* state_trans_itf_{nullptr};
-    
-};
 
 // Trajectory planning core
 class TrajectoryPlanningCore {
