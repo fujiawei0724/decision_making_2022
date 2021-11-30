@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-11-30 11:49:32
+ * @LastEditTime: 2021-11-30 15:29:35
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -735,15 +735,37 @@ class SscOptimizationInterface {
         equal_constraints_ = equal_constraints;
     }
 
-    void runOnce() {
+    /**
+     * @brief Run optimization
+     * @param {*}
+     * @return {*}
+     */    
+    void runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
+        // Prepare data for s and d dimensions
+        std::array<double, 3> s_start_constraints = start_constraints_.toDimensionS();
+        std::array<double, 3> s_end_constraints = end_constraints_.toDimensionS();
+        std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
+        std::array<double, 3> d_start_constraints = start_constraints_.toDimensionD();
+        std::array<double, 3> d_end_constraints = end_constraints_.toDimensionD();
+        std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
+        // Multi thread calculation
+        // TODO: add logic to handle the situation where the optimization process is failed
+        std::thread s_thread(&SscOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+        std::thread d_thread(&SscOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+        s_thread.join();
+        d_thread.join();
+
+        // Cache
+        *optimized_s = optimized_data_["s"];
+        *optimized_d = optimized_data_["d"];
     }
 
     /**
      * @brief Optimize in single dimension
      * @param {*}
      */
-    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, const std::vector<std::vector<double>>& equal_constraints, std::string dimension_name) {
+    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
         // ~Stage I: calculate D and c matrices (objective function)
         std::vector<double*> D;
         double* c = nullptr;
@@ -754,9 +776,29 @@ class SscOptimizationInterface {
         CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
         std::vector<double*> A;
         double* b = nullptr;
-        calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints, &A, &b);
+        calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, &A, &b);
 
         // ~Stage III: calculate low and up boundaries for intermediate points
+        bool* fl = nullptr;
+        double* l = nullptr;
+        bool* fu = nullptr;
+        double* u = nullptr;
+        calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
+        
+        // ~Stage IV: optimization and transform the formation of optimization result
+        int variables_num = static_cast<int>(ref_stamps_.size());
+        int constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 2;
+        Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
+        Solution s = CGAL::solve_quadratic_program(qp, ET());
+        // Convert data
+        std::vector<double> optimized_values;
+        for (auto iter = s.variable_values_begin(); iter != s.variable_values_end(); iter++) {
+            double value = CGAL::to_double(*iter);
+            optimized_values.emplace_back(value);
+        }
+        
+        // ~Stage V: store information
+        optimized_data_[dimension_name] = optimized_values;
 
     }
 
@@ -764,8 +806,31 @@ class SscOptimizationInterface {
      * @brief Calculate boundaries for intermediate points
      * @param {*}
      */    
-    void calculateBoundariesForIntermediatePoints() {
+    void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
+        int variables_num = static_cast<int>(ref_stamps_.size());
+        bool* tmp_fl = new bool[variables_num];
+        double* tmp_l = new double[variables_num];
+        bool* tmp_fu = new bool[variables_num];
+        double* tmp_u = new double[variables_num];
 
+        for (int i = 0; i < variables_num; i++) {
+            if (i == 0 || i == variables_num - 1) {
+                // For the first three points and last three points, the unequal constraints are invalid
+                *(tmp_fl + i) = false;
+                *(tmp_fu + i) = false;
+            } else {
+                *(tmp_fl + i) = true;
+                *(tmp_fu + i) = true;
+                *(tmp_l + i) = single_lower_boundaries[i];
+                *(tmp_u + i) = single_upper_boundaries[i];
+            }
+        }
+
+        // TODO: check this parameters transformation process
+        *fl = tmp_fl;
+        *l = tmp_l;
+        *fu = tmp_fu;
+        *u = tmp_u;
     }
 
     /**
@@ -884,7 +949,9 @@ class SscOptimizationInterface {
 // Optimization trajectory parameters 
 class SscOptimizer {
  public:
-    SscOptimizer() = default;
+    SscOptimizer() {
+        ssc_opt_itf_ = new SscOptimizationInterface();
+    }
     ~SscOptimizer() = default;
 
     /**
@@ -904,7 +971,7 @@ class SscOptimizer {
      * @param {*}
      * @return {*}
      */
-    void runOnce() {
+    void runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t) {
         // ~Stage I: calculate time stamps of split point (include start point and end point)
         std::vector<double> ref_stamps;
         for (int i = 0; i < static_cast<int>(driving_corridor_.cubes.size()); i++) {
@@ -922,9 +989,16 @@ class SscOptimizer {
         std::vector<std::vector<double>> equal_constraints;
         generateEqualConstraints(&equal_constraints);
 
-        // Optimization interface
-        
+        // ~Stage IV: optimization
+        // TODO: add logic to judge optimization failed
+        std::vector<double> optimized_s;
+        std::vector<double> optimized_d;
+        ssc_opt_itf_->load(ref_stamps, start_constraint_, end_constraint_, unequal_constraints, equal_constraints);
+        ssc_opt_itf_->runOnce(&optimized_s, &optimized_d);
 
+        *s = optimized_s;
+        *d = optimized_d;
+        *t = ref_stamps;
     }
 
     /**
@@ -1016,9 +1090,61 @@ class SscOptimizer {
         *equal_constraints = tmp_equal_constraints;
     } 
 
+    SscOptimizationInterface* ssc_opt_itf_{nullptr};
+
     EqualConstraint start_constraint_;
     EqualConstraint end_constraint_;
     DrivingCorridorWorldMetric driving_corridor_;
+};
+
+// Generate interpolated curves
+class BezierPiecewiseCurve {
+ public:
+    BezierPiecewiseCurve(const std::vector<double>& s, const std::vector<double>& d, std::vector<double>& ref_stamps) {
+        // Check data
+        assert(s.size() == d.size());
+        assert((static_cast<int>(ref_stamps.size()) - 1) * 5 + 1 == static_cast<int>(s.size()));
+
+        s_ = s;
+        d_ = d;
+        ref_stamps_ = ref_stamps;
+    }
+    ~BezierPiecewiseCurve() = default;
+
+    /**
+     * @brief Calculate curve
+     * @param {*}
+     * @return {*}
+     */    
+    std::vector<Point3f> generateTraj(double sample_gap=0.01) {
+        // Generate sample seeds
+        std::vector<double> seeds = Tools::linspace(0.0, static_cast<double>(ref_stamps_.size()) - 1.0, sample_gap);
+        
+    }
+
+    /**
+     * @brief Calculate single point 
+     * @param {*}
+     * @return {*}
+     */    
+    Point3f generatePoint(double seed) {
+
+    }
+
+    /**
+     * @brief Valid seed value
+     * @param {*}
+     * @return {*}
+     */    
+    double validSeed(double seed) {
+        
+    }
+
+
+
+    std::vector<double> s_;
+    std::vector<double> d_;
+    std::vector<double> ref_stamps_;
 };
 
 // Trajectory planning core
