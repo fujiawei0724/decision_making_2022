@@ -199,8 +199,32 @@ double getOverlapLength(const std::vector<double>& proj_1, const std::vector<dou
 // Judge collision based on OBB
 bool isCollision(Rectangle* rec_1, Rectangle* rec_2);
 
+
 template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear=true);
+std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear = true) {
+
+    std::vector<double> linspaced;
+
+    double start = static_cast<double>(start_in);
+    double end = static_cast<double>(end_in);
+    double num = static_cast<double>(num_in);
+
+    if (num == 0) { return linspaced; }
+    if (num == 1) {
+        linspaced.push_back(start);
+        return linspaced;
+    }
+
+    double delta = (end - start) / (num - 1);
+
+    for(int i=0; i < num-1; ++i){
+        linspaced.push_back(start + delta * i);
+    }
+    if (include_rear) {
+        linspaced.push_back(end);
+    }
+    return linspaced;
+}
 
 };  // namespace Tools
 

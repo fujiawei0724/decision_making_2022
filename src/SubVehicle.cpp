@@ -545,7 +545,7 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
 
         // Run trajectory planning
         bool is_trajectory_planning_success;
-        trajectoryPlanning(is_trajectory_planning_success);
+        trajectoryPlanning(&is_trajectory_planning_success);
 
 
         loop_rate.sleep();

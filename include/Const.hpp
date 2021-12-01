@@ -11,7 +11,7 @@
 // 常量整理
 // 重要常量
 #define PI 3.141592653589793238462643383279  // pi
-#define EPS 1.0e-8  // 浮点数比较的精度
+#define SMALL_EPS 1.0e-8  // 浮点数比较的精度
 #define MIDDLE_EPS 1.0e-6  
 #define BIG_EPS 1.0e-1
 #define LESS_THAN_BOUNDARY_RATION 0.9 // 为了避免达到边界值的系数

@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
- * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 20:40:45
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2021-12-01 15:30:47
  * @Descripttion: Trajectory planner's interface with the whole pipeline
  */
 

@@ -1239,7 +1239,7 @@ void DecisionMaking::SubVehicle::AvoidancePathGenerator(const Lane &lane, std::v
         // 计算最大可行曲率
         double allowable_max_curvature = MAX_CURVATURE;
         // according to velocity mini max curvature
-        double allowable_curvature_for_velocity = MAX_NORMAL_ACCELERATION / std::max(EPS, (current_vehicle_movement.velocity_ * current_vehicle_movement.velocity_));
+        double allowable_curvature_for_velocity = MAX_NORMAL_ACCELERATION / std::max(SMALL_EPS, (current_vehicle_movement.velocity_ * current_vehicle_movement.velocity_));
         allowable_max_curvature = std::min(allowable_max_curvature, allowable_curvature_for_velocity);
 
         double total_curves_min_curvature = MAX_VALUE;

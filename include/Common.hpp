@@ -73,6 +73,7 @@
 #include "VehicleState.hpp"
 #include "BehaviorPlanner.hpp"
 #include "TrajectoryPlanning.hpp"
+#include "SscPlanning.hpp"
 
 // extern bool GLOBAL_IS_IN_GROUND_;
 // extern std::mutex GLOBAL_IN_GROUND_MUTEX_;

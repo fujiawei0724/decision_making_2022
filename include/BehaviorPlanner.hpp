@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
- * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-11-12 20:32:22
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2021-12-01 15:06:09
  * @Descripttion: Behavior planner core.
  */
 
@@ -292,15 +292,15 @@ public:
 class IDM {
 public:
     static double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
-        double a_free = cur_velocity <= desired_velocity ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
+        double a_free = cur_velocity <= desired_velocity ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + SMALL_EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + SMALL_EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
 
-        double s_alpha = std::max(0.0 + EPS, leading_s - cur_s - vehicle_length_);
+        double s_alpha = std::max(0.0 + SMALL_EPS, leading_s - cur_s - vehicle_length_);
         double z = (minimum_spacing_ + std::max(0.0, cur_velocity * desired_headaway_time_ + cur_velocity * (cur_velocity - leading_velocity) / (2.0 * sqrt(acceleration_ * comfortable_braking_deceleration_)))) / s_alpha;
 
         // Calculate output acceleration
         double a_out;
         if (cur_velocity <= desired_velocity) {
-            a_out = z >= 1.0 ? acceleration_ * (1 - pow(z, 2)) : a_free * (1.0 - pow(z, 2.0 * acceleration_ / (a_free + EPS)));
+            a_out = z >= 1.0 ? acceleration_ * (1 - pow(z, 2)) : a_free * (1.0 - pow(z, 2.0 * acceleration_ / (a_free + SMALL_EPS)));
         } else {
             a_out = z >= 0.0 ? a_free + acceleration_ * (1 - pow(z, 2)) : a_free;
         }

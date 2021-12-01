@@ -32,7 +32,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Glog REQUIRED COMPONENTS system)
-find_package(/opt/ros/kinetic/include/opencv-3.3.1-dev)
+# find_package(/opt/ros/kinetic/include/opencv-3.3.1-dev)
 find_package(OpenCV REQUIRED)
 find_package(CGAL)
 
@@ -160,7 +160,7 @@ include_directories(
 add_executable(${PROJECT_NAME}_node src/MotionPlanningNode.cpp)
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_lib src/BehaviorPlanner.cc src/MotionPlanning.cpp src/VelocityPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/DecisionMaking src/StateMaintaining.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp src/SpecialMotionPlanning.cpp src/LowSpeedMotionPlanning.cpp src/ReverseMotionPlanning.cpp src/RotateMotionPlanning.cpp)
+add_library(${PROJECT_NAME}_lib src/TrajectoryPlanning.cc src/BehaviorPlanner.cc src/MotionPlanning.cpp src/VelocityPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/DecisionMaking src/StateMaintaining.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp src/SpecialMotionPlanning.cpp src/LowSpeedMotionPlanning.cpp src/ReverseMotionPlanning.cpp src/RotateMotionPlanning.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -188,19 +188,20 @@ add_dependencies(${PROJECT_NAME}_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}
   glog
+  CGAL::CGAL
+  ${OpenCV_LIBS}
   # obstacle_utilities
 )
 
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
   glog
+  CGAL::CGAL
+  ${OpenCV_LIBS}
   ${PROJECT_NAME}_lib
   # obstacle_utilities
 )
 
-target_link_libraries(
-  CGAL::CGAL
-)
 
 #############
 ## Install ##

@@ -2,12 +2,13 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-11-30 20:30:45
+ * @LastEditTime: 2021-12-01 16:33:42
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
 #pragma once
 
+#include <cmath>
 #include <unordered_map>
 #include <thread>
 #include <map>
@@ -28,7 +29,6 @@
 #include "Lane.hpp"
 #include "Rectangle.hpp"
 #include "Obstacle.hpp"
-#include "QuinticBSpline.hpp"
 
 namespace Common {
 
@@ -324,7 +324,7 @@ public:
             }
         }
         Eigen::Matrix<double, 2, 1> lane_pos{lane_position.worldpos_.position_.x_, lane_position.worldpos_.position_.y_};
-
+        
         // Get tangent vector and normal vector, the norm is set with 1.0
         double lane_orientation = lane_position.worldpos_.theta_;
         double y = tan(lane_orientation);
@@ -470,6 +470,21 @@ class Point3i : public Point2i {
     ~Point3i() = default;
 
     int z_{0};
+};
+
+class Point3f {
+ public:
+    Point3f() = default;
+    Point3f(double x, double y, double z) {
+        x_ = x;
+        y_ = y;
+        z_ = z;
+    }
+    ~Point3f() = default;
+
+    double x_{0.0};
+    double y_{0.0};
+    double z_{0.0};
 };
 
 
@@ -1057,6 +1072,33 @@ class BpTpBridge {
     StateTransformer* state_trans_itf_{nullptr};
     
 };
+
+template<typename T>
+std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear)
+{
+
+    std::vector<double> linspaced;
+
+    double start = static_cast<double>(start_in);
+    double end = static_cast<double>(end_in);
+    double num = static_cast<double>(num_in);
+
+    if (num == 0) { return linspaced; }
+    if (num == 1) {
+        linspaced.push_back(start);
+        return linspaced;
+    }
+
+    double delta = (end - start) / (num - 1);
+
+    for(int i=0; i < num-1; ++i){
+        linspaced.push_back(start + delta * i);
+    }
+    if (include_rear) {
+        linspaced.push_back(end);
+    }
+    return linspaced;
+}
 
 
 

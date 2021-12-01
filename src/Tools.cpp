@@ -13,7 +13,7 @@
 
 // 判断一个double类型的数是否等于0
 bool Tools::isZero(double value) {
-    if (std::fabs(value) <= EPS) {
+    if (std::fabs(value) <= SMALL_EPS) {
         return true;
     } else {
         return false;
@@ -22,7 +22,7 @@ bool Tools::isZero(double value) {
 
 // 判断前一个double是否大于后一个double
 bool Tools::isLarge(double value_1, double value_2) {
-    if (value_1 > value_2 && std::fabs(value_1 - value_2) > EPS) {
+    if (value_1 > value_2 && std::fabs(value_1 - value_2) > SMALL_EPS) {
         return true;
     } else {
         return false;
@@ -31,7 +31,7 @@ bool Tools::isLarge(double value_1, double value_2) {
 
 // 判断前一个double是否小于后一个double
 bool Tools::isSmall(double value_1, double value_2) {
-    if (value_1 < value_2 && std::fabs(value_1 - value_2) > EPS) {
+    if (value_1 < value_2 && std::fabs(value_1 - value_2) > SMALL_EPS) {
         return true;
     } else {
         return false;
@@ -40,7 +40,7 @@ bool Tools::isSmall(double value_1, double value_2) {
 
 // 判断前一个double是否等于后一个double
 bool Tools::isEqual(double value_1, double value_2) {
-    if (std::fabs(value_1 - value_2) <= EPS) {
+    if (std::fabs(value_1 - value_2) <= SMALL_EPS) {
         return true;
     } else {
         return false;
@@ -127,7 +127,7 @@ double Tools::calcMaxNormalAccelerationForCurve(const PathPlanningUtilities::Cur
 double Tools::calcVelocityForMaxNormalAcceleration(double kappa) {
     // 曲率不能为负值
     kappa = std::fabs(kappa);
-    kappa = kappa + EPS;
+    kappa = kappa + SMALL_EPS;
     return sqrt(MAX_NORMAL_ACCELERATION / kappa);
 }
 
@@ -142,13 +142,13 @@ double Tools::calcNormalJerk(double kappa, double velocity, double acceleration)
 double Tools::calcAccelerationForMaxNormalJerk(double kappa, double velocity) {
     // 曲率不能为负
     kappa = std::fabs(kappa);
-    kappa = kappa + EPS;
+    kappa = kappa + SMALL_EPS;
     return MAX_NORMAL_JERK / (2.0 * kappa * velocity);
 }
 
 // 最大法向加加速度计算最大速度
 double Tools::calcVelocityForMaxNormalJerk(double curvature_change_rate) {
-    curvature_change_rate = std::abs(curvature_change_rate) + EPS;
+    curvature_change_rate = std::abs(curvature_change_rate) + SMALL_EPS;
     return sqrt(MAX_NORMAL_JERK / (2.0 * curvature_change_rate));
 }
 
@@ -214,7 +214,7 @@ bool Tools::isRectangleOverlap(const Rectangle &rectangle_1, const Rectangle &re
 // 判断一个点是否在区间内
 bool Tools::judgeInSection(const SectionSet &section_set, double value) {
     for (size_t i = 0; i < section_set.size(); i++) {
-        if (value > section_set[i].min_ + EPS && value < section_set[i].max_ - EPS) {
+        if (value > section_set[i].min_ + SMALL_EPS && value < section_set[i].max_ - SMALL_EPS) {
             return true;
         }
     }
@@ -910,29 +910,3 @@ bool Tools::isCollision(Rectangle* rec_1, Rectangle* rec_2) {
     return true;
 }
 
-template<typename T>
-std::vector<double> Tools::linspace(T start_in, T end_in, int num_in, bool include_rear)
-{
-
-    std::vector<double> linspaced;
-
-    double start = static_cast<double>(start_in);
-    double end = static_cast<double>(end_in);
-    double num = static_cast<double>(num_in);
-
-    if (num == 0) { return linspaced; }
-    if (num == 1) {
-        linspaced.push_back(start);
-        return linspaced;
-    }
-
-    double delta = (end - start) / (num - 1);
-
-    for(int i=0; i < num-1; ++i){
-        linspaced.push_back(start + delta * i);
-    }
-    if (include_rear) {
-        linspaced.push_back(end);
-    }
-    return linspaced;
-}
