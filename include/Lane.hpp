@@ -242,6 +242,12 @@ class Lane{
         
         // Calculate target point 
         size_t target_lane_point_index = lane_point_index + static_cast<size_t>(distance / 0.1);
+
+        std::cout << "Target lane point index: " << target_lane_point_index << std::endl;
+        std::cout << "Distance: " << distance << std::endl;
+        std::cout << "Lane point index: " << lane_point_index << std::endl;
+        std::cout << "Lane whole length: " << lane_coorination_.size() << std::endl;
+
         PathPlanningUtilities::CoordinationPoint target_path_point = lane_coorination_[target_lane_point_index];
         Eigen::Matrix<double, 2, 1> target_point{target_path_point.worldpos_.position_.x_, target_path_point.worldpos_.position_.y_};
 
