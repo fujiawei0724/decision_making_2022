@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-01 21:09:38
+ * @LastEditTime: 2021-12-02 10:39:07
  * @Descripttion: Behavior planner core.
  */
 
@@ -833,6 +833,7 @@ public:
         // TODO: use thread pool to balance calculation consumption in difference thread
         std::vector<std::thread> thread_set(sequence_num);
         for (int i = 0; i < sequence_num; i++) {
+            std::cout << "i: " << i << std::endl;
             thread_set[i] = std::thread(&BehaviorPlannerCore::simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
         }
         for (int i = 0; i < sequence_num; i++) {
@@ -843,6 +844,10 @@ public:
     // Simulate single behavior sequence
     void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, int index) {
 
+        std::cout << mtf_->lane_set_[LaneId::CenterLane].getLaneCoordnation().size() << std::endl;
+        std::cout << mtf_->lane_set_[LaneId::LeftLane].getLaneCoordnation().size() << std::endl;
+        std::cout << mtf_->lane_set_[LaneId::RightLane].getLaneCoordnation().size() << std::endl;
+
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
         SemanticVehicle ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0]);
         std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = mtf_->getSurroundSemanticVehicles(surround_vehicles);
@@ -851,9 +856,9 @@ public:
         // TODO: add logic to calculate the desired speed
         double ego_vehicle_desired_speed = ego_vehicle.state_.velocity_;
         if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Aggressive) {
-            ego_vehicle_desired_speed += 10.0;
+            ego_vehicle_desired_speed += 5.0;
         } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Conservative) {
-            ego_vehicle_desired_speed -= 10.0;
+            ego_vehicle_desired_speed -= 5.0;
         }
 
         // Initialize trajectory
@@ -882,7 +887,7 @@ public:
             std::unordered_map<int, Vehicle> surround_desired_states;
 
             // Simulate single behavior
-            simulateSingleBehavior(ego_semantic_vehicle, surround_semantic_vehicles, behavior_sequence[i], ego_desired_state, surround_desired_states);
+            simulateSingleBehavior(ego_semantic_vehicle, surround_semantic_vehicles, ego_vehicle_desired_speed, ego_desired_state, surround_desired_states);
 
             // Update trajectories
             ego_trajectory.emplace_back(ego_desired_state);
@@ -932,7 +937,7 @@ public:
     }
 
     // Simulate single vehicle behavior (lateral and longitudinal)
-    void simulateSingleBehavior(const SemanticVehicle& ego_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& surround_semantic_vehicles, const VehicleBehavior& vehicle_behavior, Vehicle& ego_vehicle_next_state, std::unordered_map<int, Vehicle>& surround_vehicles_next_states) {
+    void simulateSingleBehavior(const SemanticVehicle& ego_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& surround_semantic_vehicles, const double& ego_desired_velocity, Vehicle& ego_vehicle_next_state, std::unordered_map<int, Vehicle>& surround_vehicles_next_states) {
         // Get all semantic vehicles
         std::unordered_map<int, SemanticVehicle> all_semantic_vehicles = surround_semantic_vehicles;
         all_semantic_vehicles.insert({0, ego_semantic_vehicle});
@@ -943,11 +948,7 @@ public:
             double desired_velocity = veh_info.second.vehicle_.state_.velocity_;
             if (veh_info.first == 0) {
                 // Ego vehicle
-                if (vehicle_behavior.lon_beh_ == LongitudinalBehavior::Aggressive) {
-                    desired_velocity += 10.0;
-                } else if (vehicle_behavior.lon_beh_ == LongitudinalBehavior::Conservative) {
-                    desired_velocity = std::max(0.0, desired_velocity - 10.0);
-                }
+                desired_velocity = ego_desired_velocity;
             }
 
             // Calculate desired state
