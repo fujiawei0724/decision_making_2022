@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-02 16:48:19
+ * @LastEditTime: 2021-12-02 18:48:40
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -43,7 +43,7 @@ namespace BehaviorPlanner {
         mtf_ = mtf;
         predict_time_span_ = predict_time_span;
         dt_ = dt;
-        *vis_pub_ = vis_pub;
+        vis_pub_ = vis_pub;
     }
     BehaviorPlannerCore::~BehaviorPlannerCore() {
         
@@ -184,7 +184,7 @@ namespace BehaviorPlanner {
 
         // DEBUG
         // Visualization
-        VisualizationMethods::visualizeTrajectory(ego_trajectory, *vis_pub_);
+        VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_);
         // END DEBUG
         
         // Judge whether generate lane change behavior
@@ -220,7 +220,7 @@ namespace BehaviorPlanner {
         all_semantic_vehicles.insert({0, ego_semantic_vehicle});
 
         // Traverse all vehicles
-        for (const auto& veh_info: all_semantic_vehicles) {
+        for (const auto& veh_info : all_semantic_vehicles) {
             // Calculate desired velocity
             double desired_velocity = veh_info.second.vehicle_.state_.velocity_;
             if (veh_info.first == 0) {

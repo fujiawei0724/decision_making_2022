@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-02 16:48:06
+ * @LastEditTime: 2021-12-02 21:17:51
  * @Descripttion: Behavior planner core.
  */
 
@@ -20,7 +20,7 @@ class BehaviorPlannerConfig {
 public:
     static constexpr double look_ahead_min_distance{3.0};
     static constexpr double look_ahead_max_distance{50.0};
-    static constexpr double steer_control_gain{1.5};
+    static constexpr double steer_control_gain{3.0};
     static constexpr double wheelbase_length{2.8498};
 
     static constexpr double max_lon_acc_jerk{5.0};
@@ -79,9 +79,9 @@ public:
 
         // Judge whether excess the tolerance
         // TODO: add logic to handle this situation
-        if (lanes_distances[0].second > 5.0) {
-            return LaneId::Undefined;
-        }
+        // if (lanes_distances[0].second > 5.0) {
+        //     return LaneId::Undefined;
+        // }
 
         return lanes_distances[0].first;
     }
@@ -415,9 +415,9 @@ public:
             Eigen::Matrix<double, 5, 1> predicted_state{Eigen::Matrix<double, 5, 1>::Zero()};
             predicted_state[0] = cur_state[0] + t_gap * cos(cur_state[2]) * cur_state[3];
             predicted_state[1] = cur_state[1] + t_gap * sin(cur_state[2]) * cur_state[3];
-            predicted_state[2] = tan(cur_state[4]) * cur_state[3] / wheelbase_len_;
-            predicted_state[3] = cur_state[3] + dt * desired_lon_acc_;
-            predicted_state[4] = cur_state[4] + dt * desired_steer_rate_;
+            predicted_state[2] = cur_state[2] + t_gap * tan(cur_state[4]) * cur_state[3] / wheelbase_len_;
+            predicted_state[3] = cur_state[3] + t_gap * desired_lon_acc_;
+            predicted_state[4] = cur_state[4] + t_gap * desired_steer_rate_;
             
             return predicted_state;
         };
@@ -796,7 +796,7 @@ public:
     double predict_time_span_{0.0};
     double dt_{0.0};
     // DEBUG visualization
-    ros::Publisher* vis_pub_{nullptr};
+    ros::Publisher vis_pub_;
 
     // Store multiple thread information
     // Store the final cost information

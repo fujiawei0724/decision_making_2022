@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
- * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-02 15:48:24
+ * @LastEditors: fujiawei0724
+ * @LastEditTime: 2021-12-02 18:40:13
  * @Descripttion: EUDM behavior planner interface with the whole pipeline
  */
 
@@ -63,7 +63,7 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     unlaned_obstacles_ = unlaned_obstacles;
 
     // Construct behavior planner core and decision making
-    double behavior_planner_time_span = 4.0;
+    double behavior_planner_time_span = 1.2;
     double behavior_planner_dt = 0.4;
     bool is_behavior_planning_success = false;
     BehaviorPlanner::BehaviorPlannerCore* behavior_planner = new BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt, vis_behavior_planner_ego_states_pub_);
