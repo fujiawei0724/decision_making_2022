@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-01 21:52:10
+ * @LastEditTime: 2021-12-02 15:48:24
  * @Descripttion: EUDM behavior planner interface with the whole pipeline
  */
 
@@ -66,16 +66,15 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     double behavior_planner_time_span = 4.0;
     double behavior_planner_dt = 0.4;
     bool is_behavior_planning_success = false;
-    BehaviorPlanner::BehaviorPlannerCore* behavior_planner = new BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt);
+    BehaviorPlanner::BehaviorPlannerCore* behavior_planner = new BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt, vis_behavior_planner_ego_states_pub_);
     is_behavior_planning_success = behavior_planner->runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_, &reference_lane_);
 
-    // DEBUG
-    // Visualization best policy states predicted by behavior planning
-    if (is_behavior_planning_success) {
-        VisualizationMethods::visualizationEgoPredictState(ego_trajectory_, vis_behavior_planner_ego_states_pub_);
-    } else {
-        printf("[MainPipeline] Behavior planning failed.\n");
-    }
+    // // Visualization best policy states predicted by behavior planning
+    // if (is_behavior_planning_success) {
+    //     VisualizationMethods::visualizeTrajectory(ego_trajectory_, vis_behavior_planner_ego_states_pub_);
+    // } else {
+    //     printf("[MainPipeline] Behavior planning failed.\n");
+    // }
 
     *result = is_behavior_planning_success;
 

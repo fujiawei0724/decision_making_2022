@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-01 16:33:42
+ * @LastEditTime: 2021-12-02 14:51:58
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <functional>
 #include <stdio.h>
+#include <pthread.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -428,7 +429,7 @@ public:
         nearest_lane_id_ = nearest_lane_id;
         reference_lane_id_ = reference_lane_id;
         nearest_lane_ = nearest_lane;
-        reference_lane_id_ = reference_lane_id;
+        reference_lane_ = reference_lane;
     }
 
     // Destructor

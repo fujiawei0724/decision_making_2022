@@ -190,6 +190,7 @@ target_link_libraries(${PROJECT_NAME}_lib
   glog
   CGAL::CGAL
   ${OpenCV_LIBS}
+  pthread
   # obstacle_utilities
 )
 
@@ -199,6 +200,7 @@ target_link_libraries(${PROJECT_NAME}_node
   CGAL::CGAL
   ${OpenCV_LIBS}
   ${PROJECT_NAME}_lib
+  pthread
   # obstacle_utilities
 )
 
