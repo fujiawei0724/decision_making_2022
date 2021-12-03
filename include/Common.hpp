@@ -1206,7 +1206,7 @@ visualization_msgs::Marker visualizePosition(double position_x, double position_
 void visualizeInfluenceObstacles(const std::vector<InfluenceObstacle> &influence_obstacles, const ros::Publisher &publisher);
 
 // Visualization for behavior policy
-void visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher);
+void visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index);
 
 }  // namespace VisualizationMethods
 

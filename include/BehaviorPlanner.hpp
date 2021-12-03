@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-03 17:30:47
+ * @LastEditTime: 2021-12-03 17:34:56
  * @Descripttion: Behavior planner core.
  */
 
@@ -668,8 +668,7 @@ public:
             efficiency_cost = (speed_limit - ego_vehicle_last_state.state_.velocity_) / 10.0;
         } else{
             // Velocity excess the lane limitation
-            // TODO: adjust parameters
-            efficiency_cost = 10.0;
+            // Note that these situations are labeled as unsafe, which isn't handled there
         }
         return efficiency_cost;
     }

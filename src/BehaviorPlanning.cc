@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-03 12:08:40
+ * @LastEditTime: 2021-12-03 17:41:13
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -62,6 +62,14 @@ namespace BehaviorPlanner {
             // TODO: add logic to handle the situation where there is no safe policy
             return false;
         }
+        
+        // // DEBUG
+        // // Print behavior cost information
+        // for (int i = 0; i < static_cast<int>(behavior_sequence_cost_.size()); i++) {
+        //     std::cout << "Behavior sequence: " << i << ", cost: " << behavior_sequence_cost_[i] << ", safe: " << behavior_safety_[i] << std::endl; 
+        // }
+        // // END DEBUG
+
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];
@@ -110,22 +118,21 @@ namespace BehaviorPlanner {
         // Initialize container
         initializeContainer(sequence_num);
 
-        // // Multiple threads calculation
-        // // TODO: use thread pool to balance calculation consumption in difference thread
-        // std::vector<std::thread> thread_set(sequence_num);
-        // for (int i = 0; i < sequence_num; i++) {
-        //     std::cout << "i: " << i << std::endl;
-        //     thread_set[i] = std::thread(&BehaviorPlannerCore::simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
-        // }
-        // for (int i = 0; i < sequence_num; i++) {
-        //     thread_set[i].join();
-        // }
-
-        // DEBUG
-        for (int i = 0; i < 1; i ++) {
-            simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[42], 42);
+        // Multiple threads calculation
+        // TODO: use thread pool to balance calculation consumption in difference thread
+        std::vector<std::thread> thread_set(sequence_num);
+        for (int i = 0; i < sequence_num; i++) {
+            thread_set[i] = std::thread(&BehaviorPlannerCore::simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
         }
-        // END DEBUG
+        for (int i = 0; i < sequence_num; i++) {
+            thread_set[i].join();
+        }
+
+        // // DEBUG
+        // for (int i = 0; i < 1; i ++) {
+        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[41], 41);
+        // }
+        // // END DEBUG
     }
 
     // Simulate single behavior sequence
@@ -142,7 +149,13 @@ namespace BehaviorPlanner {
             ego_vehicle_desired_speed += 5.0;
         } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Conservative) {
             ego_vehicle_desired_speed = std::max(0.0, ego_vehicle_desired_speed - 5.0);
+        } else {
+            ego_vehicle_desired_speed = ego_vehicle.state_.velocity_;
         }
+
+        // // DEBUG
+        // std::cout << "Ego vehicle desired speed: " << ego_vehicle_desired_speed << std::endl;
+        // // END DEBUG
 
         // Initialize trajectory
         Trajectory ego_trajectory;
@@ -195,7 +208,7 @@ namespace BehaviorPlanner {
 
         // DEBUG
         // Visualization
-        VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_);
+        VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, index);
         // Print the last predicted vehicle state
         ego_trajectory.back().print();
         // END DEBUG

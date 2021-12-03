@@ -627,14 +627,15 @@ void VisualizationMethods::visualizeInfluenceObstacles(const std::vector<Influen
 }
 
 // Visualization for behavior policy
-void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher) {
+void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index) {
     visualization_msgs::MarkerArray ego_veh_predict_states_marker_arr;
     std_msgs::ColorRGBA color;
     color.r = 0;
     color.g = 0;
     color.b = 1;
     color.a = 1;
-    int ego_veh_state_visualization_start_id = 500000;
+    // Note that this index gap 50 is set on the assumption of each trajectory mostly has 50 separated vehicle states
+    int ego_veh_state_visualization_start_id = 500000 + index * 50;
     for (int i = 0; i < static_cast<int>(traj.size()); i++) {
         BehaviorPlanner::Vehicle cur_ego_vehicle_state = traj[i];
         ego_veh_predict_states_marker_arr.markers.push_back(visualizeRectToMarker(cur_ego_vehicle_state.state_.position_(0), cur_ego_vehicle_state.state_.position_(1), cur_ego_vehicle_state.state_.theta_, cur_ego_vehicle_state.width_, cur_ego_vehicle_state.length_, 1.0, color, i + ego_veh_state_visualization_start_id));
