@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-03 12:02:07
+ * @LastEditTime: 2021-12-03 17:30:47
  * @Descripttion: Behavior planner core.
  */
 
@@ -18,6 +18,7 @@ using namespace Common;
 // Config for behavior planner 
 class BehaviorPlannerConfig {
 public:
+    // TODO: adjust parameters
     static constexpr double look_ahead_min_distance{3.0};
     static constexpr double look_ahead_max_distance{50.0};
     static constexpr double steer_control_gain{3.0};
@@ -292,14 +293,14 @@ public:
 class IDM {
 public:
     static double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
-        double a_free = cur_velocity <= desired_velocity ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + SMALL_EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + SMALL_EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
+        double a_free = cur_velocity <= (desired_velocity + MIDDLE_EPS) ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + SMALL_EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + SMALL_EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
 
         double s_alpha = std::max(0.0 + SMALL_EPS, leading_s - cur_s - vehicle_length_);
         double z = (minimum_spacing_ + std::max(0.0, cur_velocity * desired_headaway_time_ + cur_velocity * (cur_velocity - leading_velocity) / (2.0 * sqrt(acceleration_ * comfortable_braking_deceleration_)))) / s_alpha;
 
         // Calculate output acceleration
         double a_out;
-        if (cur_velocity <= desired_velocity) {
+        if (cur_velocity <= desired_velocity + MIDDLE_EPS) {
             a_out = z >= 1.0 ? acceleration_ * (1 - pow(z, 2)) : a_free * (1.0 - pow(z, 2.0 * acceleration_ / (a_free + SMALL_EPS)));
         } else {
             a_out = z >= 0.0 ? a_free + acceleration_ * (1 - pow(z, 2)) : a_free;
@@ -342,7 +343,7 @@ public:
     static constexpr double vehicle_length_{5.0};
     static constexpr double minimum_spacing_{2.0};
     static constexpr double desired_headaway_time_{1.0};
-    static constexpr double acceleration_{2.0};
+    static constexpr double acceleration_{1.7};
     static constexpr double comfortable_braking_deceleration_{3.0};
     static constexpr double hard_braking_deceleration_{5.0};
     static constexpr double exponent_{4.0};
