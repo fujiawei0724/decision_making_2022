@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
- * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-02 14:51:58
+ * @LastEditors: fujiawei0724
+ * @LastEditTime: 2021-12-02 22:10:19
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -51,9 +51,9 @@ enum class LateralBehavior {
 
 // Longitudinal behavior
 enum class LongitudinalBehavior {
-    Normal = 0,
+    Conservative = 0,
+    Normal,
     Aggressive,
-    Conservative,
     MaxCount = 3,
 };
 
@@ -94,6 +94,7 @@ public:
 
     }
 
+    // DEBUG    
     void print() {
         printf("State time stamp: %lf\n", time_stamp_);
         printf("State position x: %lf\n", position_(0));
@@ -212,6 +213,12 @@ public:
         vertex_4(0) = state_.position_(0) - length_ * 0.5 * cos(state_.theta_) - width_ * 0.5 * sin(state_.theta_);
         vertex_4(1) = state_.position_(1) - length_ * 0.5 * sin(state_.theta_) + width_ * 0.5 * cos(state_.theta_);
         vertice_[3] = vertex_4;
+    }
+
+    // DEBUG
+    void print() {
+        printf("Vehicle id: %d\n", id_);
+        state_.print();
     }
 
     int id_{0};

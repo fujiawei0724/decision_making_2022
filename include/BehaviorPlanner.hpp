@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-02 21:17:51
+ * @LastEditTime: 2021-12-03 12:02:07
  * @Descripttion: Behavior planner core.
  */
 
@@ -359,7 +359,7 @@ public:
         max_lon_acc_ = max_lon_acc;
         max_lon_dec_ = max_lon_dec;
         max_lon_acc_jerk_ = max_lon_acc_jerk;
-        max_lon_dec_jerk = max_lon_dec_jerk;
+        max_lon_dec_jerk_ = max_lon_dec_jerk;
         max_lat_acc_ = max_lat_acc;
         max_lat_jerk_ = max_lat_jerk;
         max_steering_angle_ = max_steering_angle;
@@ -667,6 +667,8 @@ public:
             efficiency_cost = (speed_limit - ego_vehicle_last_state.state_.velocity_) / 10.0;
         } else{
             // Velocity excess the lane limitation
+            // TODO: adjust parameters
+            efficiency_cost = 10.0;
         }
         return efficiency_cost;
     }

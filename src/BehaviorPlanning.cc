@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-02 18:48:40
+ * @LastEditTime: 2021-12-03 12:08:40
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -96,6 +96,17 @@ namespace BehaviorPlanner {
         delete behavior_generator;
         int sequence_num = static_cast<int>(behavior_set.size());
 
+        // // DEBUG
+        // for (int i = 0; i < static_cast<int>(behavior_set.size()); i++) {
+        //     std::cout << "Index: " << i << " ";
+        //     std::cout << static_cast<std::underlying_type<LongitudinalBehavior>::type>(behavior_set[i][0].lon_beh_) << " ";
+        //     for (int j = 0; j < static_cast<int>(behavior_set[i].size()); j++) {
+        //         std::cout << static_cast<std::underlying_type<LateralBehavior>::type>(behavior_set[i][j].lat_beh_) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // // END DEBUG
+
         // Initialize container
         initializeContainer(sequence_num);
 
@@ -112,7 +123,7 @@ namespace BehaviorPlanner {
 
         // DEBUG
         for (int i = 0; i < 1; i ++) {
-            simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[i], i);
+            simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[42], 42);
         }
         // END DEBUG
     }
@@ -130,7 +141,7 @@ namespace BehaviorPlanner {
         if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Aggressive) {
             ego_vehicle_desired_speed += 5.0;
         } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Conservative) {
-            ego_vehicle_desired_speed -= 5.0;
+            ego_vehicle_desired_speed = std::max(0.0, ego_vehicle_desired_speed - 5.0);
         }
 
         // Initialize trajectory
@@ -185,6 +196,8 @@ namespace BehaviorPlanner {
         // DEBUG
         // Visualization
         VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_);
+        // Print the last predicted vehicle state
+        ego_trajectory.back().print();
         // END DEBUG
         
         // Judge whether generate lane change behavior
