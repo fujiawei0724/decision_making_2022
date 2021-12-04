@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-03 17:41:13
+ * @LastEditTime: 2021-12-03 21:03:06
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -70,6 +70,8 @@ namespace BehaviorPlanner {
         // }
         // // END DEBUG
 
+        // Visualization best traj
+        VisualizationMethods::visualizeTrajectory(ego_traj_[winner_index], vis_pub_, 0);
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];
@@ -94,6 +96,11 @@ namespace BehaviorPlanner {
         }
         winner_index = win_idx;
         winner_cost = win_cost;
+
+        // // DEBUG
+        // std::cout << "Best action index: " << winner_index << std::endl;
+        // std::cout << "Best action cost: " << winner_cost << std::endl;
+        // // END DEBUG
     }
 
     // Simulate all situation and store trajectories information
@@ -130,7 +137,8 @@ namespace BehaviorPlanner {
 
         // // DEBUG
         // for (int i = 0; i < 1; i ++) {
-        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[41], 41);
+        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[49], 49);
+        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[51], 51);
         // }
         // // END DEBUG
     }
@@ -208,9 +216,9 @@ namespace BehaviorPlanner {
 
         // DEBUG
         // Visualization
-        VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, index);
+        // VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, index);
         // Print the last predicted vehicle state
-        ego_trajectory.back().print();
+        // ego_trajectory.back().print();
         // END DEBUG
         
         // Judge whether generate lane change behavior
