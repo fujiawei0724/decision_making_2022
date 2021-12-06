@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
- * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-01 16:22:09
+ * @LastEditors: fujiawei0724
+ * @LastEditTime: 2021-12-06 21:36:42
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -877,7 +877,7 @@ class SscOptimizationInterface {
         }
 
         // Transform data structure 
-        std::vector<double*> tmp_A;
+        std::vector<double*> tmp_A(variables_num);
         for (int i = 0; i < variables_num; i++) {
             double* a_col = new double[equal_constraints_num];
             for (int j = 0; j < equal_constraints_num; j++) {
