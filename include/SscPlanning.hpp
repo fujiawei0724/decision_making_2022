@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-06 21:36:42
+ * @LastEditTime: 2021-12-06 21:55:24
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -34,6 +34,14 @@ struct DrivingCorridor {
 struct DrivingCorridorWorldMetric {
     bool is_valid;
     std::vector<DrivingCubeWorldMetric> cubes;
+
+    // DEBUG
+    void print() {
+        for (int i = 0; i < static_cast<int>(cubes.size()); i++) {
+            printf("Cube index: %d\n", i);
+            cubes[i].cube.print();
+        }
+    }
 };
 
 // Ssc map
@@ -1213,6 +1221,12 @@ class SscTrajectoryPlanningCore {
         std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
         std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
 
+        // DEBUG 
+        for (auto& veh_fs : ego_traj_fs) {
+            veh_fs.fs_.print();
+        }
+        // END DEBUG
+
         // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
         SscPlanning3DMap::Config config;
         ssc_3d_map_itf_ = new SscPlanning3DMap(config);
@@ -1223,6 +1237,10 @@ class SscTrajectoryPlanningCore {
             *result = false;
             return;
         }
+
+        // DEBUG
+        driving_corridor.print();
+        // END DEBUG
 
         // ~Stage III: determine constraints conditions and do optimization
         EqualConstraint start_constraints, end_constraints;

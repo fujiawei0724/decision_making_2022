@@ -997,6 +997,7 @@ class SubVehicle{
 
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;
+    ros::Publisher vis_trajectory_planner_pub_;
 
     
 };
@@ -1209,6 +1210,9 @@ void visualizeInfluenceObstacles(const std::vector<InfluenceObstacle> &influence
 
 // Visualization for behavior policy
 void visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index);
+
+// Visualization for the result of trajectory planner and ssc planner
+void visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher);
 
 }  // namespace VisualizationMethods
 

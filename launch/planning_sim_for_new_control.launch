@@ -97,6 +97,7 @@
     <param name="vis_occupation_topic" value="/motion_planning/vis_occupation_topic"/>
     <param name="vis_influence_obstacle_topic" value="/motion_planning/vis_influence_obstacle_topic"/>
     <param name="vis_behavior_planner_ego_states_topic" value="/behavior_planning/vis_ego_states_topic"/>
+    <param name="vis_trajectory_planner_topic" value="/trajectory_planning/vis_trajectory_topic"/>
     <!-- 变量，是否需要考虑当前曲率 -->
     <param name="current_pose_ignore_orientation" value="false"/>
     <!-- 变量，是否使用红绿灯 -->

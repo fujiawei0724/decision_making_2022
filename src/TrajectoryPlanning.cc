@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-06 18:58:30
+ * @LastEditTime: 2021-12-06 21:27:26
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -82,6 +82,9 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     if (!result) {
         printf("[MainPipeline] ssc planning failed.\n");
     }
+
+    // Visualization
+    VisualizationMethods::visualizeTrajectory(trajectory, vis_trajectory_planner_pub_);
 
     *trajectory_planning_result = result;
 

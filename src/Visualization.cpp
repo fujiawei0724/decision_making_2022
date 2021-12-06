@@ -643,3 +643,31 @@ void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner
 
     publisher.publish(ego_veh_predict_states_marker_arr);
 } 
+
+// Visualization for the result of trajectory planner and ssc planner
+void VisualizationMethods::visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher) {
+    visualization_msgs::MarkerArray traj_marker_array;
+    visualization_msgs::Marker traj_marker;
+    traj_marker.header.frame_id = "world";
+    traj_marker.header.stamp = ros::Time::now();
+    traj_marker.type = visualization_msgs::Marker().LINE_STRIP;
+    std_msgs::ColorRGBA color;
+    color.r = 1.0;
+    color.g = 0.0;
+    color.b = 0.0;
+    color.a = 1.0;
+    traj_marker.color = color;
+    traj_marker.id = 600000;
+    geometry_msgs::Vector3 v3c;
+    v3c.x = 0.15;
+    traj_marker.scale = v3c;
+    for (size_t i = 0; i < traj.size(); i++) {
+        Common::Point3f traj_point = traj[i];
+        geometry_msgs::Point point;
+        point.x = traj_point.x_;
+        point.y = traj_point.y_;
+        traj_marker.points.push_back(point);
+    }
+    traj_marker_array.markers.emplace_back(traj_marker);
+    publisher.publish(traj_marker_array);
+}

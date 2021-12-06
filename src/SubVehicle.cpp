@@ -97,10 +97,13 @@ void DecisionMaking::SubVehicle::rosInit() {
     this->vis_multi_curve_pub_ = this->nh_.advertise<visualization_msgs::MarkerArray>(vis_multi_curve_topic, 10);
     this->vis_influence_obstacle_pub_ = this->nh_.advertise<visualization_msgs::MarkerArray>(vis_influence_obstacle_topic, 10);
 
-    // Visualization behavior planner 
+    // Visualization behavior planner and trajectory planner
     std::string vis_behavior_planner_ego_states_topic;
     nh_.getParam("vis_behavior_planner_ego_states_topic", vis_behavior_planner_ego_states_topic);
     vis_behavior_planner_ego_states_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(vis_behavior_planner_ego_states_topic, 10);
+    std::string vis_trajectory_planner_topic;
+    nh_.getParam("vis_trajectory_planner_topic", vis_trajectory_planner_topic);
+    vis_trajectory_planner_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(vis_trajectory_planner_topic, 10);
 
     // 获取tf
     this->tf_listener_ptr_ = new tf::TransformListener();
