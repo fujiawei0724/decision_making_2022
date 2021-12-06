@@ -1,8 +1,8 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
- * @LastEditors: Please set LastEditors
- * @LastEditTime: 2021-12-01 16:30:54
+ * @LastEditors: fujiawei0724
+ * @LastEditTime: 2021-12-06 17:51:37
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -85,13 +85,19 @@ class TrajPlanning3DMap {
         semantic_coord_cubes_valid_.resize(seeds_num - 1);
         std::vector<std::thread> thread_set(seeds_num - 1);
 
-        // Generate semantic cubes using multi thread
+        // // Generate semantic cubes using multi thread
+        // for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
+        //     thread_set[i] = std::thread(&TrajPlanning3DMap::generateSingleSemanticCube, this, i);
+        // }
+        // for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
+        //     thread_set[i].join();
+        // }
+
+        // DEBUG
         for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
-            thread_set[i] = std::thread(&TrajPlanning3DMap::generateSingleSemanticCube, this, i);
+            generateSingleSemanticCube(i);
         }
-        for (int i = 0; i < static_cast<int>(semantic_coord_cubes_.size()); i++) {
-            thread_set[i].join();
-        }
+        // END DEBUG
 
         // Preliminary judgement of validity
         bool is_valid = true;
@@ -1159,6 +1165,13 @@ class TrajectoryPlanningCore {
         bridge_itf_ = new BpTpBridge(reference_lane_);
         FsVehicle current_vehicle_state_fs = bridge_itf_->getFsVehicle(current_vehicle_state_);
         std::vector<FsVehicle> ego_traj_fs = bridge_itf_->getEgoFrenetTrajectory(ego_traj_);
+
+        // // DEBUG 
+        // for (auto& veh_fs : ego_traj_fs) {
+        //     veh_fs.fs_.print();
+        // }
+        // // END DEBUG
+
         std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
         std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
 
@@ -1172,6 +1185,12 @@ class TrajectoryPlanningCore {
             *result = false;
             return;
         }
+
+        // DEBUG
+        for (auto& sem_cube : semantic_cubes_sequence) {
+            sem_cube.print();
+        }
+        // END DEBUG
 
         // ~Stage III: determine constraints conditions and do optimization
         EqualConstraint start_constraints, end_constraints;

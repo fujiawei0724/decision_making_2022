@@ -988,6 +988,8 @@ class SubVehicle{
 
     void trajectoryPlanning(bool* trajectory_planning_result);
 
+    void sscPlanning(bool* trajectory_planning_result);
+
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
     std::vector<Obstacle> unlaned_obstacles_;

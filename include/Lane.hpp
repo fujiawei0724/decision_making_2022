@@ -144,6 +144,8 @@ class Lane{
     }
 
     // 找出当前位置在道路中对应的下标
+    // TODO: check this logic, maybe has problem
+    // Note that although this method may has some problem, in the new tyrajectory planning, this calculation method is not used
     size_t findCurrenPositionIndexInLane(double position_x, double position_y) const {
         size_t index = lane_coorination_.size() - 1;
         PathPlanningUtilities::Point2f current_position;
@@ -249,9 +251,28 @@ class Lane{
     }
 
     // Find nearest lane point index from a position
-    size_t findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) const {
-        int position_x = position(0), position_y = position(1);
-        return findCurrenPositionIndexInLane(position_x, position_y);
+    // Calculation of distances to find the local minimum
+    int findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) const {
+        // Using simple distance to calculate the nearest point
+        double pre_distance = MAX_VALUE;
+        double cur_distance = 0.0;
+        int nearest_point_index = -1;
+        for (int i = 0; i < static_cast<int>(lane_coorination_.size()); i++) {
+            Eigen::Matrix<double, 2, 1> cur_lane_point{lane_coorination_[i].worldpos_.position_.x_, lane_coorination_[i].worldpos_.position_.y_};
+            cur_distance = (position - cur_lane_point).norm();
+            if (i > 0 && cur_distance > pre_distance) {
+                nearest_point_index = i - 1;
+                break;
+            }
+            if (i == static_cast<int>(lane_coorination_.size()) - 1) {
+                // TODO: add logic to handle this situation 
+                printf("[Lane] cannot find the nearest point index.\n");
+                assert(false);
+            } 
+            pre_distance = cur_distance;
+        }
+
+        return nearest_point_index;
     }
 
     // Judge position whether in lane

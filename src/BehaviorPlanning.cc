@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-03 21:03:06
+ * @LastEditTime: 2021-12-05 19:38:36
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -125,22 +125,21 @@ namespace BehaviorPlanner {
         // Initialize container
         initializeContainer(sequence_num);
 
-        // Multiple threads calculation
-        // TODO: use thread pool to balance calculation consumption in difference thread
-        std::vector<std::thread> thread_set(sequence_num);
-        for (int i = 0; i < sequence_num; i++) {
-            thread_set[i] = std::thread(&BehaviorPlannerCore::simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
-        }
-        for (int i = 0; i < sequence_num; i++) {
-            thread_set[i].join();
-        }
-
-        // // DEBUG
-        // for (int i = 0; i < 1; i ++) {
-        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[49], 49);
-        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[51], 51);
+        // // Multiple threads calculation
+        // // TODO: use thread pool to balance calculation consumption in difference thread
+        // std::vector<std::thread> thread_set(sequence_num);
+        // for (int i = 0; i < sequence_num; i++) {
+        //     thread_set[i] = std::thread(&BehaviorPlannerCore::simulateSingleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set[i], i);
         // }
-        // // END DEBUG
+        // for (int i = 0; i < sequence_num; i++) {
+        //     thread_set[i].join();
+        // }
+
+        // DEBUG
+        for (int i = 0; i < 1; i ++) {
+            simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[28], 28);
+        }
+        // END DEBUG
     }
 
     // Simulate single behavior sequence

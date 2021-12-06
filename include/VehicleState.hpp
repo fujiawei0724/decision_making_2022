@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-02 22:10:19
+ * @LastEditTime: 2021-12-06 17:51:14
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -150,6 +150,20 @@ public:
         vec_dt_[2] = vec_ds_[2] * vec_s_[1] * vec_s_[1] + vec_ds_[1] * vec_s_[2];
     }
 
+    // DEBUG 
+    void print() {
+        printf("Frenet state time stamp: %lf\n", time_stamp_);
+        printf("Frenet state vec_s[0]: %lf\n", vec_s_[0]);
+        printf("Frenet state vec_s[1]: %lf\n", vec_s_[1]);
+        printf("Frenet state vec_s[2]: %lf\n", vec_s_[2]);
+        printf("Frenet state vec_ds_[0]: %lf\n", vec_ds_[0]);
+        printf("Frenet state vec_ds_[1]: %lf\n", vec_ds_[1]);
+        printf("Frenet state vec_ds_[2]: %lf\n", vec_ds_[2]);
+        printf("Frenet state vec_dt_[0]: %lf\n", vec_dt_[0]);
+        printf("Frenet state vec_dt_[1]: %lf\n", vec_dt_[1]);
+        printf("Frenet state vec_dt_[2]: %lf\n", vec_dt_[2]);
+    }
+
     double time_stamp_{0.0};
     Eigen::Matrix<double, 3, 1> vec_s_{Eigen::Matrix<double, 3, 1>::Zero()};
     Eigen::Matrix<double, 3, 1> vec_ds_{Eigen::Matrix<double, 3, 1>::Zero()};
@@ -290,9 +304,9 @@ public:
         Eigen::Matrix<double, 2, 1> lane_normal_vec{-lane_tangent_vec(1), lane_tangent_vec(0)};
 
         // Check tolerance
-        const double step_tolerance = 0.5;
+        const double step_tolerance = 0.2;
         if (fabs((state.position_ - lane_position).dot(lane_tangent_vec)) > step_tolerance) {
-            printf("[StatsTransformer] Offset larger than tolerance.\n");
+            printf("[StatsTransformer] offset %lf larger than tolerance.\n", fabs((state.position_ - lane_position).dot(lane_tangent_vec)));
         }
 
         double d = (state.position_ - lane_position).dot(lane_normal_vec);
@@ -513,6 +527,17 @@ public:
     }
     // Destructor
     ~SemanticCube() = default;
+
+    // DEBUG
+    void print() {
+        std::cout << "semantic cube id: " << id_ << std::endl;
+        std::cout << "s_start: " << s_start_ << std::endl;
+        std::cout << "s_end: " << s_end_ << std::endl;
+        std::cout << "d_start: " << d_start_ << std::endl;
+        std::cout << "d_end: " << d_end_ << std::endl;
+        std::cout << "t_start: " << t_start_ << std::endl;
+        std::cout << "t_end: " << t_end_ << std::endl;
+    }
 
     T s_start_;
     T s_end_;
