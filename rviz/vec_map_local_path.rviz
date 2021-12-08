@@ -244,7 +244,7 @@ Visualization Manager:
           Marker Topic: /map/mission
           Name: MarkerArray
           Namespaces:
-            {}
+            line: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -1035,6 +1035,14 @@ Visualization Manager:
       Marker Topic: /behavior_planning/vis_ego_states_topic
       Name: MarkerArray
       Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /trajectory_planning/vis_trajectory_topic
+      Name: MarkerArray
+      Namespaces:
         {}
       Queue Size: 100
       Value: true
@@ -1066,7 +1074,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.639999807
+      Angle: 0.519999921
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
@@ -1076,11 +1084,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 8.42528725
+      Scale: 5.05260563
       Target Frame: base_footprint
       Value: TopDownOrtho (rviz)
-      X: 0
-      Y: 0
+      X: 38.9928703
+      Y: 17.536499
     Saved: ~
 Window Geometry:
   Displays:

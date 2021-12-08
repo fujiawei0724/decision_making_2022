@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-06 21:55:24
+ * @LastEditTime: 2021-12-08 15:52:51
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -29,6 +29,14 @@ struct DrivingCubeWorldMetric {
 struct DrivingCorridor {
     bool is_valid;
     std::vector<DrivingCube> cubes;
+
+    // DEBUG
+    void print() {
+        for (int i = 0; i < static_cast<int>(cubes.size()); i++) {
+            printf("Cube index: %d\n", i);
+            cubes[i].cube.print();
+        }
+    }
 };
 
 struct DrivingCorridorWorldMetric {
@@ -53,11 +61,11 @@ class SscPlanning3DMap {
         std::array<double, 3> map_resolution = {{0.25, 0.2, 0.1}};
         std::array<std::string, 3> axis_name = {{"s", "d", "t"}};
 
-        double s_back_len = 0.0;
+        double s_back_len = 7.0;
         double MaxLongitudinalVel = 50.0;
         double MinLongitudinalVel = 0.0;
         double MaxLongitudinalAcc = 3.0;
-        double MaxLongitudinalDecel = -8.0;
+        double MaxLongitudinalDecel = -2.0;
         double MaxLateralVel = 3.0;
         double MaxLateralAcc = 2.5;
 
@@ -74,6 +82,20 @@ class SscPlanning3DMap {
     }
     ~SscPlanning3DMap() = default;
     
+    /**
+     * @brief Load data, set initial fs and origin
+     * @param {*}
+     * @return {*}
+     */    
+    void load(const FrenetState& initial_fs) {
+        initial_fs_ = initial_fs;
+        std::array<double, 3> map_origin;
+        map_origin[0] = initial_fs.vec_s_[0] - config_.s_back_len;
+        map_origin[1] = -1.0 * (config_.map_size[1] - 1) * config_.map_resolution[1] / 2.0;
+        map_origin[2] = initial_fs.time_stamp_;
+        p_3d_grid_->set_origin(map_origin);
+    }
+
     /**
      * @brief Run once to generate the semantic cubes sequence
      * @param {*}
@@ -304,9 +326,9 @@ class SscPlanning3DMap {
         int s_idx_u = p_3d_grid_->getCoordUsingGlobalMetricOnSingleDim(s_u, 0);
         int s_idx_l = p_3d_grid_->getCoordUsingGlobalMetricOnSingleDim(s_l, 0);
         s_idx_l = std::max(s_idx_l, static_cast<int>((config_.s_back_len / 2.0) / config_.map_resolution[0]));
+        // s_idx_l = std::max(s_idx_l, cube->s_start_ - static_cast<int>(10.0 / config_.map_resolution[0]));
 
         // Inflate in 5 directions
-        // TODO: check this logic, whether inflate in 6 directions is available and better?
         bool x_p_finish = false;
         bool x_n_finish = false;
         bool y_p_finish = false;
@@ -623,6 +645,13 @@ class SscPlanning3DMap {
             }
         }
 
+        // // DEBUG
+        // for (int i = 0; i < static_cast<int>(tmp_seeds.size()); i++) {
+        //     printf("seed index: %d\n", i);
+        //     printf("x: %d, y: %d, z: %d\n", tmp_seeds[i].x_, tmp_seeds[i].y_, tmp_seeds[i].z_);
+        // }
+        // // END DEBUG
+
         // Cache 
         *seeds = tmp_seeds;
         
@@ -711,7 +740,7 @@ class SscPlanning3DMap {
 // Optimization interface, based on CGAL
 class SscOptimizationInterface {
  public:
-    using ET = CGAL::Gmpz;
+    using ET = CGAL::MP_Float;
     using Program = CGAL::Quadratic_program_from_iterators<
                         std::vector<double*>::iterator,                            // For A
                         double*,                                                   // For b
@@ -757,12 +786,17 @@ class SscOptimizationInterface {
         std::array<double, 3> d_end_constraints = end_constraints_.toDimensionD();
         std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
-        // Multi thread calculation
-        // TODO: add logic to handle the situation where the optimization process is failed
-        std::thread s_thread(&SscOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        std::thread d_thread(&SscOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        s_thread.join();
-        d_thread.join();
+        // // Multi thread calculation
+        // // TODO: add logic to handle the situation where the optimization process is failed
+        // std::thread s_thread(&SscOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+        // std::thread d_thread(&SscOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+        // s_thread.join();
+        // d_thread.join();
+
+        // DEBUG
+        optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+        optimizeSingleDim(d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+        // END DEBUG
 
         // Cache
         *optimized_s = optimized_data_["s"];
@@ -780,11 +814,30 @@ class SscOptimizationInterface {
         calculateDcMatrix(&D, &c);
         double c0 = 0.0;
 
+        // // DEBUG
+        // for (int i = 0; i < 26; i++) {
+        //     for (int j = 0; j < 26; j++) {
+        //         std::cout << *(D[i] + j) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // // END DEBUG
+
+
         // ~Stage II: calculate equal constraints, includes start point constraints, end point constraints and continuity constraints
         CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
         std::vector<double*> A;
         double* b = nullptr;
         calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, &A, &b);
+
+        // // DEBUG
+        // for (int i = 0; i < 26; i++) {
+        //     for (int j = 0; j < 14; j++) {
+        //         std::cout << *(A[i] + j) << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // // ENMD DEBUG
 
         // ~Stage III: calculate low and up boundaries for intermediate points
         bool* fl = nullptr;
@@ -792,9 +845,33 @@ class SscOptimizationInterface {
         bool* fu = nullptr;
         double* u = nullptr;
         calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
+
+        // // DEBUG
+        // std::cout << "fl" << std::endl;
+        // for (int i = 0; i < 26; i++) {
+        //     std::cout << *(fl + i) << ", ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "l" << std::endl;
+        // for (int i = 0; i < 26; i++) {
+        //     std::cout << *(l + i) << ", ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "fu" << std::endl;
+        // for (int i = 0; i < 26; i++) {
+        //     std::cout << *(fu + i) << ", ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "u" << std::endl;
+        // for (int i = 0; i < 26; i++) {
+        //     std::cout << *(u + i) << ", ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "-------------" << std::endl;
+        // // END DEBUG
         
         // ~Stage IV: optimization and transform the formation of optimization result
-        int variables_num = static_cast<int>(ref_stamps_.size());
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
         int constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 2;
         Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
         Solution s = CGAL::solve_quadratic_program(qp, ET());
@@ -815,7 +892,7 @@ class SscOptimizationInterface {
      * @param {*}
      */    
     void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
-        int variables_num = static_cast<int>(ref_stamps_.size());
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
         bool* tmp_fl = new bool[variables_num];
         double* tmp_l = new double[variables_num];
         bool* tmp_fu = new bool[variables_num];
@@ -884,6 +961,21 @@ class SscOptimizationInterface {
             }
         }
 
+        // // DEBUG
+        // for (int i = 0; i < static_cast<int>(A_matrix.rows()); i++) {
+        //     for (int j = 0; j < static_cast<int>(A_matrix.cols()); j++) {
+        //         printf("%lf, ", A_matrix(i, j));
+        //     }
+        // }
+        // std::cout << "---------------------------";
+        // std::cout << std::endl;
+        // // END DEBUG
+
+        // // DEBUG
+        // std::cout << b_matrix << std::endl;
+        // // EDN DEBUG
+        
+
         // Transform data structure 
         std::vector<double*> tmp_A(variables_num);
         for (int i = 0; i < variables_num; i++) {
@@ -925,6 +1017,15 @@ class SscOptimizationInterface {
             D_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
         }
 
+        // // DEBUG
+        // for (int i = 0; i < static_cast<int>(D_matrix.rows()); i++) {
+        //     for (int j = 0; j < static_cast<int>(D_matrix.cols()); j++) {
+        //         printf("%lf, ", D_matrix(i, j));
+        //     }
+        // }
+        // printf("----------------------------------\n");
+        // // END DEBUG
+
         // Convert the eigen data to double**
         std::vector<double*> tmp_D(variables_num);
         for (int i = 0; i < variables_num; i++) {
@@ -934,6 +1035,15 @@ class SscOptimizationInterface {
             }
             tmp_D[i] = d_col;
         }
+
+        // // DEBUG
+        // for (int i = 0; i < variables_num; i++) {
+        //     for (int j = 0; j <= i; j++) {
+        //         printf("%lf ", *(tmp_D[i] + j));
+        //     }
+        //     printf("-----------------\n");
+        // }
+        // // END DEBUG
 
         // Generate c information, all zeros
         double* tmp_c = new double[variables_num];
@@ -963,7 +1073,7 @@ class SscOptimizer {
     ~SscOptimizer() = default;
 
     /**
-     * @brief load data
+     * @brief Load data
      * @param start_constraint
      * @param end_constraint
      * @param driving_corridor
@@ -992,6 +1102,14 @@ class SscOptimizer {
         // ~Stage II: calculate unequal constraints for variables (except start point and end point)
         std::array<std::vector<double>, 4> unequal_constraints;
         generateUnequalConstraints(&unequal_constraints);
+
+        // DEBUG
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < static_cast<int>(unequal_constraints[i].size()); j++) {
+                printf("i: %d, j: %d, %lf\n", i, j, unequal_constraints[i][j]);
+            }
+        }
+        // END DEBUG
 
         // ~Stage III: calculate equal constraints to ensure the continuity
         std::vector<std::vector<double>> equal_constraints;
@@ -1230,6 +1348,7 @@ class SscTrajectoryPlanningCore {
         // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
         SscPlanning3DMap::Config config;
         ssc_3d_map_itf_ = new SscPlanning3DMap(config);
+        ssc_3d_map_itf_->load(current_vehicle_state_fs.fs_);
         DrivingCorridorWorldMetric driving_corridor;
         bool is_map_constructed_success = ssc_3d_map_itf_->runOnce(ego_traj_fs, sur_laned_trajs_fs, sur_unlaned_trajs_fs, &driving_corridor);
         if (!is_map_constructed_success) {
@@ -1251,10 +1370,28 @@ class SscTrajectoryPlanningCore {
         std::vector<double> s, d, t;
         // TODO: add logic to handle the situation where the optimization is failed
         ssc_opt_itf_->runOnce(&s, &d, &t);
+
+        // DEBUG
+        for (const auto& it_s : s) {
+            printf("s: %lf\n", it_s);
+        }
+        for (const auto& it_d : d) {
+            printf("d: %lf\n", it_d);
+        }
+        for (const auto& it_t : t) {
+            printf("t: %lf\n", it_t);
+        }
+        // END DEBUG
         
         // ~Stage IV: calculate piecewise bezier curve in frenet frame
         bezier_curve_traj_itf_ = new BezierPiecewiseCurve(s, d, t);
         std::vector<Point3f> traj_fs = bezier_curve_traj_itf_->generateTraj(0.01);
+
+        // // DEBUG
+        // for (const auto& point_fs : traj_fs) {
+        //     printf("s: %lf, d: %lf, t: %lf\n", point_fs.x_, point_fs.y_, point_fs.z_);
+        // }
+        // // END DEBUG
 
         // ~Stage V: transform the trajectory from frenet to world
         std::vector<Point3f> traj = bridge_itf_->getTrajFromTrajFs(traj_fs);

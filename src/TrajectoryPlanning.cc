@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-06 21:27:26
+ * @LastEditTime: 2021-12-08 15:48:18
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -71,7 +71,7 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
 
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
-    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_ + 10.0, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
 
     // Trajectory planning
     std::vector<Common::Point3f> trajectory;

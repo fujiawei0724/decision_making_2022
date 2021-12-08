@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-06 17:51:14
+ * @LastEditTime: 2021-12-07 16:44:32
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -23,6 +23,7 @@
 #include <CGAL/QP_models.h>
 #include <CGAL/QP_functions.h>
 #include <CGAL/Gmpzf.h>
+#include <CGAL/MP_Float.h>
 #include "Const.hpp"
 #include "Point.hpp"
 #include "Compare.hpp"
@@ -487,7 +488,7 @@ class Point3i : public Point2i {
         
     }
     Point3i(int x, int y, int z) : Point2i(x, y) {
-        z = z_;
+        z_ = z;
     }
     ~Point3i() = default;
 
@@ -530,7 +531,7 @@ public:
 
     // DEBUG
     void print() {
-        std::cout << "semantic cube id: " << id_ << std::endl;
+        // std::cout << "semantic cube id: " << id_ << std::endl;
         std::cout << "s_start: " << s_start_ << std::endl;
         std::cout << "s_end: " << s_end_ << std::endl;
         std::cout << "d_start: " << d_start_ << std::endl;
@@ -613,6 +614,8 @@ public:
         d_ = fs_veh.fs_.vec_dt_[0];
         d_d_ = fs_veh.fs_.vec_dt_[1];
         dd_d_ = fs_veh.fs_.vec_dt_[2];
+        s_info_ = {s_, d_s_, dd_s_};
+        d_info_ = {d_, d_d_, dd_d_};
     }
 
     std::array<double, 3> toDimensionS() const {
