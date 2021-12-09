@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-08 15:52:51
+ * @LastEditTime: 2021-12-09 16:10:41
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -815,12 +815,17 @@ class SscOptimizationInterface {
         double c0 = 0.0;
 
         // // DEBUG
-        // for (int i = 0; i < 26; i++) {
-        //     for (int j = 0; j < 26; j++) {
-        //         std::cout << *(D[i] + j) << " ";
+        // for (int i = 0; i < 18; i++) {
+        //     for (int j = 0; j < 18; j++) {
+        //         std::cout << *(D[i] + j) << ", ";
         //     }
-        //     std::cout << std::endl;
         // }
+        // std::cout << "--------------------------" << std::endl;;
+
+        // for (int i = 0; i < 18; i++) {
+        //     std::cout << *(c + i) << ", ";
+        // }
+        // std::cout << "--------------------------" << std::endl;
         // // END DEBUG
 
 
@@ -831,13 +836,17 @@ class SscOptimizationInterface {
         calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, &A, &b);
 
         // // DEBUG
-        // for (int i = 0; i < 26; i++) {
-        //     for (int j = 0; j < 14; j++) {
-        //         std::cout << *(A[i] + j) << " ";
+        // for (int i = 0; i < 18; i++) {
+        //     for (int j = 0; j < 12; j++) {
+        //         std::cout << *(A[i] + j) << ", ";
         //     }
-        //     std::cout << std::endl;
         // }
-        // // ENMD DEBUG
+        // std::cout << "---------------------------" << std::endl;
+        // for (int i = 0; i < 12; i++) {
+        //     std::cout << *(b + i) << ", ";
+        // }
+        // std::cout << "---------------------------" << std::endl;
+        // // END DEBUG
 
         // ~Stage III: calculate low and up boundaries for intermediate points
         bool* fl = nullptr;
@@ -848,31 +857,31 @@ class SscOptimizationInterface {
 
         // // DEBUG
         // std::cout << "fl" << std::endl;
-        // for (int i = 0; i < 26; i++) {
+        // for (int i = 0; i < 18; i++) {
         //     std::cout << *(fl + i) << ", ";
         // }
         // std::cout << std::endl;
         // std::cout << "l" << std::endl;
-        // for (int i = 0; i < 26; i++) {
+        // for (int i = 0; i < 18; i++) {
         //     std::cout << *(l + i) << ", ";
         // }
         // std::cout << std::endl;
         // std::cout << "fu" << std::endl;
-        // for (int i = 0; i < 26; i++) {
+        // for (int i = 0; i < 18; i++) {
         //     std::cout << *(fu + i) << ", ";
         // }
         // std::cout << std::endl;
         // std::cout << "u" << std::endl;
-        // for (int i = 0; i < 26; i++) {
+        // for (int i = 0; i < 18; i++) {
         //     std::cout << *(u + i) << ", ";
         // }
         // std::cout << std::endl;
-        // std::cout << "-------------" << std::endl;
+        // std::cout << "-------------------" << std::endl;
         // // END DEBUG
         
         // ~Stage IV: optimization and transform the formation of optimization result
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
-        int constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 2;
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
+        int constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
         Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
         Solution s = CGAL::solve_quadratic_program(qp, ET());
         // Convert data
@@ -892,7 +901,7 @@ class SscOptimizationInterface {
      * @param {*}
      */    
     void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
         bool* tmp_fl = new bool[variables_num];
         double* tmp_l = new double[variables_num];
         bool* tmp_fu = new bool[variables_num];
@@ -925,8 +934,8 @@ class SscOptimizationInterface {
     void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, std::vector<double*>* A, double** b) {
         
         // Calculate dimensions and initialize
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
-        int equal_constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 2;
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
+        int equal_constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
         double start_cube_time_span = ref_stamps_[1] - ref_stamps_[0];
         double end_cube_time_span = ref_stamps_[ref_stamps_.size() - 1] - ref_stamps_[ref_stamps_.size() - 2];
         Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
@@ -1003,7 +1012,7 @@ class SscOptimizationInterface {
     void calculateDcMatrix(std::vector<double*>* D, double** c) {
         
         // Initialize D matrix
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 5 + 1;
+        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
         Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(variables_num, variables_num);
 
         // Calculate D matrix
@@ -1013,7 +1022,7 @@ class SscOptimizationInterface {
             double time_coefficient = pow(time_span, -3);
 
             // Intergrate to objective function
-            int influenced_variable_index = i * 5;
+            int influenced_variable_index = i * 6;
             D_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
         }
 
@@ -1030,7 +1039,7 @@ class SscOptimizationInterface {
         std::vector<double*> tmp_D(variables_num);
         for (int i = 0; i < variables_num; i++) {
             double* d_col = new double[variables_num];
-            for (int j = 0; j <= i; j++) {
+            for (int j = 0; j < variables_num; j++) {
                 *(d_col + j) = D_matrix(i, j);
             }
             tmp_D[i] = d_col;
@@ -1047,6 +1056,9 @@ class SscOptimizationInterface {
 
         // Generate c information, all zeros
         double* tmp_c = new double[variables_num];
+        for (int i = 0; i < variables_num; i++) {
+            *(tmp_c + i) = 0.0;
+        }
 
         // TODO: check this parameters transformation process
         *D = tmp_D;
@@ -1103,13 +1115,13 @@ class SscOptimizer {
         std::array<std::vector<double>, 4> unequal_constraints;
         generateUnequalConstraints(&unequal_constraints);
 
-        // DEBUG
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < static_cast<int>(unequal_constraints[i].size()); j++) {
-                printf("i: %d, j: %d, %lf\n", i, j, unequal_constraints[i][j]);
-            }
-        }
-        // END DEBUG
+        // // DEBUG
+        // for (int i = 0; i < 4; i++) {
+        //     for (int j = 0; j < static_cast<int>(unequal_constraints[i].size()); j++) {
+        //         printf("i: %d, j: %d, %lf\n", i, j, unequal_constraints[i][j]);
+        //     }
+        // }
+        // // END DEBUG
 
         // ~Stage III: calculate equal constraints to ensure the continuity
         std::vector<std::vector<double>> equal_constraints;
@@ -1133,7 +1145,7 @@ class SscOptimizer {
      */    
     void generateUnequalConstraints(std::array<std::vector<double>, 4>* unequal_constraints) {
         // Initialize
-        int variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 5 + 1;
+        int variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 6;
         std::array<std::vector<double>, 4> tmp_unequal_constraints = {};
         for (int i = 0; i < 4; i++) {
             tmp_unequal_constraints[i].resize(static_cast<int>(variables_num));
@@ -1145,24 +1157,33 @@ class SscOptimizer {
                 // Delete unequal constraints for start point and end point
                 continue;
             }
-            if (i % 5 == 0) {
-                // Points in intersection which have two constraint cubes 
-                int next_corridor_index = i / 5;
-                DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[next_corridor_index - 1];
-                DrivingCubeWorldMetric next_cube = driving_corridor_.cubes[next_corridor_index];
-                tmp_unequal_constraints[0][i] = std::max(current_cube.cube.s_start_, next_cube.cube.s_start_); // s_low
-                tmp_unequal_constraints[1][i] = std::min(current_cube.cube.s_end_, next_cube.cube.s_end_); // s_up
-                tmp_unequal_constraints[2][i] = std::max(current_cube.cube.d_start_, next_cube.cube.d_start_); // d_start
-                tmp_unequal_constraints[3][i] = std::min(current_cube.cube.d_end_, next_cube.cube.d_end_); // d_end
-            } else {
-                // Normal points which only have one constraint cube
-                int current_corridor_index = i / 5;
-                DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[current_corridor_index];
-                tmp_unequal_constraints[0][i] = current_cube.cube.s_start_;
-                tmp_unequal_constraints[1][i] = current_cube.cube.s_end_;
-                tmp_unequal_constraints[2][i] = current_cube.cube.d_start_;
-                tmp_unequal_constraints[3][i] = current_cube.cube.d_end_;
-            }
+
+            // if (i % 5 == 0) {
+            //     // Points in intersection which have two constraint cubes 
+            //     int next_corridor_index = i / 5;
+            //     DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[next_corridor_index - 1];
+            //     DrivingCubeWorldMetric next_cube = driving_corridor_.cubes[next_corridor_index];
+            //     tmp_unequal_constraints[0][i] = std::max(current_cube.cube.s_start_, next_cube.cube.s_start_); // s_low
+            //     tmp_unequal_constraints[1][i] = std::min(current_cube.cube.s_end_, next_cube.cube.s_end_); // s_up
+            //     tmp_unequal_constraints[2][i] = std::max(current_cube.cube.d_start_, next_cube.cube.d_start_); // d_start
+            //     tmp_unequal_constraints[3][i] = std::min(current_cube.cube.d_end_, next_cube.cube.d_end_); // d_end
+            // } else {
+            //     // Normal points which only have one constraint cube
+            //     int current_corridor_index = i / 5;
+            //     DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[current_corridor_index];
+            //     tmp_unequal_constraints[0][i] = current_cube.cube.s_start_;
+            //     tmp_unequal_constraints[1][i] = current_cube.cube.s_end_;
+            //     tmp_unequal_constraints[2][i] = current_cube.cube.d_start_;
+            //     tmp_unequal_constraints[3][i] = current_cube.cube.d_end_;
+            // }
+
+            int current_corridor_index = i / 6;
+            DrivingCubeWorldMetric current_cube = driving_corridor_.cubes[current_corridor_index];
+            tmp_unequal_constraints[0][i] = current_cube.cube.s_start_;
+            tmp_unequal_constraints[1][i] = current_cube.cube.s_end_;
+            tmp_unequal_constraints[2][i] = current_cube.cube.d_start_;
+            tmp_unequal_constraints[3][i] = current_cube.cube.d_end_;
+
         }
 
         *unequal_constraints = tmp_unequal_constraints;
@@ -1175,7 +1196,7 @@ class SscOptimizer {
     void generateEqualConstraints(std::vector<std::vector<double>>* equal_constraints) {
         // Initialize 
         std::vector<std::vector<double>> tmp_equal_constraints;
-        int variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 5 + 1;
+        int variables_num = static_cast<int>(driving_corridor_.cubes.size()) * 6;
 
         // Calculate equal constraints
         for (int i = 0; i < static_cast<int>(driving_corridor_.cubes.size()) - 1; i++) {
@@ -1188,26 +1209,32 @@ class SscOptimizer {
             double next_cube_time_span = next_cube.cube.t_end_ - next_cube.cube.t_start_;
 
             // Initialize equal constraints
-            int current_cube_start_index = i * 5;
-            int next_cube_start_index = (i + 1) * 5;
+            int current_cube_start_index = i * 6;
+            int next_cube_start_index = (i + 1) * 6;
+            std::vector<double> current_position_equal_constraints(variables_num, 0.0);
             std::vector<double> current_velocity_equal_constraints(variables_num, 0.0);
             std::vector<double> current_acceleration_equal_constraints(variables_num, 0.0);
+
+            // Supple position constraints
+            current_position_equal_constraints[current_cube_start_index + 5] = 1.0;
+            current_position_equal_constraints[next_cube_start_index] = -1.0;
 
             // Supple velocity constraints 
             current_velocity_equal_constraints[current_cube_start_index + 4] = -5.0 / current_cube_time_span;
             current_velocity_equal_constraints[current_cube_start_index + 5] = 5.0 / current_cube_time_span;
-            current_velocity_equal_constraints[next_cube_start_index] = -5.0 / next_cube_time_span;
-            current_velocity_equal_constraints[next_cube_start_index + 1] = 5.0 / next_cube_time_span;
+            current_velocity_equal_constraints[next_cube_start_index] = -1.0 * -5.0 / next_cube_time_span;
+            current_velocity_equal_constraints[next_cube_start_index + 1] = -1.0 * 5.0 / next_cube_time_span;
 
             // Supple acceleration constraints 
             current_acceleration_equal_constraints[current_cube_start_index + 3] = 20.0 / current_cube_time_span;
             current_acceleration_equal_constraints[current_cube_start_index + 4] = -40.0 / current_cube_time_span;
             current_acceleration_equal_constraints[current_cube_start_index + 5] = 20.0 / current_cube_time_span;
-            current_acceleration_equal_constraints[next_cube_start_index] = 20.0 / next_cube_time_span;
-            current_acceleration_equal_constraints[next_cube_start_index + 1] = -40.0 / next_cube_time_span;
-            current_acceleration_equal_constraints[next_cube_start_index + 2] = 20.0 / next_cube_time_span;
+            current_acceleration_equal_constraints[next_cube_start_index] = -1.0 * 20.0 / next_cube_time_span;
+            current_acceleration_equal_constraints[next_cube_start_index + 1] = -1.0 * -40.0 / next_cube_time_span;
+            current_acceleration_equal_constraints[next_cube_start_index + 2] = -1.0 * 20.0 / next_cube_time_span;
 
             // Cache
+            tmp_equal_constraints.emplace_back(current_position_equal_constraints);
             tmp_equal_constraints.emplace_back(current_velocity_equal_constraints);
             tmp_equal_constraints.emplace_back(current_acceleration_equal_constraints);
 
@@ -1229,7 +1256,7 @@ class BezierPiecewiseCurve {
     BezierPiecewiseCurve(const std::vector<double>& s, const std::vector<double>& d, std::vector<double>& ref_stamps) {
         // Check data
         assert(s.size() == d.size());
-        assert((static_cast<int>(ref_stamps.size()) - 1) * 5 + 1 == static_cast<int>(s.size()));
+        assert((static_cast<int>(ref_stamps.size()) - 1) * 6 == static_cast<int>(s.size()));
 
         // Calculate segments number
         ref_stamps_ = ref_stamps;
@@ -1244,7 +1271,7 @@ class BezierPiecewiseCurve {
             d_coefficients_[i].resize(6);
             
             // Supple coefficients
-            int start_influenced_index = i * 5;
+            int start_influenced_index = i * 6;
             s_coefficients_[i][0] = s[start_influenced_index];
             s_coefficients_[i][1] = s[start_influenced_index + 1];
             s_coefficients_[i][2] = s[start_influenced_index + 2];
@@ -1339,11 +1366,11 @@ class SscTrajectoryPlanningCore {
         std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
         std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
 
-        // DEBUG 
-        for (auto& veh_fs : ego_traj_fs) {
-            veh_fs.fs_.print();
-        }
-        // END DEBUG
+        // // DEBUG 
+        // for (auto& veh_fs : ego_traj_fs) {
+        //     veh_fs.fs_.print();
+        // }
+        // // END DEBUG
 
         // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
         SscPlanning3DMap::Config config;
@@ -1357,9 +1384,9 @@ class SscTrajectoryPlanningCore {
             return;
         }
 
-        // DEBUG
-        driving_corridor.print();
-        // END DEBUG
+        // // DEBUG
+        // driving_corridor.print();
+        // // END DEBUG
 
         // ~Stage III: determine constraints conditions and do optimization
         EqualConstraint start_constraints, end_constraints;
@@ -1371,17 +1398,17 @@ class SscTrajectoryPlanningCore {
         // TODO: add logic to handle the situation where the optimization is failed
         ssc_opt_itf_->runOnce(&s, &d, &t);
 
-        // DEBUG
-        for (const auto& it_s : s) {
-            printf("s: %lf\n", it_s);
-        }
-        for (const auto& it_d : d) {
-            printf("d: %lf\n", it_d);
-        }
-        for (const auto& it_t : t) {
-            printf("t: %lf\n", it_t);
-        }
-        // END DEBUG
+        // // DEBUG
+        // for (const auto& it_s : s) {
+        //     printf("s: %lf\n", it_s);
+        // }
+        // for (const auto& it_d : d) {
+        //     printf("d: %lf\n", it_d);
+        // }
+        // for (const auto& it_t : t) {
+        //     printf("t: %lf\n", it_t);
+        // }
+        // // END DEBUG
         
         // ~Stage IV: calculate piecewise bezier curve in frenet frame
         bezier_curve_traj_itf_ = new BezierPiecewiseCurve(s, d, t);
