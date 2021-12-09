@@ -638,7 +638,7 @@ void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner
     int ego_veh_state_visualization_start_id = 500000 + index * 50;
     for (int i = 0; i < static_cast<int>(traj.size()); i++) {
         BehaviorPlanner::Vehicle cur_ego_vehicle_state = traj[i];
-        ego_veh_predict_states_marker_arr.markers.push_back(visualizeRectToMarker(cur_ego_vehicle_state.state_.position_(0), cur_ego_vehicle_state.state_.position_(1), cur_ego_vehicle_state.state_.theta_, cur_ego_vehicle_state.width_, cur_ego_vehicle_state.length_, 1.0, color, i + ego_veh_state_visualization_start_id));
+        ego_veh_predict_states_marker_arr.markers.push_back(visualizeRectToMarker(cur_ego_vehicle_state.state_.position_(0), cur_ego_vehicle_state.state_.position_(1), cur_ego_vehicle_state.state_.theta_, cur_ego_vehicle_state.width_, cur_ego_vehicle_state.length_, 0.5, color, i + ego_veh_state_visualization_start_id));
     }
 
     publisher.publish(ego_veh_predict_states_marker_arr);
