@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-09 20:23:49
+ * @LastEditTime: 2021-12-11 18:27:17
  * @Description: Components for ssc planner.
  */
 
@@ -17,7 +17,7 @@ namespace SscPlanner {
     }
     SscPlanning3DMap::~SscPlanning3DMap() = default;
 
-        /**
+    /**
      * @brief Load data, set initial fs and origin
      * @param {*}
      * @return {*}
@@ -38,12 +38,18 @@ namespace SscPlanner {
      */
     bool SscPlanning3DMap::runOnce(const std::vector<FsVehicle>& ego_traj, const std::unordered_map<int, std::vector<FsVehicle>>& surround_laned_trajs, const std::unordered_map<int, std::vector<FsVehicle>>& surround_unlaned_obs_trajs, DrivingCorridorWorldMetric* semantic_cubes_sequence) {
         // ~Stage I: construct 3D grid map
+        clock_t constructed_3dmap_start_time = clock();
         contruct3DMap(surround_laned_trajs);
         contruct3DMap(surround_unlaned_obs_trajs);
+        clock_t constructed_3dmap_end_time = clock();
+        printf("[SscPlanner] construct 3d map time consumption: %lf.\n", static_cast<double>((constructed_3dmap_end_time - constructed_3dmap_start_time)) / CLOCKS_PER_SEC);
 
         // ~Stage II: generate corridor in coord frame
         DrivingCorridor driving_corridor;
+        clock_t generate_corridor_start_time = clock();
         bool is_success = generateCorridor(ego_traj, &driving_corridor);
+        clock_t generate_corridor_end_time = clock();
+        printf("[SscPlanner] generate corridor time consumption: %lf.\n", static_cast<double>((generate_corridor_end_time - generate_corridor_start_time)) / CLOCKS_PER_SEC);
         if (!is_success) {
             return false;
         }
@@ -698,10 +704,13 @@ namespace SscPlanner {
 
         // Multi thread calculation
         // TODO: add logic to handle the situation where the optimization process is failed
+        clock_t single_dim_optimization_start_time = clock();
         std::thread s_thread(&SscOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
         std::thread d_thread(&SscOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
         s_thread.join();
         d_thread.join();
+        clock_t single_dim_optimization_end_time = clock();
+        printf("[SscPlanner] single dimension optimization time consumption: %lf.\n", static_cast<double>((single_dim_optimization_end_time - single_dim_optimization_start_time)) / CLOCKS_PER_SEC);
 
         // // DEBUG
         // optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
