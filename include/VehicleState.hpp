@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-07 16:44:32
+ * @LastEditTime: 2021-12-12 21:13:56
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -14,6 +14,7 @@
 #include <map>
 #include <array>
 #include <algorithm>
+#include <memory>
 #include <functional>
 #include <stdio.h>
 #include <pthread.h>
@@ -24,6 +25,8 @@
 #include <CGAL/QP_functions.h>
 #include <CGAL/Gmpzf.h>
 #include <CGAL/MP_Float.h>
+#include <torch/torch.h>
+#include <torch/script.h>
 #include "Const.hpp"
 #include "Point.hpp"
 #include "Compare.hpp"
@@ -251,6 +254,7 @@ public:
     StateTransformer(const Lane& lane) {
         lane_ = lane;
     }
+    ~StateTransformer() = default;
 
     
     // Transform world state position to frenet state position     
@@ -433,6 +437,11 @@ public:
             fs_traj[i] = getFsVehicleFromVehicle(traj[i]);
         }
         return fs_traj;
+    }
+
+    // Transform a vehicle world state to the state array in frenet (for HPUP)
+    std::vector<double> getFrenetVehicleStateArray() {
+        
     }
 
     Lane lane_;

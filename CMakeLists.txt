@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(motion_planning)
-set(CMAKE_BUILD_TYPE Debug)#Release
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11 -Wall -O0)
+set(CMAKE_BUILD_TYPE Debug)
+add_compile_options(-std=c++14 -Wall -O0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
+set(Torch_DIR /home/fjw/libtorch/share/cmake/Torch)
+
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -35,6 +36,8 @@ find_package(Glog REQUIRED COMPONENTS system)
 # find_package(/opt/ros/kinetic/include/opencv-3.3.1-dev)
 find_package(OpenCV REQUIRED)
 find_package(CGAL)
+find_package(Torch REQUIRED)
+
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -191,6 +194,7 @@ target_link_libraries(${PROJECT_NAME}_lib
   CGAL::CGAL
   ${OpenCV_LIBS}
   pthread
+  ${TORCH_LIBRARIES}
   # obstacle_utilities
 )
 
@@ -201,6 +205,7 @@ target_link_libraries(${PROJECT_NAME}_node
   ${OpenCV_LIBS}
   ${PROJECT_NAME}_lib
   pthread
+  ${TORCH_LIBRARIES}
   # obstacle_utilities
 )
 
