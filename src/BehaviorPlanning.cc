@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-11 17:27:44
+ * @LastEditTime: 2021-12-13 17:12:53
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -149,7 +149,7 @@ namespace BehaviorPlanner {
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, potential_lateral_behavior);
         Lane reference_lane = lane_set_[reference_lane_id];
 
-        return SemanticVehicle(surround_vehicle, potential_lateral_behavior, LongitudinalBehavior::Normal, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
+        return SemanticVehicle(surround_vehicle, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
     }
 
     std::unordered_map<int, SemanticVehicle> MapInterface::getSurroundSemanticVehicles(const std::unordered_map<int, Vehicle>& surround_vehicles) {
@@ -162,20 +162,16 @@ namespace BehaviorPlanner {
 
     // Get ego semantic vehicle state
     // Note that ego vehicle's reference lane could be updated with the behavior sequence
-    SemanticVehicle MapInterface::getEgoSemanticVehicle(const Vehicle& ego_vehicle, const VehicleBehavior& ego_vehicle_behavior) {
+    SemanticVehicle MapInterface::getEgoSemanticVehicle(const Vehicle& ego_vehicle, const LateralBehavior& ego_vehicle_lat_beh) {
         // Calculate nearest lane
         LaneId nearest_lane_id = calculateNearestLaneId(ego_vehicle.state_.position_);
         Lane nearest_lane = lane_set_[nearest_lane_id];
 
-        // Transform vehicle behavior to lateral behavior and longitudinal behavior
-        LateralBehavior lat_beh = ego_vehicle_behavior.lat_beh_;
-        LongitudinalBehavior lon_beh = ego_vehicle_behavior.lon_beh_;
-
         // Update reference lane
-        LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, lat_beh);
+        LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, ego_vehicle_lat_beh);
         Lane reference_lane = lane_set_[reference_lane_id];
 
-        return SemanticVehicle(ego_vehicle, lat_beh, lon_beh, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
+        return SemanticVehicle(ego_vehicle, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
     }
 
     // Get leading vehicle state
@@ -789,7 +785,7 @@ namespace BehaviorPlanner {
     void BehaviorPlannerCore::simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, int index) {
         
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
-        SemanticVehicle ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0]);
+        SemanticVehicle ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0].lat_beh_);
         std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = mtf_->getSurroundSemanticVehicles(surround_vehicles);
 
         // Determine desired speed based on longitudinal speed
@@ -825,7 +821,7 @@ namespace BehaviorPlanner {
         for (int i = 0; i < static_cast<int>(behavior_sequence.size()); i++) {
             // Update the lateral behavior and reference lane for ego semantic vehicle
             if (i > 0 && behavior_sequence[i].lat_beh_ != behavior_sequence[i - 1].lat_beh_) {
-                ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(current_ego_vehicle, behavior_sequence[i]);
+                ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(current_ego_vehicle, behavior_sequence[i].lat_beh_);
             }
 
             // Initialize desired state

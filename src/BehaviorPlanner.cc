@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-10 11:05:22
+ * @LastEditTime: 2021-12-13 13:40:16
  * @Descripttion: EUDM behavior planner interface with the whole pipeline.
  */
 
@@ -66,8 +66,11 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     double behavior_planner_time_span = 4.0;
     double behavior_planner_dt = 0.4;
     bool is_behavior_planning_success = false;
+    clock_t behavior_planning_start_time = clock();
     BehaviorPlanner::BehaviorPlannerCore* behavior_planner = new BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt, vis_behavior_planner_ego_states_pub_);
     is_behavior_planning_success = behavior_planner->runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_, &reference_lane_);
+    clock_t behavior_planning_end_time = clock();
+    printf("[MainPipeline] behavior planning time consumption: %lf.\n", static_cast<double>((behavior_planning_end_time - behavior_planning_start_time)) / CLOCKS_PER_SEC);
 
     // // Visualization best policy states predicted by behavior planning
     // if (is_behavior_planning_success) {

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-09 19:55:38
+ * @LastEditTime: 2021-12-13 17:17:08
  * @Descripttion: Behavior planner core.
  */
 
@@ -62,7 +62,7 @@ public:
 
     // Get ego semantic vehicle state
     // Note that ego vehicle's reference lane could be updated with the behavior sequence
-    SemanticVehicle getEgoSemanticVehicle(const Vehicle& ego_vehicle, const VehicleBehavior& ego_vehicle_behavior);
+    SemanticVehicle getEgoSemanticVehicle(const Vehicle& ego_vehicle, const LateralBehavior& ego_vehicle_lat_beh);
 
     // Get leading vehicle state
     bool getLeadingVehicle(const SemanticVehicle& cur_semantic_vehicle, const std::unordered_map<int, SemanticVehicle>& other_semantic_vehicles_set, Vehicle& leading_vehicle);
@@ -230,7 +230,7 @@ public:
 
 // Behavior planner core
 class BehaviorPlannerCore {
-public:
+ public:
     using Trajectory = std::vector<Vehicle>;
     using BehaviorSequence = std::vector<VehicleBehavior>;
     // Add the variability of behavior sequence

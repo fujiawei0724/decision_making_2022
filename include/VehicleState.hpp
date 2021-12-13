@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-12 21:13:56
+ * @LastEditTime: 2021-12-13 17:01:14
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -63,24 +63,36 @@ enum class LongitudinalBehavior {
 
 // Vehicle behavior 
 class VehicleBehavior {
-public:
+ public:
     VehicleBehavior() = default;
     VehicleBehavior(const LateralBehavior& lat_beh, const LongitudinalBehavior& lon_beh) {
         lat_beh_ = lat_beh;
         lon_beh_ = lon_beh;
     }
-    ~VehicleBehavior() {
-
-    }
+    ~VehicleBehavior() = default;
 
     LateralBehavior lat_beh_;
     LongitudinalBehavior lon_beh_;
 };
 
+// Vehicle intention
+class VehicleIntention {
+ public:
+    VehicleIntention() = default;
+    VehicleIntention(const LateralBehavior& lat_beh, const double& vel_comp) {
+        lat_beh_ = lat_beh;
+        lon_vel_comp_ = vel_comp;
+    }
+    ~VehicleIntention() = default;
+
+    LateralBehavior lat_beh_;
+    double lon_vel_comp_{0.0};
+};
+
 
 // The description of vehicle state in world coordination
 class State {
-public: 
+ public: 
     // Constructor
     State() = default;
     State(double time_stamp, const Eigen::Matrix<double, 2, 1>& position, double theta, double curvature, double velocity, double acceleration, double steer) {
@@ -125,7 +137,7 @@ public:
  * @param vec_dt_ denote the lateral offset based on the tim t. (Maybe useless)
  */
 class FrenetState {
-public: 
+ public: 
     // Constructor
     FrenetState() = default;
     FrenetState(const Eigen::Matrix<double, 3, 1>& s, const Eigen::Matrix<double, 3, 1>& ds, const Eigen::Matrix<double, 3, 1>& dt) {
@@ -178,7 +190,7 @@ public:
 
 // The description of vehicle information in frenet state
 class FsVehicle {
-public:
+ public:
     // Constructor
     FsVehicle() = default;
     FsVehicle(const FrenetState& frenet_state, const std::vector<Eigen::Matrix<double, 2, 1>>& vertex) {
@@ -193,7 +205,7 @@ public:
 };
 
 class Vehicle {
-public:
+ public:
     // Constructor
     Vehicle() = default;
     Vehicle(int id, const State& state, double length, double width) {
@@ -249,7 +261,7 @@ public:
 
 // Transform between world state and frenet state
 class StateTransformer {
-public:
+ public:
     StateTransformer() = default;
     StateTransformer(const Lane& lane) {
         lane_ = lane;
@@ -439,9 +451,55 @@ public:
         return fs_traj;
     }
 
-    // Transform a vehicle world state to the state array in frenet (for HPUP)
-    std::vector<double> getFrenetVehicleStateArray() {
-        
+    // Transform ego vehicle world state to the state array in frenet (for HPUP)
+    std::vector<double> getFrenetEgoVehicleStateArray(const Vehicle& ego_vehicle) {
+        std::vector<double> ego_veh_state_array;
+
+        // Note that the value need to convert is position.x, position.y, theta, velocity, acceleration, and curvature. To simplify the calculation, the valicity and acceleration have not been converted at the initial version.
+        // TODO: convert velocity and acceleration if need
+
+        // Convert position, theta, curvature
+        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(ego_vehicle.state_.position_);
+        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        Eigen::Vector2d start_point_in_world_v2d(ego_vehicle.state_.position_(0), ego_vehicle.state_.position_(1));
+        Eigen::Vector2d start_point_position_in_frenet;
+        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        double start_point_theta_in_frenet;
+        Tools::transferThetaCoordinateSystem(trans_matrix, ego_vehicle.state_.theta_, &start_point_theta_in_frenet);
+        double start_point_kappa_in_frenet;
+        start_point_kappa_in_frenet = ego_vehicle.state_.curvature_ - cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*1.0/(1.0/lane_coordination[start_index_of_lane].worldpos_.kappa_ - start_point_position_in_frenet(1));
+
+        // Supple data
+        // Note that ego vehicle's size is identical with training model, length: 5.0, width: 1.95
+        ego_veh_state_array = std::vector<double>{start_point_position_in_frenet(0), start_point_position_in_frenet(1), start_point_theta_in_frenet, 5.0, 1.95, ego_vehicle.state_.velocity_, ego_vehicle.state_.acceleration_, start_point_kappa_in_frenet, ego_vehicle.state_.steer_};
+
+        return ego_veh_state_array;
+    }
+
+    // Transform single surround vehicle world state to the state array in frenet (for HPUP)
+    std::vector<double> getFrenetSurroundVehicleStateArray(const Vehicle& surround_vehicle) {
+        std::vector<double> surround_veh_state_array;
+
+        // Note that the value need to convert is position.x, position.y, theta, velocity, acceleration. Different from ego vehicle, curvature and steer information could not be provided, and a special flag is added at the head of the vector to represent whether current surround vehicle is existed. To simplify the calculation, the valicity and acceleration have not been converted at the initial version. 
+        // TODO: convert velocity and acceleration if need
+
+        // Convert position, theta
+        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(surround_vehicle.state_.position_);
+        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        Eigen::Vector2d start_point_in_world_v2d(surround_vehicle.state_.position_(0), surround_vehicle.state_.position_(1));
+        Eigen::Vector2d start_point_position_in_frenet;
+        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        double start_point_theta_in_frenet;
+        Tools::transferThetaCoordinateSystem(trans_matrix, surround_vehicle.state_.theta_, &start_point_theta_in_frenet);
+
+        // Supple data 
+        surround_veh_state_array = std::vector<double>{1.0, start_point_position_in_frenet(0), start_point_position_in_frenet(1), start_point_theta_in_frenet, surround_vehicle.length_, surround_vehicle.width_, surround_vehicle.state_.velocity_, surround_vehicle.state_.acceleration_};
+
+        return surround_veh_state_array;
     }
 
     Lane lane_;
@@ -450,13 +508,11 @@ public:
 
 // Vehicle state with semantic information, such as current lane and reference lane
 class SemanticVehicle {
-public:
+ public:
     // Constructor
     SemanticVehicle() = default;
-    SemanticVehicle(const Vehicle& vehicle, const LateralBehavior& lat_beh, const LongitudinalBehavior& lon_beh, const LaneId& nearest_lane_id, const LaneId& reference_lane_id, const Lane& nearest_lane, const Lane& reference_lane) {
+    SemanticVehicle(const Vehicle& vehicle, const LaneId& nearest_lane_id, const LaneId& reference_lane_id, const Lane& nearest_lane, const Lane& reference_lane) {
         vehicle_ = vehicle;
-        lat_beh_ = lat_beh;
-        lon_beh_ = lon_beh;
         nearest_lane_id_ = nearest_lane_id;
         reference_lane_id_ = reference_lane_id;
         nearest_lane_ = nearest_lane;
@@ -469,8 +525,6 @@ public:
     }
 
     Vehicle vehicle_;
-    LateralBehavior lat_beh_;
-    LongitudinalBehavior lon_beh_;
     LaneId nearest_lane_id_{LaneId::Undefined};
     LaneId reference_lane_id_{LaneId::Undefined};
     Lane nearest_lane_;
@@ -523,7 +577,7 @@ class Point3f {
 // The semantic cube to constrain the position of trajectory interpolation points
 template <typename T>
 class SemanticCube {
-public:
+ public:
     // Constructor
     SemanticCube() = default;
     SemanticCube(int id, T s_start, T s_end, T d_start, T d_end, T t_start, T t_end) {
@@ -600,7 +654,7 @@ class ShapeUtils {
 
 // Equal constraints related to start point and end point
 class EqualConstraint {
-public:
+ public:
     // Constructor
     EqualConstraint() = default;
     EqualConstraint(double s, double d_s, double dd_s, double d, double d_d, double dd_d) {
@@ -1117,35 +1171,6 @@ class BpTpBridge {
     StateTransformer* state_trans_itf_{nullptr};
     
 };
-
-template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear)
-{
-
-    std::vector<double> linspaced;
-
-    double start = static_cast<double>(start_in);
-    double end = static_cast<double>(end_in);
-    double num = static_cast<double>(num_in);
-
-    if (num == 0) { return linspaced; }
-    if (num == 1) {
-        linspaced.push_back(start);
-        return linspaced;
-    }
-
-    double delta = (end - start) / (num - 1);
-
-    for(int i=0; i < num-1; ++i){
-        linspaced.push_back(start + delta * i);
-    }
-    if (include_rear) {
-        linspaced.push_back(end);
-    }
-    return linspaced;
-}
-
-
 
 
 } // End of namespace BehaviorPlanner
