@@ -987,6 +987,8 @@ class SubVehicle{
 
     void behaviorPlanning(bool* result);
 
+    void hpdmPlanning(bool* result);
+
     void trajectoryPlanning(bool* trajectory_planning_result);
 
     void sscPlanning(bool* trajectory_planning_result);

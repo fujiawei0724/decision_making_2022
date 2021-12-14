@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-13 17:17:08
+ * @LastEditTime: 2021-12-14 11:12:50
  * @Descripttion: Behavior planner core.
  */
 
@@ -75,6 +75,20 @@ public:
 
     // Calculate the orientation of a lane point that has the minimum distance from the specified position
     double calculateNearestPointOrientation(const PathPlanningUtilities::Point2f& position);
+
+    /**
+     * @brief Generate lane information for HPDM 
+     * @param {*}
+     * @return {*}
+     */   
+    std::vector<double> getLaneInfo();
+
+    /**
+     * @brief Calculate nearest lane for HPDM
+     * @param {*}
+     * @return {*}
+     */
+    Lane calculateNearestLane(const Vehicle& vehicle);
 
     // Lane information in map interface
     bool center_lane_exist_{false};

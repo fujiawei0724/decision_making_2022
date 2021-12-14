@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-14 10:23:36
+ * @LastEditTime: 2021-12-14 12:00:02
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -258,7 +258,7 @@ class TrajectoryGenerator {
      * @param safe
      * @param cost
      */    
-    void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost) {
+    void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_behavior_reference_lane) {
         
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
         SemanticVehicle ego_semantic_vehicle = map_itf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0].lat_beh_);
@@ -349,6 +349,7 @@ class TrajectoryGenerator {
         *sur_trajs = surround_trajectories;
         *safe = is_safe;
         *cost = behavior_cost;
+        *target_behavior_reference_lane = map_itf_->lane_set_[ego_semantic_vehicle.reference_lane_id_];
     }
 
     /**
@@ -360,7 +361,7 @@ class TrajectoryGenerator {
      * @param safe
      * @param cost
      */    
-    void simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost) {
+    void simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane) {
         
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
         SemanticVehicle ego_semantic_vehicle = map_itf_->getEgoSemanticVehicle(ego_vehicle, intention_sequence[0].lat_beh_);
@@ -444,6 +445,7 @@ class TrajectoryGenerator {
         *sur_trajs = surround_trajectories;
         *safe = is_safe;
         *cost = behavior_cost;
+        *target_intention_reference_lane = map_itf_->lane_set_[ego_semantic_vehicle.reference_lane_id_];
     }
 
     // Simulate single vehicle behavior (lateral and longitudinal)
@@ -480,73 +482,25 @@ class TrajectoryGenerator {
 
 class HpdmPlannerCore {
  public:
-    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
-        traj_generator_ = new TrajectoryGenerator(map_itf);
-        state_itf_ = new StateInterface(nearest_lane);
-        torch_itf_ = new TorchInterface(model_path);
-    }
-    ~HpdmPlannerCore() = default;
+    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path);
+    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub);
+    ~HpdmPlannerCore();
 
     // Load data
-    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& nearest_lane) {
-        ego_vehicle_ = ego_vehicle;
-        surround_vehicles_ = surround_vehicles;
-        lane_info_ = lane_info;
-        nearest_lane_ = nearest_lane;
-    }
+    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info);
 
     // Run HPDM planner
-    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, bool* safe, double* cost) {
-        // ~Stage I: construct state array
-        std::vector<double> state_array;
-        state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, &state_array);
-
-        // ~Stage II: model predict to generate action index
-        int action_index = -1;
-        torch_itf_->runOnce(state_array, &action_index);
-
-        // ~Stage III: generate behavior / intention sequence from action index 
-        std::vector<VehicleBehavior> behavior_sequence;
-        std::vector<VehicleIntention> intention_sequence;
-        if (lon_candidate_num == 3) {
-            behavior_sequence = ActionInterface::indexToBehSeq(action_index);
-        } else if (lon_candidate_num == 11) {
-            intention_sequence = ActionInterface::indexToIntentionSeq(action_index);
-        } else {
-            assert(false);
-        }
-
-        // ~Stage IV: generate trajectories for all vehicles and additional information 
-        std::vector<Vehicle> ego_trajectory;
-        std::unordered_map<int, std::vector<Vehicle>> sur_trajectories;
-        bool is_safe = false;
-        double policy_cost = 0.0;
-        if (lon_candidate_num == 3) {
-            traj_generator_->simulateSingleBehaviorSequence(ego_vehicle_, surround_vehicles_, behavior_sequence, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost);
-        } else if (lon_candidate_num == 11) {
-            traj_generator_->simulateSingleIntentionSequence(ego_vehicle_, surround_vehicles_, intention_sequence, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost);
-        } else {
-            assert(false);
-        }
-
-        *ego_traj = ego_trajectory;
-        *sur_trajs = sur_trajectories;
-        *safe = is_safe;
-        *cost = policy_cost;
-    }
-
-
-
+    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost);
 
     TrajectoryGenerator* traj_generator_{nullptr};
     StateInterface* state_itf_{nullptr};
     TorchInterface* torch_itf_{nullptr};
+    // DEBUG visualization
+    ros::Publisher vis_pub_;
 
     Vehicle ego_vehicle_;
     std::unordered_map<int, Vehicle> surround_vehicles_;
     std::vector<double> lane_info_;
-    Lane nearest_lane_;
-
 
 };
 

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-14 10:21:57
+ * @LastEditTime: 2021-12-14 11:56:27
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -83,3 +83,75 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
 
 }
 
+void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
+    // Update information for behavior planning
+    updateMapInformation();
+    updateObstacleInformation();
+
+    // Contruct map interface for HPDM 
+    std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
+    std::map<Common::LaneId, Lane> lanes_info;
+    if (center_lane_.getLaneExistance()) {
+        lanes_exist_info[Common::LaneId::CenterLane] = true;
+        lanes_info[Common::LaneId::CenterLane] = center_lane_;
+    }
+    if (left_lane_.getLaneExistance()) {
+        lanes_exist_info[Common::LaneId::LeftLane] = true;
+        lanes_info[Common::LaneId::LeftLane] = left_lane_;
+    }
+    if (right_lane_.getLaneExistance()) {
+        lanes_exist_info[Common::LaneId::RightLane] = true;
+        lanes_info[Common::LaneId::RightLane] = right_lane_;
+    }
+    BehaviorPlanner::MapInterface map_interface = BehaviorPlanner::MapInterface(lanes_exist_info, lanes_info);
+    // Get lane information
+    std::vector<double> lane_info = map_interface.getLaneInfo();
+
+    // Transform ego vehicle information and surround vehice information
+    // Update vehicle information
+    PathPlanningUtilities::VehicleState start_point_in_world;
+    this->current_vehicle_world_position_mutex_.lock();
+    start_point_in_world = this->current_vehicle_world_position_;
+    this->current_vehicle_world_position_mutex_.unlock();
+    PathPlanningUtilities::VehicleMovementState start_point_movement;
+    this->current_vehicle_movement_mutex_.lock();
+    start_point_movement = this->current_vehicle_movement_;
+    this->current_vehicle_movement_mutex_.unlock();
+    this->current_vehicle_kappa_mutex_.lock();
+    double start_point_kappa = this->current_vehicle_kappa_;
+    start_point_in_world.kappa_ = start_point_kappa;
+    this->current_vehicle_kappa_mutex_.unlock();
+    current_vehicle_steer_metex_.lock();
+    double current_vehicle_steer = current_vehicle_steer_;
+    current_vehicle_steer_metex_.unlock();
+
+    // Update data
+    Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
+    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_ + 10.0, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+    Lane nearest_lane = map_interface.calculateNearestLane(ego_vehicle);
+
+    // Clear information
+    unlaned_obstacles_.clear();
+    ego_trajectory_.clear();
+    surround_trajectories_.clear();
+
+    // Unlaned obstacles are considered in trajectory planner to generate occupied semantic cubes
+    std::vector<DecisionMaking::Obstacle> unlaned_obstacles;
+    std::unordered_map<int, Common::Vehicle> surround_vehicles = BehaviorPlanner::VehicleInterface::getSurroundVehicles(&map_interface, obstacles_, unlaned_obstacles);
+    unlaned_obstacles_ = unlaned_obstacles;
+
+    // Run HPDM
+    // Load information
+    std::string model_path = "";
+    clock_t hpdm_planning_start_time = clock();
+    HpdmPlanner::HpdmPlannerCore* hpdm_planner = new HpdmPlanner::HpdmPlannerCore(&map_interface, nearest_lane, model_path, vis_behavior_planner_ego_states_pub_);
+    hpdm_planner->load(ego_vehicle, surround_vehicles, lane_info);
+    // Get additional information
+    bool is_safe = false;
+    double cost = 0.0;
+    hpdm_planner->runHpdmPlanner(3, &ego_trajectory_, &surround_trajectories_, &reference_lane_, &is_safe, &cost);
+    clock_t hpdm_planning_end_time = clock();
+    printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);
+
+    *result = is_safe;
+}

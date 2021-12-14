@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-13 17:12:53
+ * @LastEditTime: 2021-12-14 11:55:50
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -256,6 +256,43 @@ namespace BehaviorPlanner {
         double orientation = nearest_lane.getLaneCoordnation()[nearest_lane_point_index].worldpos_.theta_;
 
         return orientation;
+    }
+
+    /**
+     * @brief Generate lane information for HPDM 
+     * @param {*}
+     * @return {*}
+     */   
+    std::vector<double> MapInterface::getLaneInfo() {
+        // Encode left and right lane existence and gap information
+        std::vector<double> lane_info(5, 0.0);
+        PathPlanningUtilities::Point2f center_lane_start_point = lane_set_[LaneId::CenterLane].getLaneCenterPathInWorld()[0]; 
+        if (left_lane_exist_) {
+            lane_info[0] = 1.0;
+            PathPlanningUtilities::Point2f left_lane_start_point = lane_set_[LaneId::LeftLane].getLaneCenterPathInWorld()[0];
+            lane_info[2] = (center_lane_start_point - left_lane_start_point).norm();
+        }
+        if (right_lane_exist_) {
+            lane_info[1] = 1.0;
+            PathPlanningUtilities::Point2f right_lane_start_point = lane_set_[LaneId::RightLane].getLaneCenterPathInWorld()[0];
+            lane_info[3] = (center_lane_start_point - right_lane_start_point).norm();
+        }
+
+        // Calculate speed limit 
+        // TODO: maybe need consider the speed limit in different position in lane
+        double speed_limit = lane_set_[LaneId::CenterLane].getLaneVelocityLimitation()[0];
+        lane_info[4] = speed_limit;
+
+        return lane_info;
+    }
+
+    /**
+     * @brief Calculate nearest lane for HPDM
+     * @param {*}
+     * @return {*}
+     */
+    Lane MapInterface::calculateNearestLane(const Vehicle& vehicle) {
+        return lane_set_[calculateNearestLaneId(vehicle)];
     }
     
     double IDM::calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
@@ -710,7 +747,7 @@ namespace BehaviorPlanner {
 
         // Visualization best traj and print
         VisualizationMethods::visualizeTrajectory(ego_traj_[winner_index], vis_pub_, 0);
-        printf("Selected action index: %d, with the cost: %lf\n", winner_index, winner_cost);
+        printf("[BehaviorPlanner] selected action index: %d, with the cost: %lf\n", winner_index, winner_cost);
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];

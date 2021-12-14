@@ -542,12 +542,16 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             }
         }
 
-        // Run behavior planner
-        bool is_behavior_planning_success;
-        behaviorPlanning(&is_behavior_planning_success);
+        // // Run behavior planner
+        // bool is_behavior_planning_success = false;
+        // behaviorPlanning(&is_behavior_planning_success);
+
+        // Run HPDM
+        bool is_hpdm_planning_success = false;
+        hpdmPlanning(&is_hpdm_planning_success);
 
         // Run trajectory planning
-        bool is_trajectory_planning_success;
+        bool is_trajectory_planning_success = false;
         sscPlanning(&is_trajectory_planning_success);
 
 

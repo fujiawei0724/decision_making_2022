@@ -16,6 +16,10 @@ namespace PathPlanningUtilities
 	{
 		double x_;
 		double y_;
+
+		double norm() {
+			return sqrt(x_ * x_ + y_ * y_);
+		}
 	};
 
 	struct CurvePoint
