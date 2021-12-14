@@ -481,6 +481,21 @@ void DecisionMaking::SubVehicle::getHistoryCurve(const path_planning_msgs::Motio
     this->history_curve_mutex_.unlock();
 }
 
+// Replanning thread
+void DecisionMaking::SubVehicle::triggerThread() {
+    // Frequency 50hz
+    ros::Rate loop_rate(50);
+    // Prepare 
+    Utils::Trigger* trigger = new Utils::Trigger();
+
+    while (ros::ok() && !executed_trajectory_.empty()) {
+        trigger->load(executed_trajectory_, trajectory_update_time_stamp_);
+        bool need_replanning = trigger->runOnce();
+        need_replanning_ = need_replanning;
+    }
+}
+
+
 // 规划和决策线程,20hz
 void DecisionMaking::SubVehicle::motionPlanningThread() {
     // ros::Rate loop_rate(MOTION_PLANNING_FREQUENCY);

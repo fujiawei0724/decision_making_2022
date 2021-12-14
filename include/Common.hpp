@@ -75,6 +75,7 @@
 #include "TrajectoryPlanning.hpp"
 #include "SscPlanning.hpp"
 #include "HpdmPlanner.hpp"
+#include "Utils.hpp"
 
 // extern bool GLOBAL_IS_IN_GROUND_;
 // extern std::mutex GLOBAL_IN_GROUND_MUTEX_;
@@ -993,6 +994,12 @@ class SubVehicle{
 
     void sscPlanning(bool* trajectory_planning_result);
 
+    void checker();
+
+    void publisher();
+
+    void triggerThread();
+
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
     std::vector<Obstacle> unlaned_obstacles_;
@@ -1001,6 +1008,11 @@ class SubVehicle{
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;
     ros::Publisher vis_trajectory_planner_pub_;
+
+    std::vector<Common::Point3f> generated_trajectory_{};
+    std::vector<Common::Point3f> executed_trajectory_{};
+    clock_t trajectory_update_time_stamp_;
+    bool need_replanning_{false};
 
     
 };
