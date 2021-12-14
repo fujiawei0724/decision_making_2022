@@ -483,7 +483,13 @@ void DecisionMaking::SubVehicle::getHistoryCurve(const path_planning_msgs::Motio
 
 // 规划和决策线程,20hz
 void DecisionMaking::SubVehicle::motionPlanningThread() {
-    ros::Rate loop_rate(MOTION_PLANNING_FREQUENCY);
+    // ros::Rate loop_rate(MOTION_PLANNING_FREQUENCY);
+
+    // DEBUG
+    // Decrease frequency to record data
+    ros::Rate loop_rate(0.5);
+    // END DEBUG
+
     // 进程等待直到数据准备完成
     while (ros::ok()) {
         this->vehicle_surround_radar_ready_flag_mutex_.lock();
