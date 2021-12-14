@@ -2,8 +2,8 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-13 18:40:52
- * @Description: Realization of the HPUP behavior planner based on reinforcement learning.
+ * @LastEditTime: 2021-12-14 10:23:36
+ * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
 #pragma once
@@ -13,7 +13,7 @@
 #include "VehicleState.hpp"
 #include "BehaviorPlanner.hpp"
 
-namespace HpupPlanner {
+namespace HpdmPlanner {
 
 using namespace Common;
 
@@ -176,7 +176,7 @@ class StateInterface {
         std::vector<double> sur_vehicles_states;
         // TODO: add logic to handle the situation where there are more than 10 surround vehicles
         if (static_cast<int>(sur_vehicles.size()) > 10) {
-            printf("[HpupPlanner][WARNING] there is more than 10 ten laned surround vehicles.\n");
+            printf("[HpdmPlanner][WARNING] there is more than 10 ten laned surround vehicles.\n");
         }
 
         // Traverse existed surround vehicles
@@ -478,14 +478,14 @@ class TrajectoryGenerator {
     double dt_{0.0};
 };
 
-class HpupPlannerCore {
+class HpdmPlannerCore {
  public:
-    HpupPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
+    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
         traj_generator_ = new TrajectoryGenerator(map_itf);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
     }
-    ~HpupPlannerCore() = default;
+    ~HpdmPlannerCore() = default;
 
     // Load data
     void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& nearest_lane) {
@@ -495,8 +495,8 @@ class HpupPlannerCore {
         nearest_lane_ = nearest_lane;
     }
 
-    // Run HPUP planner
-    void runHpupPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, bool* safe, double* cost) {
+    // Run HPDM planner
+    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, bool* safe, double* cost) {
         // ~Stage I: construct state array
         std::vector<double> state_array;
         state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, &state_array);
@@ -550,4 +550,4 @@ class HpupPlannerCore {
 
 };
 
-} // End of namespace HpupPlanner
+} // End of namespace HpdmPlanner

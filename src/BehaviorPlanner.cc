@@ -2,8 +2,8 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-13 13:40:16
- * @Descripttion: EUDM behavior planner interface with the whole pipeline.
+ * @LastEditTime: 2021-12-14 10:21:57
+ * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
 #include "Common.hpp"
@@ -82,3 +82,4 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     *result = is_behavior_planning_success;
 
 }
+

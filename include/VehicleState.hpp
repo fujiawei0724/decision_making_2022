@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-13 17:01:14
+ * @LastEditTime: 2021-12-14 10:24:34
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -451,7 +451,7 @@ class StateTransformer {
         return fs_traj;
     }
 
-    // Transform ego vehicle world state to the state array in frenet (for HPUP)
+    // Transform ego vehicle world state to the state array in frenet (for HPDM)
     std::vector<double> getFrenetEgoVehicleStateArray(const Vehicle& ego_vehicle) {
         std::vector<double> ego_veh_state_array;
 
@@ -478,7 +478,7 @@ class StateTransformer {
         return ego_veh_state_array;
     }
 
-    // Transform single surround vehicle world state to the state array in frenet (for HPUP)
+    // Transform single surround vehicle world state to the state array in frenet (for HPDM)
     std::vector<double> getFrenetSurroundVehicleStateArray(const Vehicle& surround_vehicle) {
         std::vector<double> surround_veh_state_array;
 
