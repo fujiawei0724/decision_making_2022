@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-14 15:23:22
+ * @LastEditTime: 2021-12-14 16:06:44
  * @Description: Hpdm planner.
  */
 
@@ -166,7 +166,7 @@ namespace HpdmPlanner {
                 // Supple empty surround vehicles
                 cur_sur_veh_frenet_state_array = std::vector<double>(8, 0.0);
             }
-            sur_vehicles_states.insert(sur_vehicles_states.begin(), cur_sur_veh_frenet_state_array.begin(), cur_sur_veh_frenet_state_array.end());
+            sur_vehicles_states.insert(sur_vehicles_states.end(), cur_sur_veh_frenet_state_array.begin(), cur_sur_veh_frenet_state_array.end());
         }
 
         assert(static_cast<int>(sur_vehicles_states.size()) == 80);
@@ -464,6 +464,12 @@ namespace HpdmPlanner {
         // ~Stage I: construct state array
         std::vector<double> state_array;
         state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, &state_array);
+        
+        // // DEBUG
+        // for (const auto& state_it : state_array) {
+        //     std::cout << state_it << std::endl;
+        // }
+        // // END DEBUG
 
         // ~Stage II: model predict to generate action index
         int action_index = -1;
