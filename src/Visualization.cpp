@@ -645,16 +645,23 @@ void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner
 } 
 
 // Visualization for the result of trajectory planner and ssc planner
-void VisualizationMethods::visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher) {
+void VisualizationMethods::visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher, bool is_executed) {
     visualization_msgs::MarkerArray traj_marker_array;
     visualization_msgs::Marker traj_marker;
     traj_marker.header.frame_id = "world";
     traj_marker.header.stamp = ros::Time::now();
     traj_marker.type = visualization_msgs::Marker().LINE_STRIP;
     std_msgs::ColorRGBA color;
-    color.r = 1.0;
-    color.g = 0.0;
-    color.b = 0.0;
+    if (is_executed) {
+        color.r = 1.0;
+        color.g = 0.0;
+        color.b = 0.0;
+    } else {
+        color.r = 0.5;
+        color.g = 0.0;
+        color.b = 0.5;
+    }
+
     color.a = 1.0;
     traj_marker.color = color;
     traj_marker.id = 600000;

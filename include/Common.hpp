@@ -994,9 +994,9 @@ class SubVehicle{
 
     void sscPlanning(bool* trajectory_planning_result);
 
-    void checker();
+    void trajectoryCheck(std::vector<double>* thetas, std::vector<double>* curvatures, std::vector<double>* velocities, std::vector<double>* accelerations) const;
 
-    void publisher();
+    void trajectoryPublish(const std::vector<double>& thetas, const std::vector<double>& curvatures, const std::vector<double>& velocities, const std::vector<double>& accelerations, const ros::Publisher &publisher);
 
     void triggerThread();
 
@@ -1227,7 +1227,7 @@ void visualizeInfluenceObstacles(const std::vector<InfluenceObstacle> &influence
 void visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index);
 
 // Visualization for the result of trajectory planner and ssc planner
-void visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher);
+void visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher, bool is_executed = false);
 
 }  // namespace VisualizationMethods
 

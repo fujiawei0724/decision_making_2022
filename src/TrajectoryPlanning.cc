@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-10 11:05:42
+ * @LastEditTime: 2021-12-15 10:50:39
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -10,7 +10,7 @@
 
 /**
  * @brief Trajectory planning with quintic B-spline
- * TODO: test and DEBUG
+ * TODO: need test and DEBUG
  */
 void DecisionMaking::SubVehicle::trajectoryPlanning(bool* trajectory_planning_result) {
     // Transform ego vehicle information and surround vehice information
@@ -87,6 +87,7 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     // Visualization
     VisualizationMethods::visualizeTrajectory(trajectory, vis_trajectory_planner_pub_);
 
+    generated_trajectory_ = trajectory;
     *trajectory_planning_result = result;
 
 }

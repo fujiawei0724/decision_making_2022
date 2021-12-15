@@ -23,6 +23,7 @@ void DecisionMaking::SubVehicle::runMotionPlanning() {
     // 启动各线程,线程一为订阅ros节点和服务，获取车辆信息，线程二为motionplanning和decisionmaking，计算并保持轨迹
     std::thread ros_msgs_receiver_thread(&DecisionMaking::SubVehicle::listenRosMSGThread, this);
     std::thread motion_planning_thread(&DecisionMaking::SubVehicle::motionPlanningThread, this);
+    std::thread replanning_trigger_thread(&DecisionMaking::SubVehicle::triggerThread, this);
     ros_msgs_receiver_thread.join();
     motion_planning_thread.join();
 }
@@ -488,7 +489,12 @@ void DecisionMaking::SubVehicle::triggerThread() {
     // Prepare 
     Utils::Trigger* trigger = new Utils::Trigger();
 
-    while (ros::ok() && !executed_trajectory_.empty()) {
+    while (ros::ok()) {
+        if (executed_trajectory_.empty()) {
+            // printf("[Trigger] no executed trajectory, waiting.\n");
+            need_replanning_ = true;
+            continue;
+        }
         trigger->load(executed_trajectory_, trajectory_update_time_stamp_);
         bool need_replanning = trigger->runOnce();
         need_replanning_ = need_replanning;
@@ -498,12 +504,12 @@ void DecisionMaking::SubVehicle::triggerThread() {
 
 // 规划和决策线程,20hz
 void DecisionMaking::SubVehicle::motionPlanningThread() {
-    // ros::Rate loop_rate(MOTION_PLANNING_FREQUENCY);
+    ros::Rate loop_rate(MOTION_PLANNING_FREQUENCY);
 
-    // DEBUG
-    // Decrease frequency to record data
-    ros::Rate loop_rate(0.5);
-    // END DEBUG
+    // // DEBUG
+    // // Decrease frequency to record data
+    // ros::Rate loop_rate(0.5);
+    // // END DEBUG
 
     // 进程等待直到数据准备完成
     while (ros::ok()) {
@@ -574,6 +580,18 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
         sscPlanning(&is_trajectory_planning_success);
+
+        // Check trajectory
+        std::vector<double> thetas, curvatures, velocities, accelerations;
+        trajectoryCheck(&thetas, &curvatures, &velocities, &accelerations);
+
+        // Publish trajectory
+        if (need_replanning_) {
+            trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
+            // Visualization executed trajectory
+            VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
+            printf("[MainPineline] execute replanning.\n");
+        }
 
 
         loop_rate.sleep();
