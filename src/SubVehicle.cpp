@@ -585,6 +585,13 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         std::vector<double> thetas, curvatures, velocities, accelerations;
         trajectoryCheck(&thetas, &curvatures, &velocities, &accelerations);
 
+        // DEBUG
+        for (int i = 0; i < static_cast<int>(thetas.size()); i++) {
+            printf("Index: %d, theta: %lf, curvature: %lf, velocity: %lf, acceleration: %lf.\n", i, thetas[i], curvatures[i], velocities[i], accelerations[i]);
+        }
+        // END DEBUG
+
+
         // Publish trajectory
         if (need_replanning_) {
             trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);

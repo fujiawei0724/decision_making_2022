@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-14 10:24:34
+ * @LastEditTime: 2021-12-15 16:41:41
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -558,6 +558,19 @@ class Point3i : public Point2i {
     int z_{0};
 };
 
+class Point2f {
+ public:
+    Point2f() = default;
+    Point2f(double x, double y) {
+        x_ = x;
+        y_ = y;
+    }
+    ~Point2f() = default;
+
+    double x_{0.0};
+    double y_{0.0};
+};
+ 
 class Point3f {
  public:
     Point3f() = default;
@@ -1099,6 +1112,20 @@ class BpTpBridge {
             Eigen::Matrix<double, 2, 1> point_fs{traj_fs[i].x_, traj_fs[i].y_};
             Eigen::Matrix<double, 2, 1> point = state_trans_itf_->getPointFromFrenetPoint(point_fs);
             traj[i] = Point3f(point(0), point(1), traj_fs[i].z_); 
+        }
+
+        return traj;
+    }
+
+    // Transform 2d trajectory points
+    std::vector<Point2f> get2dTrajFrom2dTrajFs(const std::vector<Point2f>& traj_fs) {
+        int length = static_cast<int>(traj_fs.size());
+        std::vector<Point2f> traj(length);
+
+        for (int i = 0; i < length; i++) {
+            Eigen::Matrix<double, 2, 1> point_fs{traj_fs[i].x_, traj_fs[i].y_};
+            Eigen::Matrix<double, 2, 1> point = state_trans_itf_->getPointFromFrenetPoint(point_fs);
+            traj[i] = Point2f(point(0), point(1)); 
         }
 
         return traj;

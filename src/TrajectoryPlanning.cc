@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-15 10:50:39
+ * @LastEditTime: 2021-12-15 12:20:14
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -86,6 +86,12 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
 
     // Visualization
     VisualizationMethods::visualizeTrajectory(trajectory, vis_trajectory_planner_pub_);
+
+    // DEBUG
+    for (int i = 0; i < static_cast<int>(trajectory.size()); i++) {
+        printf("Index: %d, x: %lf, y: %lf, t: %lf.\n", i, trajectory[i].x_, trajectory[i].y_, trajectory[i].z_);
+    }
+    // END DEBUG
 
     generated_trajectory_ = trajectory;
     *trajectory_planning_result = result;

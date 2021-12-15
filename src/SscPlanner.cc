@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-11 18:27:17
+ * @LastEditTime: 2021-12-15 17:30:04
  * @Description: Components for ssc planner.
  */
 
@@ -1285,14 +1285,17 @@ namespace SscPlanner {
 
         // // DEBUG
         // for (const auto& it_s : s) {
-        //     printf("s: %lf\n", it_s);
+        //     printf("%lf, ", it_s);
         // }
+        // printf("--------------------\n");
         // for (const auto& it_d : d) {
-        //     printf("d: %lf\n", it_d);
+        //     printf("%lf, ", it_d);
         // }
+        // printf("--------------------\n");
         // for (const auto& it_t : t) {
-        //     printf("t: %lf\n", it_t);
+        //     printf("%lf, ", it_t);
         // }
+        // printf("--------------------\n");
         // // END DEBUG
         
         // ~Stage IV: calculate piecewise bezier curve in frenet frame
@@ -1300,13 +1303,91 @@ namespace SscPlanner {
         std::vector<Point3f> traj_fs = bezier_curve_traj_itf_->generateTraj(0.01);
 
         // // DEBUG
+        // std::vector<double> interpolated_s, interpolated_d, interpolated_t;
         // for (const auto& point_fs : traj_fs) {
-        //     printf("s: %lf, d: %lf, t: %lf\n", point_fs.x_, point_fs.y_, point_fs.z_);
+        //     interpolated_s.emplace_back(point_fs.x_);
+        //     interpolated_d.emplace_back(point_fs.y_);
+        //     interpolated_t.emplace_back(point_fs.z_);
         // }
+        // for (const auto& s : interpolated_s) {
+        //     printf("%lf, ", s);
+        // }
+        // printf("--------------------\n");
+        // for (const auto& d : interpolated_d) {
+        //     printf("%lf, ", d);
+        // }
+        // printf("--------------------\n");
+        // for (const auto& t : interpolated_t) {
+        //     printf("%lf, ", t);
+        // }
+        // printf("--------------------\n");
+
         // // END DEBUG
 
         // ~Stage V: transform the trajectory from frenet to world
+        // TODO: fatal error, add logic to improve coordination transformation precision
         std::vector<Point3f> traj = bridge_itf_->getTrajFromTrajFs(traj_fs);
+
+        // // DEBUG
+        // std::vector<double> interpolated_s, interpolated_d, interpolated_t;
+        // for (const auto& point_fs : traj) {
+        //     interpolated_s.emplace_back(point_fs.x_);
+        //     interpolated_d.emplace_back(point_fs.y_);
+        //     interpolated_t.emplace_back(point_fs.z_);
+        // }
+        // for (const auto& s : interpolated_s) {
+        //     printf("%lf, ", s);
+        // }
+        // printf("--------------------\n");
+        // for (const auto& d : interpolated_d) {
+        //     printf("%lf, ", d);
+        // }
+        // printf("--------------------\n");
+        // for (const auto& t : interpolated_t) {
+        //     printf("%lf, ", t);
+        // }
+        // printf("--------------------\n");
+
+        // // END DEBUG
+
+        // // Test 
+        // // Only transform the control points position
+        // std::vector<Point2f> control_points_2d_fs;
+        // assert(s.size() == d.size());
+        // for (int i = 0; i < static_cast<int>(s.size()); i++) {
+        //     control_points_2d_fs.emplace_back(Point2f(s[i], d[i]));
+        // }
+        // std::vector<Point2f> control_points_2d = bridge_itf_->get2dTrajFrom2dTrajFs(control_points_2d_fs);
+        // std::vector<double> s_world, d_world;
+        // for (const auto& point : control_points_2d) {
+        //     s_world.emplace_back(point.x_);
+        //     d_world.emplace_back(point.y_);
+        // }
+        // bezier_curve_traj_itf_ = new BezierPiecewiseCurve(s_world, d_world, t);
+        // std::vector<Point3f> traj = bezier_curve_traj_itf_->generateTraj(0.01);
+        // // End test
+
+        // // DEBUG
+        // std::vector<double> interpolated_s, interpolated_d, interpolated_t;
+        // for (const auto& point_fs : traj) {
+        //     interpolated_s.emplace_back(point_fs.x_);
+        //     interpolated_d.emplace_back(point_fs.y_);
+        //     interpolated_t.emplace_back(point_fs.z_);
+        // }
+        // for (const auto& s : interpolated_s) {
+        //     printf("%lf, ", s);
+        // }
+        // printf("--------------------\n");
+        // for (const auto& d : interpolated_d) {
+        //     printf("%lf, ", d);
+        // }
+        // printf("--------------------\n");
+        // for (const auto& t : interpolated_t) {
+        //     printf("%lf, ", t);
+        // }
+        // printf("--------------------\n");
+
+        // // END DEBUG
 
         *result = true;
         *trajectory = traj;
