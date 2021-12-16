@@ -311,4 +311,204 @@ class Lane{
     // int turn_direction_; // 道路的转向
 };
 
+// A segment of quintic spline
+class QuinticSpline {
+ public:
+    QuinticSpline() = default;
+    // TODO: check if the arc length could bev add here to replace the points distance
+    QuinticSpline(const PathPlanningUtilities::CurvePoint& begin_state, const PathPlanningUtilities::CurvePoint& end_state, const double& real_dis) {
+        double l = sqrt((begin_state.position_.x_ - end_state.position_.x_) * (begin_state.position_.x_ - end_state.position_.x_) + (begin_state.position_.y_ - end_state.position_.y_) * (begin_state.position_.y_ - end_state.position_.y_));
+        l_ = l;
+        real_dis_ = real_dis;
+        //Initialize parameters
+		double p0x, p0y, t0x, t0y, k0x, k0y;
+		p0x = begin_state.position_.x_;
+		p0y = begin_state.position_.y_;
+		t0x = cos(begin_state.theta_);
+		t0y = sin(begin_state.theta_);
+		k0x = -begin_state.kappa_*sin(begin_state.theta_);
+		k0y = begin_state.kappa_*cos(begin_state.theta_);
+		//Finish parameter initialization
+		double p1x, p1y, t1x, t1y, k1x, k1y;
+		p1x = end_state.position_.x_;
+		p1y = end_state.position_.y_;
+		t1x = cos(end_state.theta_);
+		t1y = sin(end_state.theta_);
+		k1x = -end_state.kappa_*sin(end_state.theta_);
+		k1y = end_state.kappa_*cos(end_state.theta_);
+        //Generate parameters
+		fx_ = +(                   p0x );
+		ex_ = +(                   t0x ) * l;
+		dx_ = +(                   k0x ) * l * l / 2.0f;
+        cx_ = +( + 10 * p1x - 10 * p0x )
+              +( -  4 * t1x -  6 * t0x ) * l
+              +( +      k1x -  3 * k0x ) * l * l / 2.0f;
+        bx_ = +( - 15 * p1x + 15 * p0x )
+              +( +  7 * t1x +  8 * t0x ) * l
+              +( -  2 * k1x +  3 * k0x ) * l * l / 2.0f;
+        ax_ = +( +  6 * p1x -  6 * p0x )
+              +( -  3 * t1x -  3 * t0x ) * l
+              +( +      k1x -      k0x ) * l * l / 2.0f;
+        fy_ = +(                   p0y );
+        ey_ = +(                   t0y ) * l;
+        dy_ = +(                   k0y ) * l * l / 2.0f;
+        cy_ = +( + 10 * p1y - 10 * p0y )
+              +( -  4 * t1y -  6 * t0y ) * l
+              +( +      k1y -  3 * k0y ) * l * l / 2.0f;
+        by_ = +( - 15 * p1y + 15 * p0y )
+              +( +  7 * t1y +  8 * t0y ) * l
+              +( -  2 * k1y +  3 * k0y ) * l * l / 2.0f;
+        ay_ = +( +  6 * p1y -  6 * p0y )
+              +( -  3 * t1y -  3 * t0y ) * l
+              +( +      k1y -      k0y ) * l * l / 2.0f;
+    }
+    ~QuinticSpline() = default;
+
+    /**
+     * @brief calculate nearest point information
+     * @param {*}
+     * @return {*}
+     */ 
+    void calculateNearestInfo() {
+
+    }  
+
+    /**
+     * @brief calculate point information given parameter
+     * @param {*}
+     * @return {*}
+     * TODO: check this transformation logic, add curvature slope transform here
+     */
+    void calculatePointInfo(const double& remain_station, double* pos_x, double* pos_y, double* theta, double* curvature) {
+        double cur_l = remain_station / real_dis_ * l_;
+        // Calculate parameters
+        assert(cur_l >= 0 && cur_l <= l_);
+        std::vector<double> coefficients(5, 0.0);
+        for (int i = 0; i < 5; i++) {
+            coefficients[i] = powf(cur_l / l_, i + 1.0f);
+        }
+        *pos_x = ax_ * coefficients[4] + bx_ * coefficients[3] + cx_ * coefficients[2] + dx_ * coefficients[1] + ex_ * coefficients[0] + fx_;
+        *pos_y = ay_ * coefficients[4] + by_ * coefficients[3] + cy_ * coefficients[2] + dy_ * coefficients[1] + ey_ * coefficients[0] + fy_;
+        double vx = ax_ * coefficients[3] * 5 + bx_ * coefficients[2] * 4 + cx_ * coefficients[1] * 3 + dx_ * coefficients[0] * 2 + ex_;
+        double vy = ay_ * coefficients[3] * 5 + by_ * coefficients[2] * 4 + cy_ * coefficients[1] * 3 + dy_ * coefficients[0] * 2 + ey_;
+        *theta = atan2(vy, vx);
+        double ax = ax_ * coefficients[2] * 20 + bx_ * coefficients[1] * 12 + cx_ * coefficients[0] * 6 + dx_ * 2;
+        double ay = ay_ * coefficients[2] * 20 + by_ * coefficients[1] * 12 + cy_ * coefficients[0] * 6 + dy_ * 2;
+        *curvature = (ay*vx-ax*vy)/pow((vx*vx+vy*vy), 1.5);
+    }
+
+    /**
+     * @brief speed up calculation
+     * @param {double&} remain_station
+     * @param {double*} pos_x
+     * @param {double*} pos_y
+     * @param {double*} theta
+     * @param {double*} curvature
+     * @return {*}
+     */    
+    static void calculatePointInfo(const PathPlanningUtilities::CurvePoint& begin_state, const PathPlanningUtilities::CurvePoint& end_state, const double& real_dis, const double& remain_station, double* pos_x, double* pos_y, double* theta, double* curvature) {
+        double l = sqrt((begin_state.position_.x_ - end_state.position_.x_) * (begin_state.position_.x_ - end_state.position_.x_) + (begin_state.position_.y_ - end_state.position_.y_) * (begin_state.position_.y_ - end_state.position_.y_));
+        //Initialize parameters
+        double ax, bx, cx, dx, ex, fx, ay, by, cy, dy, ey, fy;
+		double p0x, p0y, t0x, t0y, k0x, k0y;
+		p0x = begin_state.position_.x_;
+		p0y = begin_state.position_.y_;
+		t0x = cos(begin_state.theta_);
+		t0y = sin(begin_state.theta_);
+		k0x = -begin_state.kappa_*sin(begin_state.theta_);
+		k0y = begin_state.kappa_*cos(begin_state.theta_);
+		//Finish parameter initialization
+		double p1x, p1y, t1x, t1y, k1x, k1y;
+		p1x = end_state.position_.x_;
+		p1y = end_state.position_.y_;
+		t1x = cos(end_state.theta_);
+		t1y = sin(end_state.theta_);
+		k1x = -end_state.kappa_*sin(end_state.theta_);
+		k1y = end_state.kappa_*cos(end_state.theta_);
+        //Generate parameters
+		fx = +(                   p0x );
+		ex = +(                   t0x ) * l;
+		dx = +(                   k0x ) * l * l / 2.0f;
+        cx = +( + 10 * p1x - 10 * p0x )
+              +( -  4 * t1x -  6 * t0x ) * l
+              +( +      k1x -  3 * k0x ) * l * l / 2.0f;
+        bx = +( - 15 * p1x + 15 * p0x )
+              +( +  7 * t1x +  8 * t0x ) * l
+              +( -  2 * k1x +  3 * k0x ) * l * l / 2.0f;
+        ax = +( +  6 * p1x -  6 * p0x )
+              +( -  3 * t1x -  3 * t0x ) * l
+              +( +      k1x -      k0x ) * l * l / 2.0f;
+        fy = +(                   p0y );
+        ey = +(                   t0y ) * l;
+        dy = +(                   k0y ) * l * l / 2.0f;
+        cy = +( + 10 * p1y - 10 * p0y )
+              +( -  4 * t1y -  6 * t0y ) * l
+              +( +      k1y -  3 * k0y ) * l * l / 2.0f;
+        by = +( - 15 * p1y + 15 * p0y )
+              +( +  7 * t1y +  8 * t0y ) * l
+              +( -  2 * k1y +  3 * k0y ) * l * l / 2.0f;
+        ay = +( +  6 * p1y -  6 * p0y )
+              +( -  3 * t1y -  3 * t0y ) * l
+              +( +      k1y -      k0y ) * l * l / 2.0f;
+
+        double cur_l = remain_station / real_dis * l;
+        // Calculate parameters
+        assert(cur_l >= 0 && cur_l <= l);
+        std::vector<double> coefficients(5, 0.0);
+        for (int i = 0; i < 5; i++) {
+            coefficients[i] = powf(cur_l / l, i + 1.0f);
+        }
+        *pos_x = ax * coefficients[4] + bx * coefficients[3] + cx * coefficients[2] + dx * coefficients[1] + ex * coefficients[0] + fx;
+        *pos_y = ay * coefficients[4] + by * coefficients[3] + cy * coefficients[2] + dy * coefficients[1] + ey * coefficients[0] + fy;
+        double vx = ax * coefficients[3] * 5 + bx * coefficients[2] * 4 + cx * coefficients[1] * 3 + dx * coefficients[0] * 2 + ex;
+        double vy = ay * coefficients[3] * 5 + by * coefficients[2] * 4 + cy * coefficients[1] * 3 + dy * coefficients[0] * 2 + ey;
+        *theta = atan2(vy, vx);
+        double acc_x = ax * coefficients[2] * 20 + bx * coefficients[1] * 12 + cx * coefficients[0] * 6 + dx * 2;
+        double acc_y = ay * coefficients[2] * 20 + by * coefficients[1] * 12 + cy * coefficients[0] * 6 + dy * 2;
+        *curvature = (acc_y*vx-acc_x*vy)/pow((vx*vx+vy*vy), 1.5);
+    }
+    
+
+
+    double real_dis_{0.0};
+    double l_{0.0};
+    double ax_{0.0}, bx_{0.0}, cx_{0.0}, dx_{0.0}, ex_{0.0}, fx_{0.0};
+    double ay_{0.0}, by_{0.0}, cy_{0.0}, dy_{0.0}, ey_{0.0}, fy_{0.0};
+};
+
+class QuinticSplinePiecewise {
+ public: 
+    QuinticSplinePiecewise(const std::vector<PathPlanningUtilities::CurvePoint>& curve_points, const double& real_dis) {
+        segment_num_ = static_cast<int>(curve_points.size()) - 1;
+        quintic_segments_.resize(segment_num_);
+        arc_length_domain_.resize(segment_num_ + 1);
+        for (int i = 0; i < segment_num_; i++) {
+            quintic_segments_[i] = QuinticSpline(curve_points[i], curve_points[i + 1], real_dis);
+            arc_length_domain_[i] = i * real_dis;
+        }
+        arc_length_domain_[segment_num_] = segment_num_ * real_dis;
+    }
+    ~QuinticSplinePiecewise() = default;
+
+    /**
+     * @brief calculate the nearest point in the spline from a specific point
+     * @param {*}
+     * @return {*}
+     */    
+    void calculateNearestInfo(const Eigen::Matrix<double, 2, 1>& location, const std::pair<int, int>& initial_guess) {
+
+    }
+
+    /**
+     * @brief calculate information from a given arc length
+     * @param {*}
+     * @return {*}
+     */   
+
+
+    int segment_num_{0};
+    std::vector<double> arc_length_domain_{};
+    std::vector<QuinticSpline> quintic_segments_{};
+};
+
 #endif

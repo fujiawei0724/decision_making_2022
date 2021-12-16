@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-15 17:30:04
+ * @LastEditTime: 2021-12-16 16:27:40
  * @Description: Components for ssc planner.
  */
 
@@ -1300,7 +1300,7 @@ namespace SscPlanner {
         
         // ~Stage IV: calculate piecewise bezier curve in frenet frame
         bezier_curve_traj_itf_ = new BezierPiecewiseCurve(s, d, t);
-        std::vector<Point3f> traj_fs = bezier_curve_traj_itf_->generateTraj(0.01);
+        std::vector<Point3f> traj_fs = bezier_curve_traj_itf_->generateTraj(0.02);
 
         // // DEBUG
         // std::vector<double> interpolated_s, interpolated_d, interpolated_t;

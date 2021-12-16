@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-14 16:09:53
+ * @LastEditTime: 2021-12-16 16:47:39
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -50,7 +50,7 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
 
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
-    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_ + 10.0, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
 
     // Clear information
     unlaned_obstacles_.clear();
@@ -127,7 +127,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
 
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
-    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_ + 10.0, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+    Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
     Lane nearest_lane = map_interface.calculateNearestLane(ego_vehicle);
 
     // Clear information
