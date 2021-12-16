@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-15 16:41:41
+ * @LastEditTime: 2021-12-16 15:07:14
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -355,17 +355,33 @@ class StateTransformer {
     Eigen::Matrix<double, 2, 1> getPointFromFrenetPoint(const Eigen::Matrix<double, 2, 1>& frenet_point) {
         // Determine the nearest position to frenet state
         std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        PathPlanningUtilities::CoordinationPoint lane_position;
-        for (const PathPlanningUtilities::CoordinationPoint& lane_point: lane_coordination) {
-            if (lane_point.station_ > frenet_point(0)) {
-                lane_position = lane_point;
+        
+        // Origin transformation, no use
+        // PathPlanningUtilities::CoordinationPoint lane_position;
+        // for (const PathPlanningUtilities::CoordinationPoint& lane_point: lane_coordination) {
+        //     if (lane_point.station_ > frenet_point(0)) {
+        //         lane_position = lane_point;
+        //         break;
+        //     }
+        // }
+        
+        double lane_position_x = 0.0, lane_position_y = 0.0, lane_position_theta = 0.0, lane_position_curvature = 0.0;
+        int i = 0;
+        for (; i < static_cast<int>(lane_coordination.size()); i++) {
+            if (lane_coordination[i].station_ > frenet_point(0)) {
+                if (i == 0) {
+                    printf("[StateTransformer] transformed point out of range.\n");
+                }
                 break;
             }
         }
-        Eigen::Matrix<double, 2, 1> lane_pos{lane_position.worldpos_.position_.x_, lane_position.worldpos_.position_.y_};
+        double remain_station = frenet_point(0) - lane_coordination[i - 1].station_;
+        QuinticSpline::calculatePointInfo(lane_coordination[i - 1].worldpos_, lane_coordination[i].worldpos_, LANE_GAP_DISTANCE, remain_station, &lane_position_x, &lane_position_y, &lane_position_theta, &lane_position_curvature);
+
+        Eigen::Matrix<double, 2, 1> lane_pos{lane_position_x, lane_position_y};
         
         // Get tangent vector and normal vector, the norm is set with 1.0
-        double lane_orientation = lane_position.worldpos_.theta_;
+        double lane_orientation = lane_position_theta;
         double y = tan(lane_orientation);
         double x = 1.0;
         Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
@@ -376,6 +392,7 @@ class StateTransformer {
     }
 
     // Get state 
+    // TODO: add interpolation to improve precision
     State getStateFromFrenetState(const FrenetState& frenet_state) const {
         // Determine the nearest position to frenet state
         std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();

@@ -569,13 +569,13 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             }
         }
 
-        // // Run behavior planner
-        // bool is_behavior_planning_success = false;
-        // behaviorPlanning(&is_behavior_planning_success);
+        // Run behavior planner
+        bool is_behavior_planning_success = false;
+        behaviorPlanning(&is_behavior_planning_success);
 
-        // Run HPDM
-        bool is_hpdm_planning_success = false;
-        hpdmPlanning(&is_hpdm_planning_success);
+        // // Run HPDM
+        // bool is_hpdm_planning_success = false;
+        // hpdmPlanning(&is_hpdm_planning_success);
 
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
@@ -585,11 +585,11 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         std::vector<double> thetas, curvatures, velocities, accelerations;
         trajectoryCheck(&thetas, &curvatures, &velocities, &accelerations);
 
-        // DEBUG
-        for (int i = 0; i < static_cast<int>(thetas.size()); i++) {
-            printf("Index: %d, theta: %lf, curvature: %lf, velocity: %lf, acceleration: %lf.\n", i, thetas[i], curvatures[i], velocities[i], accelerations[i]);
-        }
-        // END DEBUG
+        // // DEBUG
+        // for (int i = 0; i < static_cast<int>(thetas.size()); i++) {
+        //     printf("Index: %d, theta: %lf, curvature: %lf, velocity: %lf, acceleration: %lf.\n", i, thetas[i], curvatures[i], velocities[i], accelerations[i]);
+        // }
+        // // END DEBUG
 
 
         // Publish trajectory
