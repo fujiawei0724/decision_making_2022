@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-16 16:27:40
+ * @LastEditTime: 2021-12-17 20:13:29
  * @Description: Components for ssc planner.
  */
 
@@ -828,7 +828,7 @@ namespace SscPlanner {
 
         for (int i = 0; i < variables_num; i++) {
             if (i == 0 || i == variables_num - 1) {
-                // For the first three points and last three points, the unequal constraints are invalid
+                // For the first point and last point, the unequal constraints are invalid
                 *(tmp_fl + i) = false;
                 *(tmp_fu + i) = false;
             } else {

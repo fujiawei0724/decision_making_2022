@@ -453,7 +453,11 @@ class QuinticSpline {
 
         double cur_l = remain_station / real_dis * l;
         // Calculate parameters
-        assert(cur_l >= 0 && cur_l <= l);
+        if (cur_l < 0.0) {
+            cur_l = 0.0;
+        } else if (cur_l > 1.0) {
+            cur_l = 1.0;
+        }
         std::vector<double> coefficients(5, 0.0);
         for (int i = 0; i < 5; i++) {
             coefficients[i] = powf(cur_l / l, i + 1.0f);

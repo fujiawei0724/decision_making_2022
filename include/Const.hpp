@@ -6,6 +6,7 @@
 #define CONST_INCLUDE_CONST_HPP_
 
 #include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/SparseCore>
 #include <eigen3/Eigen/Geometry>
 
 // 常量整理

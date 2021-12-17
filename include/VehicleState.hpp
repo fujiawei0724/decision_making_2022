@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-16 15:07:14
+ * @LastEditTime: 2021-12-17 20:45:12
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -27,6 +27,12 @@
 #include <CGAL/MP_Float.h>
 #include <torch/torch.h>
 #include <torch/script.h>
+#include "QpGenData.h"
+#include "QpGenVars.h"
+#include "QpGenResiduals.h"
+#include "GondzioSolver.h"
+#include "QpGenSparseMa27.h"
+#include "Status.h"
 #include "Const.hpp"
 #include "Point.hpp"
 #include "Compare.hpp"

@@ -157,8 +157,10 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
-
+  /home/fjw/OOQP/OOQP/include
 )
+
+link_directories(/home/fjw/OOQP/OOQP/lib)
 
 add_executable(${PROJECT_NAME}_node src/MotionPlanningNode.cpp)
 
@@ -195,6 +197,13 @@ target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   pthread
   ${TORCH_LIBRARIES}
+  ooqpgensparse 
+  ooqpsparse 
+  ooqpgondzio 
+  ooqpbase 
+  blas 
+  ma27 
+  gfortran
   # obstacle_utilities
 )
 
@@ -206,6 +215,13 @@ target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}_lib
   pthread
   ${TORCH_LIBRARIES}
+  ooqpgensparse 
+  ooqpsparse 
+  ooqpgondzio 
+  ooqpbase 
+  blas 
+  ma27 
+  gfortran
   # obstacle_utilities
 )
 
