@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-17 21:16:32
+ * @LastEditTime: 2021-12-18 15:14:05
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -324,8 +324,8 @@ class SscOptimizationInterface {
 // Optimization interface, based on OOQP
 class OoqpOptimizationInterface {
  public:
-    OoqpOptimizationInterface() = default;
-    ~OoqpOptimizationInterface() = default;
+    OoqpOptimizationInterface();
+    ~OoqpOptimizationInterface();
 
     /**
      * @brief load data
@@ -335,178 +335,39 @@ class OoqpOptimizationInterface {
      * @param unequal_constraints position limit of each point
      * @param equal_constraints ensure the continuity of the connections between each two cubes
      */    
-    void load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints) {
-        ref_stamps_ = ref_stamps;
-        start_constraints_ = start_constraints;
-        end_constraints_ = end_constraints;
-        unequal_constraints_ = unequal_constraints;
-        equal_constraints_ = equal_constraints;
-    }
+    void load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints);
 
     /**
      * @brief Run optimization
      * @param {*}
      * @return {*}
      */    
-    bool runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
-        // Prepare data for s and d dimensions
-        std::array<double, 3> s_start_constraints = start_constraints_.toDimensionS();
-        std::array<double, 3> s_end_constraints = end_constraints_.toDimensionS();
-        std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
-        std::array<double, 3> d_start_constraints = start_constraints_.toDimensionD();
-        std::array<double, 3> d_end_constraints = end_constraints_.toDimensionD();
-        std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
-
-        // Multi thread calculation
-        // TODO: add logic to handle the situation where the optimization process is failed
-        clock_t single_dim_optimization_start_time = clock();
-        std::thread s_thread(&OoqpOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        std::thread d_thread(&OoqpOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        s_thread.join();
-        d_thread.join();
-        clock_t single_dim_optimization_end_time = clock();
-        printf("[SscPlanner] single dimension optimization time consumption: %lf.\n", static_cast<double>((single_dim_optimization_end_time - single_dim_optimization_start_time)) / CLOCKS_PER_SEC);
-
-        // // DEBUG
-        // optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        // optimizeSingleDim(d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        // // END DEBUG
-
-        // Cache
-        *optimized_s = optimized_data_["s"];
-        *optimized_d = optimized_data_["d"];
-
-        bool final_res = optimization_res_["s"] && optimization_res_["d"];
-
-        return final_res;
-    }
+    bool runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d);
 
     /**
      * @brief Optimize in single dimension
      * @param {*}
      */
-    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
-        // ~Stage I: calculate objective function Q and c
-        Eigen::SparseMatrix<double, Eigen::RowMajor> Q;
-        Eigen::VectorXd c;
-        calculateQcMatrix(Q, c);
-
-        // ~Stage II: calculate equal constraints, includes start point constraints, end point constraints and continuity constraints
-        Eigen::SparseMatrix<double, Eigen::RowMajor> A;
-        Eigen::VectorXd b;
-        calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, A, b);
-
-        // ~Stage III: calculate low and up boundaries for intermediate points
-        Eigen::Matrix<char, Eigen::Dynamic, 1> useLowerLimitForX;
-        Eigen::Matrix<char, Eigen::Dynamic, 1> useUpperLimitForX;
-        Eigen::VectorXd lowerLimitForX;
-        Eigen::VectorXd upperLimitForX;
-        calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, useLowerLimitForX, useUpperLimitForX, lowerLimitForX, upperLimitForX);
-
-        // ~Stage IV: optimization
-        std::vector<double> optimized_values;
-        bool optimization_status = solve(Q, c, A, b, useLowerLimitForX, useUpperLimitForX, lowerLimitForX, upperLimitForX, &optimized_values);
-
-        // ~Stage V: store information
-        optimized_data_[dimension_name] = optimized_values;
-        optimization_res_[dimension_name] = optimization_status;
-    }
+    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name);
 
     /**
      * @brief calculate objective function
      * @param {*}
      * @return {*}
      */    
-    void calculateQcMatrix(Eigen::SparseMatrix<double, Eigen::RowMajor>& Q, Eigen::VectorXd& c) {
-        // Initialize Q matrix
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        Eigen::MatrixXd Q_matrix = Eigen::MatrixXd::Zero(variables_num, variables_num);
-
-        // Calculate D matrix
-        for (int i = 0; i < static_cast<int>(ref_stamps_.size()) - 1; i++) {
-            // Calculate time span
-            double time_span = ref_stamps_[i + 1] - ref_stamps_[i];
-            double time_coefficient = pow(time_span, -3);
-
-            // Intergrate to objective function
-            int influenced_variable_index = i * 6;
-            Q_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
-        }
-        Q = Q_matrix.sparseView();
-        c.resize(variables_num);
-        c.setZero();
-    }
+    void calculateQcMatrix(Eigen::SparseMatrix<double, Eigen::RowMajor>& Q, Eigen::VectorXd& c);
 
     /**
      * @brief Calculate equal constraints, note that position constraints in the connection don't need to be considered
      * @param {*}
      */
-    void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, Eigen::SparseMatrix<double, Eigen::RowMajor>& A, Eigen::VectorXd& b) {
-                
-        // Calculate dimensions and initialize
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        int equal_constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
-        double start_cube_time_span = ref_stamps_[1] - ref_stamps_[0];
-        double end_cube_time_span = ref_stamps_[ref_stamps_.size() - 1] - ref_stamps_[ref_stamps_.size() - 2];
-        Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
-        Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, 1);
-
-        // Supple start point and end point position constraints 
-        A_matrix(0, 0) = 1.0, A_matrix(1, variables_num - 1) = 1.0;
-        b_matrix(0, 0) = single_start_constraints[0], b_matrix(1, 0) = single_end_constraints[0];
-
-        // Supple start point and end point velocity constraints
-        A_matrix(2, 0) = -5.0, A_matrix(2, 1) = 5.0;
-        b_matrix(2, 0) = single_start_constraints[1] * start_cube_time_span;
-        A_matrix(3, variables_num - 2) = -5.0, A_matrix(3, variables_num - 1) = 5.0;
-        b_matrix(3, 0) = single_end_constraints[1] * end_cube_time_span;
-
-        // Supple start point and end point acceleration constraints
-        A_matrix(4, 0) = 20.0, A_matrix(4, 1) = -40.0, A_matrix(4, 2) = 20.0;
-        b_matrix(4, 0) = single_start_constraints[2] * start_cube_time_span;
-        A_matrix(5, variables_num - 3) = 20.0, A_matrix(5, variables_num - 2) = -40.0, A_matrix(5, variables_num - 1) = 20.0;
-        b_matrix(5, 0) = single_end_constraints[2] * end_cube_time_span;
-
-        // Supple continuity ensurance constraints
-        for (int i = 0; i < static_cast<int>(equal_constraints.size()); i++) {
-            int constraint_index = i + 6;
-            for (int j = 0; j < variables_num; j++) {
-                
-                // DEBUG: check this logic
-                assert(static_cast<int>(equal_constraints[i].size()) == variables_num);
-                // END DEBUG
-
-                A_matrix(constraint_index, j) = equal_constraints[i][j];
-            }
-        }
-        A = A_matrix.sparseView();
-        b = b_matrix;
-    }
+    void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, Eigen::SparseMatrix<double, Eigen::RowMajor>& A, Eigen::VectorXd& b);
 
     /**
      * @brief Calculate boundaries for intermediate points
      * @param {*}
      */    
-    void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, Eigen::Matrix<char, Eigen::Dynamic, 1>& useLowerLimitForX, Eigen::Matrix<char, Eigen::Dynamic, 1>& useUpperLimitForX, Eigen::VectorXd& lowerLimitForX, Eigen::VectorXd& upperLimitForX) {
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        useLowerLimitForX.setConstant(variables_num, 1);
-        useUpperLimitForX.setConstant(variables_num, 1);
-        lowerLimitForX.resize(variables_num);
-        upperLimitForX.resize(variables_num);
-
-        for (int i = 0; i < variables_num; i++) {
-            if (i == 0 || i == variables_num - 1) {
-                // For the first point and last point, the unequal constraints are invalid
-                useLowerLimitForX(i) = 0;
-                useUpperLimitForX(i) = 0;
-            } else {
-                useLowerLimitForX(i) = 1;
-                useUpperLimitForX(i) = 1;
-                lowerLimitForX(i) = single_lower_boundaries[i];
-                upperLimitForX(i) = single_upper_boundaries[i];
-            }
-        }
-    }
+    void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, Eigen::Matrix<char, Eigen::Dynamic, 1>& useLowerLimitForX, Eigen::Matrix<char, Eigen::Dynamic, 1>& useUpperLimitForX, Eigen::VectorXd& lowerLimitForX, Eigen::VectorXd& upperLimitForX);
 
     /**
      * @brief solve quartic programming
@@ -518,78 +379,7 @@ class OoqpOptimizationInterface {
                     const Eigen::SparseMatrix<double, Eigen::RowMajor>& A,
                     const Eigen::VectorXd& b,
                     Eigen::Matrix<char, Eigen::Dynamic, 1>& useLowerLimitForX, Eigen::Matrix<char, Eigen::Dynamic, 1>& useUpperLimitForX, 
-                    Eigen::VectorXd& lowerLimitForX, Eigen::VectorXd& upperLimitForX, std::vector<double>* optimized_values) {
-        Eigen::VectorXd x;
-        int nx = Q.rows();
-        x.setZero(nx);
-        // Make copies of variables that are changed
-        auto ccopy(c);
-        auto Acopy(A);
-        auto bcopy(b);
-
-        Eigen::SparseMatrix<double, Eigen::RowMajor> Q_triangular = Q.triangularView<Eigen::Lower>();
-        
-        // Compress sparse Eigen matrices (refer to Eigen Sparse Matrix user manual)
-        Q_triangular.makeCompressed();
-        Acopy.makeCompressed();
-
-        // Initialize new problem formulation.
-        int my = bcopy.size();
-        int mz = 0; // TOCO: check this parameter, unequal constraint , set with 0
-        int nnzQ = Q_triangular.nonZeros();
-        int nnzA = Acopy.nonZeros();
-        int nnzC = 0; // Unequal constraint , set with 0
-
-        QpGenSparseMa27* qp = new QpGenSparseMa27(nx, my, mz, nnzQ, nnzA, nnzC);
-        // Fill in problem data.
-        double* cp = &ccopy.coeffRef(0);
-        int* krowQ = Q_triangular.outerIndexPtr();
-        int* jcolQ = Q_triangular.innerIndexPtr();
-        double* dQ = Q_triangular.valuePtr();
-        double* xlow = &lowerLimitForX.coeffRef(0);
-        char* ixlow = &useLowerLimitForX.coeffRef(0);
-        double* xupp = &upperLimitForX.coeffRef(0);
-        char* ixupp = &useUpperLimitForX.coeffRef(0);
-        int* krowA = Acopy.outerIndexPtr();
-        int* jcolA = Acopy.innerIndexPtr();
-        double* dA = Acopy.valuePtr();
-        double* bA = &bcopy.coeffRef(0);
-        int* krowC = 0;
-        int* jcolC = 0;
-        double* dC = 0;
-        double* clow = 0;
-        char* iclow = 0;
-        double* cupp = 0;
-        char* icupp = 0;
-
-        QpGenData* prob = (QpGenData*)qp->makeData(cp, krowQ, jcolQ, dQ, xlow, ixlow, xupp, ixupp, krowA, jcolA, dA, bA, krowC, jcolC, dC, clow, iclow, cupp, icupp);
-        
-        // Create object to store problem variables
-        QpGenVars* vars = (QpGenVars*)qp->makeVariables(prob);
-
-        // Create object to store problem residual data
-        QpGenResiduals* resid = (QpGenResiduals*)qp->makeResiduals(prob);
-
-        // Create solver object
-        GondzioSolver* s = new GondzioSolver(qp, prob);
-
-        // Solve
-        int status = s->solve(prob, vars, resid);
-
-        if (status == TerminationCode::SUCCESSFUL_TERMINATION) {
-            vars->x->copyIntoArray(&x.coeffRef(0));
-            *optimized_values = std::vector<double>(x.data(), x.data() + x.rows() * x.cols());
-        }
-
-        delete s;
-        delete resid;
-        delete vars;
-        delete prob;
-        delete qp;
-
-        return status == TerminationCode::SUCCESSFUL_TERMINATION;
-
-    }
+                    Eigen::VectorXd& lowerLimitForX, Eigen::VectorXd& upperLimitForX, std::vector<double>* optimized_values);
 
     std::vector<double> ref_stamps_;
     EqualConstraint start_constraints_;
@@ -620,7 +410,7 @@ class SscOptimizer {
      * @param {*}
      * @return {*}
      */
-    void runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t);
+    bool runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t);
 
     /**
      * @brief Generate unequal constraints for intermediate variables 
@@ -634,7 +424,7 @@ class SscOptimizer {
      */  
     void generateEqualConstraints(std::vector<std::vector<double>>* equal_constraints);
 
-    SscOptimizationInterface* ssc_opt_itf_{nullptr};
+    OoqpOptimizationInterface* ssc_opt_itf_{nullptr};
 
     EqualConstraint start_constraint_;
     EqualConstraint end_constraint_;

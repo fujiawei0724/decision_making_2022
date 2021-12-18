@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(motion_planning)
-set(CMAKE_BUILD_TYPE Release)
-add_compile_options(-std=c++14 -Wall -O3)
+set(CMAKE_BUILD_TYPE Debug)
+add_compile_options(-std=c++14 -Wall -O0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 set(Torch_DIR /home/fjw/libtorch/share/cmake/Torch)
+
 
 
 ## Find catkin macros and libraries
@@ -126,8 +127,8 @@ find_package(Torch REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
-#  LIBRARIES multi_path_generator
+  INCLUDE_DIRS include
+  LIBRARIES motion_planning
   CATKIN_DEPENDS
   tf
   std_srvs
@@ -143,7 +144,7 @@ catkin_package(
   mission_msgs
   control_msgs
   self_test
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 ###########
@@ -152,17 +153,18 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+add_executable(${PROJECT_NAME}_node src/MotionPlanningNode.cpp)
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
-  /home/fjw/OOQP/OOQP/include
 )
 
-link_directories(/home/fjw/OOQP/OOQP/lib)
 
-add_executable(${PROJECT_NAME}_node src/MotionPlanningNode.cpp)
+
+include_directories(/home/fjw/OOQP/OOQP/include)
+link_directories(/home/fjw/OOQP/OOQP/lib)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_lib src/Utils.cc src/HpdmPlanner.cc src/SscPlanner.cc src/BehaviorPlanning.cc src/TrajectoryPlanning.cc src/BehaviorPlanner.cc src/MotionPlanning.cpp src/VelocityPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/DecisionMaking src/StateMaintaining.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp src/SpecialMotionPlanning.cpp src/LowSpeedMotionPlanning.cpp src/ReverseMotionPlanning.cpp src/RotateMotionPlanning.cpp)
@@ -197,13 +199,6 @@ target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   pthread
   ${TORCH_LIBRARIES}
-  ooqpgensparse 
-  ooqpsparse 
-  ooqpgondzio 
-  ooqpbase 
-  blas 
-  ma27 
-  gfortran
   # obstacle_utilities
 )
 
