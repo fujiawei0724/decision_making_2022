@@ -226,6 +226,8 @@ std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear
     return linspaced;
 }
 
+void calculateParam(const Eigen::SparseMatrix<double, Eigen::RowMajor>& M, std::vector<int>* irowM, std::vector<int>* jcolM);
+
 };  // namespace Tools
 
 #endif

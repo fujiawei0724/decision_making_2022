@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-18 15:13:17
+ * @LastEditTime: 2021-12-19 18:35:29
  * @Description: Components for ssc planner.
  */
 
@@ -1017,20 +1017,20 @@ namespace SscPlanner {
         std::array<double, 3> d_end_constraints = end_constraints_.toDimensionD();
         std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
-        // // Multi thread calculation
-        // // TODO: add logic to handle the situation where the optimization process is failed
-        // clock_t single_dim_optimization_start_time = clock();
-        // std::thread s_thread(&OoqpOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        // std::thread d_thread(&OoqpOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        // s_thread.join();
-        // d_thread.join();
-        // clock_t single_dim_optimization_end_time = clock();
-        // printf("[SscPlanner] single dimension optimization time consumption: %lf.\n", static_cast<double>((single_dim_optimization_end_time - single_dim_optimization_start_time)) / CLOCKS_PER_SEC);
+        // Multi thread calculation
+        // TODO: add logic to handle the situation where the optimization process is failed
+        clock_t single_dim_optimization_start_time = clock();
+        std::thread s_thread(&OoqpOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+        std::thread d_thread(&OoqpOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+        s_thread.join();
+        d_thread.join();
+        clock_t single_dim_optimization_end_time = clock();
+        printf("[SscPlanner] single dimension optimization time consumption: %lf.\n", static_cast<double>((single_dim_optimization_end_time - single_dim_optimization_start_time)) / CLOCKS_PER_SEC);
 
-        // DEBUG
-        optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        optimizeSingleDim(d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        // END DEBUG
+        // // DEBUG
+        // optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+        // optimizeSingleDim(d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+        // // END DEBUG
 
         // Cache
         *optimized_s = optimized_data_["s"];
@@ -1051,10 +1051,20 @@ namespace SscPlanner {
         Eigen::VectorXd c;
         calculateQcMatrix(Q, c);
 
+        // // DEBUG 
+        // std::cout << "Q: " << Q << std::endl;
+        // std::cout << "c: " << c << std::endl; 
+        // // END DEBUG
+
         // ~Stage II: calculate equal constraints, includes start point constraints, end point constraints and continuity constraints
         Eigen::SparseMatrix<double, Eigen::RowMajor> A;
         Eigen::VectorXd b;
         calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, A, b);
+
+        // // DEBUG
+        // std::cout << "A: " << A << std::endl;
+        // std::cout << "b: " << b << std::endl;
+        // // END DEBUG
 
         // ~Stage III: calculate low and up boundaries for intermediate points
         Eigen::Matrix<char, Eigen::Dynamic, 1> useLowerLimitForX;
@@ -1062,6 +1072,16 @@ namespace SscPlanner {
         Eigen::VectorXd lowerLimitForX;
         Eigen::VectorXd upperLimitForX;
         calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, useLowerLimitForX, useUpperLimitForX, lowerLimitForX, upperLimitForX);
+
+        // // DEBUG
+        // std::cout << "lowerLimitForX: " << lowerLimitForX << std::endl;
+        // std::cout << "upperLimitForX: " << upperLimitForX << std::endl;
+        // for (int i = 0; i < useLowerLimitForX.rows(); i++) {
+        //     printf("%d\n", useLowerLimitForX(i, 0));
+        //     printf("%d\n", useUpperLimitForX(i, 0));
+        // }
+        // std::cout << "------------------" << std::endl;
+        // // END DEBUG
 
         // ~Stage IV: optimization
         std::vector<double> optimized_values;
@@ -1093,9 +1113,19 @@ namespace SscPlanner {
             Q_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
         }
 
-        // DEBUG
-        std::cout << "Q_matrix: " << Q_matrix << std::endl;
-        // END DEBUG
+        // // DEBUG
+        // std::cout << "Q_matrix: " << Q_matrix << std::endl;
+        // // END DEBUG
+
+        // // DEBUG
+        // for (int i = 0; i < Q_matrix.rows(); i++) {
+        //     for (int j = 0; j < Q_matrix.cols(); j++) {
+        //         std::cout << Q_matrix(i, j) << ", ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << "-----------------" << std::endl;
+        // // END DEBUG
 
         Q = Q_matrix.sparseView();
         c.resize(variables_num);
@@ -1146,6 +1176,18 @@ namespace SscPlanner {
         }
         A = A_matrix.sparseView();
         b = b_matrix;
+
+        // // DEBUG
+        // std::cout << "A_matrix: " << std::endl;
+        // for (int i = 0; i < A_matrix.rows(); i++) {
+        //     for (int j = 0; j < A_matrix.cols(); j++) {
+        //         std::cout << A_matrix(i, j) << ", ";
+        //     }
+        // }
+        // std::cout << "-------------------" << std::endl;
+        // std::cout << b_matrix << std::endl;
+        // std::cout << "-------------------" << std::endl;
+        // // END DEBUG
     }
 
     /**
@@ -1164,6 +1206,8 @@ namespace SscPlanner {
                 // For the first point and last point, the unequal constraints are invalid
                 useLowerLimitForX(i) = 0;
                 useUpperLimitForX(i) = 0;
+                lowerLimitForX(i) = 0.0;
+                upperLimitForX(i) = 0.0;
             } else {
                 useLowerLimitForX(i) = 1;
                 useUpperLimitForX(i) = 1;
@@ -1185,16 +1229,16 @@ namespace SscPlanner {
                     Eigen::Matrix<char, Eigen::Dynamic, 1>& useLowerLimitForX, Eigen::Matrix<char, Eigen::Dynamic, 1>& useUpperLimitForX, 
                     Eigen::VectorXd& lowerLimitForX, Eigen::VectorXd& upperLimitForX, std::vector<double>* optimized_values) {
         
-        // DEBUG
-        std::cout << "Q: " << Q << std::endl;
-        std::cout << "c: " << c << std::endl;
-        std::cout << "A: " << A << std::endl;
-        std::cout << "b: " << b << std::endl;
-        std::cout << "useLowerLimitForX: " << useLowerLimitForX << std::endl;
-        std::cout << "useUpperLimitForX: " << useUpperLimitForX << std::endl;
-        std::cout << "lowerLimitForX: " << lowerLimitForX << std::endl;
-        std::cout << "upperLimitForX: " << upperLimitForX << std::endl;
-        // END DEBUG
+        // // DEBUG
+        // std::cout << "Q: " << Q << std::endl;
+        // std::cout << "c: " << c << std::endl;
+        // std::cout << "A: " << A << std::endl;
+        // std::cout << "b: " << b << std::endl;
+        // std::cout << "useLowerLimitForX: " << useLowerLimitForX << std::endl;
+        // std::cout << "useUpperLimitForX: " << useUpperLimitForX << std::endl;
+        // std::cout << "lowerLimitForX: " << lowerLimitForX << std::endl;
+        // std::cout << "upperLimitForX: " << upperLimitForX << std::endl;
+        // // END DEBUG
 
         Eigen::VectorXd x;
         int nx = Q.rows();
@@ -1212,43 +1256,62 @@ namespace SscPlanner {
 
         // Initialize new problem formulation.
         int my = bcopy.size();
-        int mz = 0; // TOCO: check this parameter, unequal constraint , set with 0
+        int mz = 0; // TODO: check this parameter, unequal constraint , set with 0
         int nnzQ = Q_triangular.nonZeros();
+        // int nnzA = Acopy.nonZeros();
         int nnzA = Acopy.nonZeros();
         int nnzC = 0; // Unequal constraint , set with 0
 
         QpGenSparseMa27* qp = new QpGenSparseMa27(nx, my, mz, nnzQ, nnzA, nnzC);
-        // Fill in problem data.
+        
+        // Fill in problem data
         double* cp = &ccopy.coeffRef(0);
-        int* krowQ = Q_triangular.outerIndexPtr();
-        int* jcolQ = Q_triangular.innerIndexPtr();
+        std::vector<int> irowQ_vec, jcolQ_vec;
+        Tools::calculateParam(Q_triangular, &irowQ_vec, &jcolQ_vec);
+        int irowQ[irowQ_vec.size()], jcolQ[jcolQ_vec.size()];
+        memcpy(irowQ, &irowQ_vec[0], irowQ_vec.size() * sizeof(irowQ_vec[0]));
+        memcpy(jcolQ, &jcolQ_vec[0], jcolQ_vec.size() * sizeof(jcolQ_vec[0]));
         double* dQ = Q_triangular.valuePtr();
+
         double* xlow = &lowerLimitForX.coeffRef(0);
         char* ixlow = &useLowerLimitForX.coeffRef(0);
         double* xupp = &upperLimitForX.coeffRef(0);
         char* ixupp = &useUpperLimitForX.coeffRef(0);
-        int* krowA = Acopy.outerIndexPtr();
-        int* jcolA = Acopy.innerIndexPtr();
+        
+        std::vector<int> irowA_vec, jcolA_vec;
+        Tools::calculateParam(Acopy, &irowA_vec, &jcolA_vec);
+        int irowA[irowA_vec.size()], jcolA[jcolA_vec.size()];
+        memcpy(irowA, &irowA_vec[0], irowA_vec.size() * sizeof(irowA_vec[0]));
+        memcpy(jcolA, &jcolA_vec[0], jcolA_vec.size() * sizeof(jcolA_vec[0]));
         double* dA = Acopy.valuePtr();
         double* bA = &bcopy.coeffRef(0);
-        int* krowC = 0;
-        int* jcolC = 0;
-        double* dC = 0;
-        double* clow = 0;
-        char* iclow = 0;
-        double* cupp = 0;
-        char* icupp = 0;
+        
+        int krowC[] = {};
+        int jcolC[] = {};
+        double dC[] = {};
+        double clow[] = {};
+        char iclow[] = {};
+        double cupp[] = {};
+        char icupp[] = {};
 
-        QpGenData* prob = (QpGenData*)qp->makeData(cp, krowQ, jcolQ, dQ, xlow, ixlow, xupp, ixupp, krowA, jcolA, dA, bA, krowC, jcolC, dC, clow, iclow, cupp, icupp);
+        QpGenData *prob = (QpGenData *)qp->copyDataFromSparseTriple(cp, irowQ, nnzQ, jcolQ, dQ, xlow, ixlow, xupp, ixupp, irowA, nnzA, jcolA, dA, bA, krowC, nnzC, jcolC, dC, clow, iclow, cupp, icupp);
         
         // Create object to store problem variables
         QpGenVars* vars = (QpGenVars*)qp->makeVariables(prob);
+
+        // // DEBUG
+        // prob->print();
+        // // END DEBUG
 
         // Create object to store problem residual data
         QpGenResiduals* resid = (QpGenResiduals*)qp->makeResiduals(prob);
 
         // Create solver object
         GondzioSolver* s = new GondzioSolver(qp, prob);
+
+        // // DEBUG
+        // s->monitorSelf();
+        // // END DEBUG
 
         // Solve
         int status = s->solve(prob, vars, resid);
