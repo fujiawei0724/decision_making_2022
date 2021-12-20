@@ -135,8 +135,8 @@ class Lane{
     // Judge position whether in lane
     bool isInLane(const PathPlanningUtilities::Point2f& position);
 
-    // Pre-process, judge whether a lane is occupied by static obstacle
-    bool isLaneOccupiedByStaticObs(const std::vector<DecisionMaking::Obstacle>& all_obs);
+    // Pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
+    bool isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<DecisionMaking::Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs);
 
     bool lane_existance_ = false;   // 道路是否可用
     std::vector<PathPlanningUtilities::CoordinationPoint> lane_coorination_;  // 道路完整信息

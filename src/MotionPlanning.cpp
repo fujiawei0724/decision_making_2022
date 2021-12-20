@@ -296,6 +296,8 @@ void DecisionMaking::SubVehicle::updateMapInformation() {
 
         // 获取交通规则生成的障碍物
         this->traffic_rule_obstacles_raw_ = map_service.response.virtual_obstacles;
+        VisualizationMethods::visualizeTrafficRules(this->traffic_rule_obstacles_raw_, this->visualization_pub_);
+
         // for (size_t i = 0; i < this->traffic_rule_obstacles_raw_.size(); i++) {
         //     if (this->traffic_rule_obstacles_raw_[i].points.size() > 0) {
         //         LOG(INFO) << " traffic obstacle is " << this->traffic_rule_obstacles_raw_[i].points[0].x << "||" << this->traffic_rule_obstacles_raw_[i].points[0].y;

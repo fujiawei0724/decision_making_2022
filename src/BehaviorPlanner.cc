@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 17:08:57
+ * @LastEditTime: 2021-12-20 20:45:38
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -11,35 +11,8 @@
 void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     // Update information for behavior planning
     updateMapInformation();
+    updateValidateTrafficRuleInformation();
     updateObstacleInformation();
-
-    // Shield the lane which is occupied by static obstacles
-    if (center_lane_.isLaneOccupiedByStaticObs(obstacles_)) {
-        center_lane_.lane_existance_ = false;
-    }
-    if (left_lane_.isLaneOccupiedByStaticObs(obstacles_)) {
-        left_lane_.lane_existance_ = false;
-    }
-    if (right_lane_.isLaneOccupiedByStaticObs(obstacles_)) {
-        right_lane_.lane_existance_ = false;
-    }
-
-    // Contruct map interface for behavior planner
-    std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
-    std::map<Common::LaneId, Lane> lanes_info;
-    if (center_lane_.getLaneExistance()) {
-        lanes_exist_info[Common::LaneId::CenterLane] = true;
-        lanes_info[Common::LaneId::CenterLane] = center_lane_;
-    }
-    if (left_lane_.getLaneExistance()) {
-        lanes_exist_info[Common::LaneId::LeftLane] = true;
-        lanes_info[Common::LaneId::LeftLane] = left_lane_;
-    }
-    if (right_lane_.getLaneExistance()) {
-        lanes_exist_info[Common::LaneId::RightLane] = true;
-        lanes_info[Common::LaneId::RightLane] = right_lane_;
-    }
-    BehaviorPlanner::MapInterface map_interface = BehaviorPlanner::MapInterface(lanes_exist_info, lanes_info);
 
     // Transform ego vehicle information and surround vehice information
     // Update vehicle information
@@ -62,6 +35,34 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+
+    // // Shield the lane which is occupied by static obstacles
+    // if (center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+    //     center_lane_.lane_existance_ = false;
+    // }
+    // if (left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+    //     left_lane_.lane_existance_ = false;
+    // }
+    // if (right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+    //     right_lane_.lane_existance_ = false;
+    // }
+
+    // Contruct map interface for behavior planner
+    std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
+    std::map<Common::LaneId, Lane> lanes_info;
+    if (center_lane_.getLaneExistance()) {
+        lanes_exist_info[Common::LaneId::CenterLane] = true;
+        lanes_info[Common::LaneId::CenterLane] = center_lane_;
+    }
+    if (left_lane_.getLaneExistance()) {
+        lanes_exist_info[Common::LaneId::LeftLane] = true;
+        lanes_info[Common::LaneId::LeftLane] = left_lane_;
+    }
+    if (right_lane_.getLaneExistance()) {
+        lanes_exist_info[Common::LaneId::RightLane] = true;
+        lanes_info[Common::LaneId::RightLane] = right_lane_;
+    }
+    BehaviorPlanner::MapInterface map_interface = BehaviorPlanner::MapInterface(lanes_exist_info, lanes_info);
 
     // Clear information
     unlaned_obstacles_.clear();

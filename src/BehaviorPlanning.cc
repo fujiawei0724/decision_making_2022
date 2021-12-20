@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-20 16:55:02
+ * @LastEditTime: 2021-12-20 20:48:38
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -86,7 +86,7 @@ namespace BehaviorPlanner {
             if (lat_beh == LateralBehavior::LaneKeeping) {
                 return LaneId::LeftLane;
             } else if (lat_beh == LateralBehavior::LaneChangeLeft) {
-                printf("[BehaviorPlanner]: keeping lang change left.\n");
+                // printf("[BehaviorPlanner]: keeping lang change left.\n");
                 return LaneId::LeftLane;
             } else if (lat_beh == LateralBehavior::LaneChangeRight) {
                 return LaneId::CenterLane;
@@ -99,7 +99,7 @@ namespace BehaviorPlanner {
             } else if (lat_beh == LateralBehavior::LaneChangeLeft) {
                 return LaneId::CenterLane;
             } else if (lat_beh == LateralBehavior::LaneChangeRight) {
-                printf("[BehaviorPlanner]: keeping lang change right.\n");
+                // printf("[BehaviorPlanner]: keeping lang change right.\n");
                 return LaneId::RightLane;
             } else {
                 assert(false);

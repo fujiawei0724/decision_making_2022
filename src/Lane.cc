@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 18:01:39
+ * @LastEditTime: 2021-12-20 20:36:48
  * @Description: Lane components
  */
 
@@ -282,11 +282,15 @@ bool Lane::isInLane(const PathPlanningUtilities::Point2f& position) {
     }
 }
 
-// Pre-process, judge whether a lane is occupied by static obstacle
-bool Lane::isLaneOccupiedByStaticObs(const std::vector<DecisionMaking::Obstacle>& all_obs) {
+// Pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
+bool Lane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<DecisionMaking::Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) {
+    // Get valid lane info
+    int vehicle_index = findCurrenPositionIndexInLane(position);
+    std::vector<PathPlanningUtilities::CurvePoint> valid_lane_curve(lane_curve_.begin() + vehicle_index, lane_curve_.end());
     // Construct occupation area of lane
-    DecisionMaking::RSS::OccupationArea lane_occupation_area = DecisionMaking::RSS::OccupationArea(lane_curve_, 5.0, 1.95);
+    DecisionMaking::RSS::OccupationArea lane_occupation_area = DecisionMaking::RSS::OccupationArea(valid_lane_curve, 5.0, 1.0);
 
+    // Construct occupation area for static obs
     for (const auto& obs : all_obs) {
         // Only static obs
         if (Tools::isEqual(obs.velocity_, 0.0)) {
@@ -295,6 +299,23 @@ bool Lane::isLaneOccupiedByStaticObs(const std::vector<DecisionMaking::Obstacle>
             if (DecisionMaking::RSS::occupationInteractionJudgement(lane_occupation_area, obs_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
                 return true;
             }
+        }
+    }
+
+    // Construct occupation area for traffic ruel virtual obs
+    for (const auto& traffic_obs : traffic_virtual_obs) {
+        DecisionMaking::RSS::OccupationArea traffic_rule_obstacle_occupation_area = DecisionMaking::RSS::OccupationArea(traffic_obs);
+        size_t subvehicle_interact_index, obstacle_interact_index;
+        // 判断两占用区域是否相交
+        if (occupationInteractionJudgement(lane_occupation_area, traffic_rule_obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+
+            // DEBUG
+            printf("Collision with traffic virtual obstacles.\n");
+            std::cout << "subvehicle_interact_index: " << subvehicle_interact_index << std::endl;
+            std::cout << "obstacle_interact_index: " << obstacle_interact_index << std::endl;
+            // END DEBUG
+
+            return true;
         }
     }
 
