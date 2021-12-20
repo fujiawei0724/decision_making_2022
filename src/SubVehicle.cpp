@@ -572,14 +572,25 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         // Run behavior planner
         bool is_behavior_planning_success = false;
         behaviorPlanning(&is_behavior_planning_success);
+        if (!is_behavior_planning_success) {
+            printf("[MainPineline] behavior planning failed.\n");
+            continue;
+        }
 
         // // Run HPDM
         // bool is_hpdm_planning_success = false;
         // hpdmPlanning(&is_hpdm_planning_success);
+        // if (!is_hpdm_planning_success) {
+        //     continue;
+        // }
 
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
         sscPlanning(&is_trajectory_planning_success);
+        if (!is_trajectory_planning_success) {
+            printf("[MainPineline] ssc planning failed.\n");
+            continue;
+        }
 
         // Check trajectory
         std::vector<double> thetas, curvatures, velocities, accelerations;

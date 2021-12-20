@@ -203,11 +203,11 @@ void DecisionMaking::SubVehicle::updateMapInformation() {
         this->guidance_type_ = map_service.response.guidance;
         LOG(INFO) << "guided type: "<< this->guidance_type_;
         // std::cout << "guided type raw: "<< Lane::GuidanceType::ALL_AVAILABLE << std::endl;
-        if (this->guidance_type_ == Lane::GuidanceType::CHANGE_LEFT) {
-            this->right_lane_.disable();
-        } else if (this->guidance_type_ == Lane::GuidanceType::CHANGE_RIGHT) {
-            this->left_lane_.disable();
-        }
+        // if (this->guidance_type_ == Lane::GuidanceType::CHANGE_LEFT) {
+        //     this->right_lane_.disable();
+        // } else if (this->guidance_type_ == Lane::GuidanceType::CHANGE_RIGHT) {
+        //     this->left_lane_.disable();
+        // }
 
         // 设置道路优先级
         // 确定中间道的优先级

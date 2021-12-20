@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-17 11:36:57
+ * @LastEditTime: 2021-12-20 10:55:30
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -498,6 +498,8 @@ namespace BehaviorPlanner {
             target_velocity = IDM::calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_, dt, desired_velocity);
         }
 
+        // std::cout << "Target velocity: " << target_velocity << std::endl;
+
         return target_velocity;
     }
 
@@ -817,7 +819,7 @@ namespace BehaviorPlanner {
 
         // // DEBUG
         // for (int i = 0; i < 1; i ++) {
-        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[28], 28);
+        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[62], 62);
         // }
         // // END DEBUG
     }
@@ -841,7 +843,7 @@ namespace BehaviorPlanner {
         }
 
         // // DEBUG
-        // std::cout << "Ego vehicle desired speed: " << ego_vehicle_desired_speed << std::endl;
+        // std::cout << "Behavior sequence index: " << index << " ego vehicle desired speed: " << ego_vehicle_desired_speed << std::endl;
         // // END DEBUG
 
         // Initialize trajectory

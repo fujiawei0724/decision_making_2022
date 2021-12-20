@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-19 18:38:01
+ * @LastEditTime: 2021-12-20 10:57:46
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -80,9 +80,6 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     SscPlanner::SscTrajectoryPlanningCore* ssc_planning_core = new SscPlanner::SscTrajectoryPlanningCore();
     ssc_planning_core->load(ego_vehicle, reference_lane_, ego_trajectory_, surround_trajectories_, unlaned_obstacles_);
     ssc_planning_core->runOnce(&result, &trajectory);
-    if (!result) {
-        printf("[MainPipeline] ssc planning failed.\n");
-    }
 
     // Visualization
     VisualizationMethods::visualizeTrajectory(trajectory, vis_trajectory_planner_pub_);
@@ -92,8 +89,10 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     //     printf("Index: %d, x: %lf, y: %lf, t: %lf.\n", i, trajectory[i].x_, trajectory[i].y_, trajectory[i].z_);
     // }
     // // END DEBUG
-
-    generated_trajectory_ = trajectory;
+    
+    if (result) {
+        generated_trajectory_ = trajectory;
+    }
     *trajectory_planning_result = result;
 
 }
