@@ -26,6 +26,7 @@ void DecisionMaking::SubVehicle::runMotionPlanning() {
     std::thread replanning_trigger_thread(&DecisionMaking::SubVehicle::triggerThread, this);
     ros_msgs_receiver_thread.join();
     motion_planning_thread.join();
+    replanning_trigger_thread.join();
 }
 
 // 状态机初始化

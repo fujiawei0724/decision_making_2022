@@ -48,7 +48,13 @@ class Lane{
         PathPlanningUtilities::Path().swap(this->lane_center_path_in_world_);
         PathPlanningUtilities::Path().swap(this->lane_center_path_in_frenet_);
         double station = 0.0;
-        for (size_t i = 0; i < geometry.points.size(); i++) {
+
+        // // DEBUG
+        // std::cout << "Lane points num: " << geometry.points.size() << std::endl;
+        // // END DEBUG
+
+        int valid_lane_points_num = std::min(static_cast<int>(geometry.points.size()), static_cast<int>(130.0 / static_cast<double>(LANE_GAP_DISTANCE)));
+        for (int i = 0; i < valid_lane_points_num; i++) {
             PathPlanningUtilities::CoordinationPoint coordinate_point;
             PathPlanningUtilities::Point2f point_in_world;
             PathPlanningUtilities::Point2f point_in_frenet;
@@ -266,8 +272,7 @@ class Lane{
             }
             if (i == static_cast<int>(lane_coorination_.size()) - 1) {
                 // TODO: add logic to handle this situation 
-                printf("[Lane] cannot find the nearest point index.\n");
-                assert(false);
+                printf("[Lane] current position responses to the last point in the lane.\n");
             } 
             pre_distance = cur_distance;
         }

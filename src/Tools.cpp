@@ -926,3 +926,16 @@ void Tools::calculateParam(const Eigen::SparseMatrix<double, Eigen::RowMajor>& M
     *jcolM = tmp_jcolM;
 }
 
+// For simulation brief
+std::vector<DecisionMaking::Obstacle> Tools::filtUnlanedObstaclesForSimulation(const std::vector<DecisionMaking::Obstacle>& raw_unlaned_obs, const Eigen::Matrix<double, 2, 1>& ego_cur_pos) {
+    std::vector<DecisionMaking::Obstacle> filted_unlaned_obs;
+    for (const auto& obs : raw_unlaned_obs) {
+        if (sqrt((ego_cur_pos(0) - obs.getObstaclePosition().x_) * (ego_cur_pos(0) - obs.getObstaclePosition().x_) + (ego_cur_pos(1) - obs.getObstaclePosition().y_) * (ego_cur_pos(1) - obs.getObstaclePosition().y_)) > 50.0) {
+            continue;
+        } else {
+            filted_unlaned_obs.emplace_back(obs);
+        }
+    }
+    return filted_unlaned_obs;
+}
+

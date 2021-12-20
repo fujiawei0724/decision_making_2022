@@ -7,6 +7,7 @@
 
 #include "Point.hpp"
 #include "Path.hpp"
+#include "Obstacle.hpp"
 #include "PathGenerator.h"
 #include "Lane.hpp"
 #include "Rectangle.hpp"
@@ -226,7 +227,11 @@ std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear
     return linspaced;
 }
 
+// Transform parameters for OOQP matrxi calculation
 void calculateParam(const Eigen::SparseMatrix<double, Eigen::RowMajor>& M, std::vector<int>* irowM, std::vector<int>* jcolM);
+
+// For simulation brief
+std::vector<DecisionMaking::Obstacle> filtUnlanedObstaclesForSimulation(const std::vector<DecisionMaking::Obstacle>& raw_unlaned_obs, const Eigen::Matrix<double, 2, 1>& ego_cur_pos);
 
 };  // namespace Tools
 

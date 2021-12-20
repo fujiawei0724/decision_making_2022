@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-19 18:35:29
+ * @LastEditTime: 2021-12-20 15:02:15
  * @Description: Components for ssc planner.
  */
 
@@ -1588,7 +1588,7 @@ namespace SscPlanner {
         reference_lane_ = reference_lane;
         ego_traj_ = ego_traj;
         sur_laned_veh_trajs_ = sur_laned_veh_trajs;
-        sur_unlaned_obs_ = sur_unlaned_obs;
+        sur_unlaned_obs_ = Tools::filtUnlanedObstaclesForSimulation(sur_unlaned_obs, cur_vehicle_state.state_.position_);
     }
 
     // Generate trajectory
@@ -1631,7 +1631,7 @@ namespace SscPlanner {
         std::vector<double> s, d, t;
         // TODO: add logic to handle the situation where the optimization is failed
         bool optimization_res = ssc_opt_itf_->runOnce(&s, &d, &t);
-        if (!optimization_res) {
+        if (!optimization_res || (s.size() != d.size())) {
             printf("[SscTrajectoryPlanningCore] ssc optimization failed.\n");
             *result = false;
             return;

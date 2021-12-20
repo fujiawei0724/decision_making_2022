@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 10:57:46
+ * @LastEditTime: 2021-12-20 15:28:21
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -52,7 +52,7 @@ void DecisionMaking::SubVehicle::trajectoryPlanning(bool* trajectory_planning_re
  * @brief Ssc planning
  */
 void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
-    // Transform ego vehicle information and surround vehice information
+    // Transform ego vehicle information and surround vehicle information
     // Update vehicle information
     PathPlanningUtilities::VehicleState start_point_in_world;
     this->current_vehicle_world_position_mutex_.lock();
