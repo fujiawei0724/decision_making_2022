@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-19 19:44:53
+ * @LastEditTime: 2021-12-20 17:08:57
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -12,6 +12,17 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     // Update information for behavior planning
     updateMapInformation();
     updateObstacleInformation();
+
+    // Shield the lane which is occupied by static obstacles
+    if (center_lane_.isLaneOccupiedByStaticObs(obstacles_)) {
+        center_lane_.lane_existance_ = false;
+    }
+    if (left_lane_.isLaneOccupiedByStaticObs(obstacles_)) {
+        left_lane_.lane_existance_ = false;
+    }
+    if (right_lane_.isLaneOccupiedByStaticObs(obstacles_)) {
+        right_lane_.lane_existance_ = false;
+    }
 
     // Contruct map interface for behavior planner
     std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};

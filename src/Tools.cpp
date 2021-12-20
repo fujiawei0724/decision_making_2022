@@ -938,4 +938,3 @@ std::vector<DecisionMaking::Obstacle> Tools::filtUnlanedObstaclesForSimulation(c
     }
     return filted_unlaned_obs;
 }
-

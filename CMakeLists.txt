@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(motion_planning)
-set(CMAKE_BUILD_TYPE Debug)
-add_compile_options(-std=c++14 -Wall -O0)
+set(CMAKE_BUILD_TYPE Release)
+add_compile_options(-std=c++14 -Wall -O3)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
@@ -167,7 +167,7 @@ include_directories(/home/fjw/OOQP/OOQP/include)
 link_directories(/home/fjw/OOQP/OOQP/lib)
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_lib src/Utils.cc src/HpdmPlanner.cc src/SscPlanner.cc src/BehaviorPlanning.cc src/TrajectoryPlanning.cc src/BehaviorPlanner.cc src/MotionPlanning.cpp src/VelocityPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/DecisionMaking src/StateMaintaining.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp src/SpecialMotionPlanning.cpp src/LowSpeedMotionPlanning.cpp src/ReverseMotionPlanning.cpp src/RotateMotionPlanning.cpp)
+add_library(${PROJECT_NAME}_lib src/Lane.cc src/Utils.cc src/HpdmPlanner.cc src/SscPlanner.cc src/BehaviorPlanning.cc src/TrajectoryPlanning.cc src/BehaviorPlanner.cc src/MotionPlanning.cpp src/VelocityPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/DecisionMaking src/StateMaintaining.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp src/SpecialMotionPlanning.cpp src/LowSpeedMotionPlanning.cpp src/ReverseMotionPlanning.cpp src/RotateMotionPlanning.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

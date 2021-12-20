@@ -433,7 +433,7 @@ bool DecisionMaking::SubVehicle::missionFinishJudgement() {
     this->destination_mutex_.lock();
     double distance = sqrt((current_position_in_world.position_.x_ - this->destination_pose_.pose.position.x) * (current_position_in_world.position_.x_ - this->destination_pose_.pose.position.x) + (current_position_in_world.position_.y_ - this->destination_pose_.pose.position.y) * (current_position_in_world.position_.y_ - this->destination_pose_.pose.position.y));
     this->destination_mutex_.unlock();
-    std::cout << "当前处于停车状态，离目标点的距离为" << distance << std::endl;
+    // std::cout << "当前处于停车状态，离目标点的距离为" << distance << std::endl;
     LOG(INFO) << "当前处于停车状态，离目标点的距离为" << distance;
     if (Tools::isSmall(distance, REACH_DESTINATION_MAX_DISTANCE)) {
         if (Tools::isZero(current_movement_state.velocity_) && this->current_state_.getStateName() == StateNames::STOP) {

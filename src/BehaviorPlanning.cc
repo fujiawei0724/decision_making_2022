@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-20 10:55:30
+ * @LastEditTime: 2021-12-20 16:55:02
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -566,6 +566,9 @@ namespace BehaviorPlanner {
             for (int beh_index = 0; beh_index < sequence_length_; beh_index++) {
                 for (int lat = 0; lat < static_cast<int>(LateralBehavior::MaxCount); lat++) {
                     // Shield the situation where the corresponding lane doesn't exist 
+                    if (!is_lane_keeping_available_ && LateralBehavior(lat) == LateralBehavior::LaneKeeping) {
+                        continue;
+                    }
                     if (!is_lane_change_left_available_ && LateralBehavior(lat) == LateralBehavior::LaneChangeLeft) {
                         continue;
                     }

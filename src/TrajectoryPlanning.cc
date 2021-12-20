@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 15:28:21
+ * @LastEditTime: 2021-12-20 17:18:58
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -81,8 +81,8 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     ssc_planning_core->load(ego_vehicle, reference_lane_, ego_trajectory_, surround_trajectories_, unlaned_obstacles_);
     ssc_planning_core->runOnce(&result, &trajectory);
 
-    // Visualization
-    VisualizationMethods::visualizeTrajectory(trajectory, vis_trajectory_planner_pub_);
+    // // Visualization
+    // VisualizationMethods::visualizeTrajectory(trajectory, vis_trajectory_planner_pub_);
 
     // // DEBUG
     // for (int i = 0; i < static_cast<int>(trajectory.size()); i++) {
