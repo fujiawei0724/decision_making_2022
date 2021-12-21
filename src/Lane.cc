@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-21 10:44:47
+ * @LastEditTime: 2021-12-21 14:46:07
  * @Description: Lane components
  */
 
@@ -258,6 +258,8 @@ int Lane::findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& posit
         if (i == static_cast<int>(lane_coorination_.size()) - 1) {
             // TODO: add logic to handle this situation 
             printf("[Lane] current position responses to the last point in the lane.\n");
+            nearest_point_index = i;
+            break;
         } 
         pre_distance = cur_distance;
     }
