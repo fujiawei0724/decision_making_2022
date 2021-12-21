@@ -496,7 +496,12 @@ void DecisionMaking::SubVehicle::triggerThread() {
             need_replanning_ = true;
             continue;
         }
-        trigger->load(executed_trajectory_, trajectory_update_time_stamp_);
+        // Update vehicle information
+        PathPlanningUtilities::VehicleState start_point_in_world;
+        this->current_vehicle_world_position_mutex_.lock();
+        start_point_in_world = this->current_vehicle_world_position_;
+        this->current_vehicle_world_position_mutex_.unlock();
+        trigger->load(executed_trajectory_, trajectory_update_time_stamp_, start_point_in_world.position_);
         bool need_replanning = trigger->runOnce();
         need_replanning_ = need_replanning;
     }

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 17:44:31
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 18:31:55
+ * @LastEditTime: 2021-12-21 18:28:35
  * @Description: Utils include trigger, checker
  */
 
@@ -24,7 +24,7 @@ class Trigger {
      * @brief update data
      * @param {*}
      */
-    void load(const std::vector<Point3f>& executed_trajectory, const clock_t& last_update_time_stamp);
+    void load(const std::vector<Point3f>& executed_trajectory, const clock_t& last_update_time_stamp, const PathPlanningUtilities::Point2f& ego_vehicle_position);
 
     /**
      * @brief judge whether need replanning
@@ -41,13 +41,20 @@ class Trigger {
     void checkTrajRemainTime(bool* need_replanning);
 
     /**
+     * @brief judge whether replanning from remain distance
+     * @param {*}
+     * @return {*}
+     */ 
+    void checkTrajRemainDis(bool* need_replanning);   
+
+    /**
      * @brief judge whether replanning from collision 
      * @param {*}
      * @return {*}
      */ 
     void checkTrajCollision(bool* need_replanning);
     
-
+    PathPlanningUtilities::Point2f cur_pos_;
     std::vector<Point3f> traj_;
     clock_t update_time_stamp_;
 

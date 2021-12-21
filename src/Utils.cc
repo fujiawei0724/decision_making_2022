@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-15 10:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 18:31:05
+ * @LastEditTime: 2021-12-21 19:20:49
  * @Description: Utils for trajectory planning.
  */
 
@@ -63,7 +63,8 @@ Utils::Trigger::~Trigger() = default;
  * @brief update data
  * @param {*}
  */
-void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const clock_t& last_update_time_stamp) {
+void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const clock_t& last_update_time_stamp, const PathPlanningUtilities::Point2f& ego_vehicle_position) {
+    cur_pos_ = ego_vehicle_position;
     traj_ = executed_trajectory;
     update_time_stamp_ = last_update_time_stamp;
 }
@@ -76,11 +77,14 @@ void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const
 bool Utils::Trigger::runOnce() {
     bool replanning_due_to_remain_time = false;
     checkTrajRemainTime(&replanning_due_to_remain_time);
+
+    bool replanning_due_to_remain_dis = false;
+    checkTrajRemainDis(&replanning_due_to_remain_dis);
     
     // TODO: add collision avoidance check here, need add vehicles information to do this
     bool replanning_due_to_collision = false;
 
-    return replanning_due_to_remain_time || replanning_due_to_collision;
+    return replanning_due_to_remain_time || replanning_due_to_remain_dis || replanning_due_to_collision;
 }
 
 /**
@@ -96,6 +100,37 @@ void Utils::Trigger::checkTrajRemainTime(bool* need_replanning) {
         *need_replanning = false;
     }
 }
+
+/**
+ * @brief judge whether replanning from remain distance
+ * @param {*}
+ * @return {*}
+ */ 
+void Utils::Trigger::checkTrajRemainDis(bool* need_replanning) {
+
+    std::function <double (double, double)> dis = [&](const double x, const double y) {return sqrt((x - cur_pos_.x_) * (x - cur_pos_.x_) + (y - cur_pos_.y_) * (y - cur_pos_.y_));};
+    
+    // Binary search the nearest index in the trajectory from the ego vehicle position
+    // TODO: check this logic
+    int left = 0;
+    int right = static_cast<int>(traj_.size()) - 1;
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+        if (mid == 0 || mid == static_cast<int>(traj_.size()) - 1) {
+            break;
+        }
+        if (dis(traj_[mid].x_, traj_[mid].y_) >= dis(traj_[mid - 1].x_, traj_[mid - 1].y_)) {
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+    }
+    if (static_cast<double>(left) / static_cast<double>(traj_.size()) > 0.85) {
+        *need_replanning = true;
+    } else {
+        *need_replanning = false;
+    }
+}  
 
 /**
  * @brief judge whether replanning from collision 
