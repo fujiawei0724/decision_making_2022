@@ -70,6 +70,8 @@
     <param name="curvature_topic" value="/planning_input/curvature"/>
     <!-- Subscribe steer -->
     <param name="steer_topic" value="/planning_input/steer"/>
+    <!-- Subscribe steer -->
+    <param name="acceleration_topic" value="/vehicle/filtered_accel"/>
     <!-- 订阅控制状态消息-->
     <param name="control_report_topic" value="/vehicle/core_report" />
     <!-- 发布开始任务服务 -->

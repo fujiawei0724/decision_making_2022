@@ -130,6 +130,11 @@ void DecisionMaking::SubVehicle::rosInit() {
     this->nh_.getParam("steer_topic", steer_topic);
     steer_sub_ = nh_.subscribe(steer_topic, 1, &DecisionMaking::SubVehicle::updateVehicleSteer, this);
 
+    // Get acceleration topic
+    std::string acceleration_topic;
+    this->nh_.getParam("acceleration_topic", acceleration_topic);
+    acceleration_sub_ = nh_.subscribe(acceleration_topic, 1, &DecisionMaking::SubVehicle::updateVehicleAcceleration, this);
+
     // 获取控制状态topic
     std::string control_report_topic;
     this->nh_.getParam("control_report_topic", control_report_topic);
@@ -297,7 +302,6 @@ void DecisionMaking::SubVehicle::updateVehicleMovement(const std_msgs::Float64::
     // 更新车辆速度信息
     this->current_vehicle_movement_mutex_.lock();
     this->current_vehicle_movement_.velocity_ = velocity_msg->data;
-    this->current_vehicle_movement_.acceleration_ = 0.0;
     this->current_vehicle_movement_mutex_.unlock();
     // 确定车辆运动信息加载成功
     this->vehicle_movement_ready_flag_mutex_.lock();
@@ -339,6 +343,13 @@ void DecisionMaking::SubVehicle::updateVehicleSteer(const std_msgs::Float64::Con
     current_vehicle_steer_metex_.lock();
     current_vehicle_steer_ = steer_msg->data;
     current_vehicle_steer_metex_.unlock();
+}
+
+void DecisionMaking::SubVehicle::updateVehicleAcceleration(const std_msgs::Float64::ConstPtr acceleration_msg) {
+    // Update acceleration information
+    this->current_vehicle_movement_mutex_.lock();
+    this->current_vehicle_movement_.acceleration_ = acceleration_msg->data;
+    this->current_vehicle_movement_mutex_.unlock();
 }
 
 // 更新控制报告信息

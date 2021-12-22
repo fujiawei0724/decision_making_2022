@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 15:02:15
+ * @LastEditTime: 2021-12-22 20:14:58
  * @Description: Components for ssc planner.
  */
 
@@ -306,10 +306,10 @@ namespace SscPlanner {
                 z_p_finish = inflateCubeOnZPosAxis(z_p_step, cube);
             }
 
-            // // TODO: check this t dimension inflate constraint condition, if it is too harsh
-            // if (cube->t_end_ - cube->t_start_ >= config_.MaxNumOfGridAlongTime) {
-            //     z_p_finish = true;
-            // }
+            // TODO: check this t dimension inflate constraint condition, if it is too harsh
+            if (cube->t_end_ - cube->t_start_ >= config_.MaxNumOfGridAlongTime) {
+                z_p_finish = true;
+            }
         }
     }
 

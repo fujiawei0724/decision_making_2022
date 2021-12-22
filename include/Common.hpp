@@ -733,6 +733,9 @@ class SubVehicle{
     // Update vehicle steer 
     void updateVehicleSteer(const std_msgs::Float64::ConstPtr steer_msg);
 
+    // Update vehicle acceleration
+    void updateVehicleAcceleration(const std_msgs::Float64::ConstPtr acceleration_msg);
+
     // 更新控制报告信息
     void updateControlReport(const control_msgs::CoreReport::ConstPtr control_report_msg);
     
@@ -885,6 +888,7 @@ class SubVehicle{
     ros::Subscriber movement_sub_;  // 速度更新节点
     ros::Subscriber curvature_sub_;  // 曲率更新节点
     ros::Subscriber steer_sub_;
+    ros::Subscriber acceleration_sub_;
     ros::Subscriber control_report_sub_;  // 控制报告节点
     ros::Subscriber obstacle_sub_;  // 障碍物信息更新节点
     ros::Subscriber surround_radar_sub_;  // 毫米波雷达预警节点
