@@ -1011,8 +1011,13 @@ class SubVehicle{
 
     std::vector<Common::Point3f> generated_trajectory_{};
     std::vector<Common::Point3f> executed_trajectory_{};
-    clock_t trajectory_update_time_stamp_;
-    bool need_replanning_{false};
+    std::vector<double> executed_traj_thetas_{};
+    std::vector<double> executed_traj_curvatures_{};
+    std::vector<double> executed_traj_velocities_{};
+    std::vector<double> executed_traj_accelerations_{};
+    bool replanning_from_previous_trajectory_state_{false};
+    PathPlanningUtilities::VehicleState prev_traj_corres_veh_state_;  
+    PathPlanningUtilities::VehicleMovementState prev_traj_corres_veh_movement_state_;  
 
     
 };

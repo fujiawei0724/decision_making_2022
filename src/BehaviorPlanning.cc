@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-21 14:36:42
+ * @LastEditTime: 2021-12-22 15:27:48
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -756,7 +756,7 @@ namespace BehaviorPlanner {
 
         // Visualization best traj and print
         VisualizationMethods::visualizeTrajectory(ego_traj_[winner_index], vis_pub_, 0);
-        printf("[BehaviorPlanner] selected action index: %d, with the cost: %lf\n", winner_index, winner_cost);
+        printf("[BehaviorPlanner] selected action index: %d, with the cost: %lf.\n", winner_index, winner_cost);
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];

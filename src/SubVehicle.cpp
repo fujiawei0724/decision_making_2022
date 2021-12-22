@@ -493,17 +493,31 @@ void DecisionMaking::SubVehicle::triggerThread() {
     while (ros::ok()) {
         if (executed_trajectory_.empty()) {
             // printf("[Trigger] no executed trajectory, waiting.\n");
-            need_replanning_ = true;
+            replanning_from_previous_trajectory_state_ = false;
             continue;
         }
+
+        // Transform ego vehicle information and surround vehice information
         // Update vehicle information
         PathPlanningUtilities::VehicleState start_point_in_world;
         this->current_vehicle_world_position_mutex_.lock();
         start_point_in_world = this->current_vehicle_world_position_;
         this->current_vehicle_world_position_mutex_.unlock();
-        trigger->load(executed_trajectory_, trajectory_update_time_stamp_, start_point_in_world.position_);
-        bool need_replanning = trigger->runOnce();
-        need_replanning_ = need_replanning;
+        PathPlanningUtilities::VehicleMovementState start_point_movement;
+        this->current_vehicle_movement_mutex_.lock();
+        start_point_movement = this->current_vehicle_movement_;
+        this->current_vehicle_movement_mutex_.unlock();
+        this->current_vehicle_kappa_mutex_.lock();
+        double start_point_kappa = this->current_vehicle_kappa_;
+        start_point_in_world.kappa_ = start_point_kappa;
+        this->current_vehicle_kappa_mutex_.unlock();
+        current_vehicle_steer_metex_.lock();
+        double current_vehicle_steer = current_vehicle_steer_;
+        current_vehicle_steer_metex_.unlock();
+
+        trigger->load(executed_trajectory_, executed_traj_thetas_, executed_traj_curvatures_, executed_traj_velocities_, executed_traj_accelerations_, start_point_in_world, start_point_movement);
+        bool replanning_from_previous_trajectory = trigger->runOnce(&prev_traj_corres_veh_state_, &prev_traj_corres_veh_movement_state_);
+        replanning_from_previous_trajectory_state_ = replanning_from_previous_trajectory;
     }
 }
 
@@ -514,7 +528,7 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
 
     // // DEBUG
     // // Decrease frequency to record data
-    // ros::Rate loop_rate(0.5);
+    // ros::Rate loop_rate(2);
     // // END DEBUG
 
     // 进程等待直到数据准备完成
@@ -610,12 +624,9 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
 
 
         // Publish trajectory
-        if (need_replanning_) {
-            trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
-            // Visualization executed trajectory
-            VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
-            printf("[MainPineline] execute replanning.\n");
-        }
+        trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
+        // Visualization executed trajectory
+        VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
 
 
         loop_rate.sleep();

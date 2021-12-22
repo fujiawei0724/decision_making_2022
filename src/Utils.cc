@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-15 10:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-21 19:20:49
+ * @LastEditTime: 2021-12-22 15:25:11
  * @Description: Utils for trajectory planning.
  */
 
@@ -41,10 +41,13 @@ void DecisionMaking::SubVehicle::trajectoryPublish(const std::vector<double>& th
     final_curve.velocity_limitation_max = max_velocity;
     final_curve.velocity_limitation_min = min_velocity;
     
-    // Publish 
+    // Publish and cache
     publisher.publish(final_curve);
     executed_trajectory_ = generated_trajectory_;
-    trajectory_update_time_stamp_ = clock();
+    executed_traj_thetas_ = thetas;
+    executed_traj_curvatures_ = curvatures;
+    executed_traj_velocities_ = velocities;
+    executed_traj_accelerations_ = accelerations;
 
 }
 
@@ -63,52 +66,51 @@ Utils::Trigger::~Trigger() = default;
  * @brief update data
  * @param {*}
  */
-void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const clock_t& last_update_time_stamp, const PathPlanningUtilities::Point2f& ego_vehicle_position) {
-    cur_pos_ = ego_vehicle_position;
+void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const std::vector<double>& thetas, const std::vector<double>& curvatures, const std::vector<double>& velocities, const std::vector<double>& accelerations, const PathPlanningUtilities::VehicleState& current_vehicle_state, const PathPlanningUtilities::VehicleMovementState& current_vehicle_movement_state) {
+    current_vehicle_state_ = current_vehicle_state;
+    current_vehicle_movement_state_ = current_vehicle_movement_state;
     traj_ = executed_trajectory;
-    update_time_stamp_ = last_update_time_stamp;
+    traj_thetas_ = thetas;
+    traj_curvatures_ = curvatures;
+    traj_velocities_ = velocities;
+    traj_accelerations_ = accelerations;
 }
 
 /**
- * @brief judge whether need replanning
+ * @brief judge replanning start point
  * @param {*}
  * @return {*}
  */    
-bool Utils::Trigger::runOnce() {
-    bool replanning_due_to_remain_time = false;
-    checkTrajRemainTime(&replanning_due_to_remain_time);
-
-    bool replanning_due_to_remain_dis = false;
-    checkTrajRemainDis(&replanning_due_to_remain_dis);
+bool Utils::Trigger::runOnce(PathPlanningUtilities::VehicleState* corres_ego_veh_state, PathPlanningUtilities::VehicleMovementState* corres_ego_veh_movement_state) {
+    PathPlanningUtilities::VehicleState tmp_corres_ego_veh_state;
+    PathPlanningUtilities::VehicleMovementState tmp_corres_ego_veh_movement_state;
     
-    // TODO: add collision avoidance check here, need add vehicles information to do this
-    bool replanning_due_to_collision = false;
-
-    return replanning_due_to_remain_time || replanning_due_to_remain_dis || replanning_due_to_collision;
-}
-
-/**
- * @brief judge whether replanning from remain time
- * @param {*}
- * @return {*}
- */    
-void Utils::Trigger::checkTrajRemainTime(bool* need_replanning) {
-    clock_t current_time_stamp = clock();
-    if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > 3.8) {
-        *need_replanning = true;
+    // Calculate the nearest point in the executed trajectory
+    int nearest_index = findCorrespondingTrajIndex();
+    // TODO: complete this replanning start point logic
+    if (sqrt((current_vehicle_state_.position_.x_ - traj_[nearest_index].x_) * (current_vehicle_state_.position_.x_ - traj_[nearest_index].x_) + (current_vehicle_state_.position_.x_ - traj_[nearest_index].x_) * (current_vehicle_state_.position_.x_ - traj_[nearest_index].x_)) > 2.0 || fabs(current_vehicle_movement_state_.velocity_ - traj_velocities_[nearest_index]) > 1.0 || fabs(current_vehicle_movement_state_.acceleration_ - traj_accelerations_[nearest_index]) > 1.0) {
+        return false;
     } else {
-        *need_replanning = false;
+        // Supple data
+        tmp_corres_ego_veh_state.position_.x_ = traj_[nearest_index].x_;
+        tmp_corres_ego_veh_state.position_.y_ = traj_[nearest_index].y_;
+        tmp_corres_ego_veh_state.theta_ = traj_thetas_[nearest_index];
+        tmp_corres_ego_veh_state.kappa_ = traj_curvatures_[nearest_index];
+        tmp_corres_ego_veh_movement_state.velocity_ = traj_velocities_[nearest_index];
+        tmp_corres_ego_veh_movement_state.acceleration_ = traj_accelerations_[nearest_index];
+        *corres_ego_veh_state = tmp_corres_ego_veh_state;
+        *corres_ego_veh_movement_state = tmp_corres_ego_veh_movement_state;
+        return true;
     }
+
 }
 
 /**
- * @brief judge whether replanning from remain distance
- * @param {*}
+ * @brief find the nearest index from the current position to the executed trajectory
  * @return {*}
- */ 
-void Utils::Trigger::checkTrajRemainDis(bool* need_replanning) {
-
-    std::function <double (double, double)> dis = [&](const double x, const double y) {return sqrt((x - cur_pos_.x_) * (x - cur_pos_.x_) + (y - cur_pos_.y_) * (y - cur_pos_.y_));};
+ */
+int Utils::Trigger::findCorrespondingTrajIndex() {
+    std::function <double (double, double)> dis = [&](const double x, const double y) {return sqrt((x - current_vehicle_state_.position_.x_) * (x - current_vehicle_state_.position_.x_) + (y - current_vehicle_state_.position_.y_) * (y - current_vehicle_state_.position_.y_));};
     
     // Binary search the nearest index in the trajectory from the ego vehicle position
     // TODO: check this logic
@@ -125,21 +127,10 @@ void Utils::Trigger::checkTrajRemainDis(bool* need_replanning) {
             left = mid + 1;
         }
     }
-    if (static_cast<double>(left) / static_cast<double>(traj_.size()) > 0.85) {
-        *need_replanning = true;
-    } else {
-        *need_replanning = false;
-    }
-}  
 
-/**
- * @brief judge whether replanning from collision 
- * @param {*}
- * @return {*}
- */ 
-void Utils::Trigger::checkTrajCollision(bool* need_replanning) {
+    return left;
+}
 
-} 
 
 /**
  * @brief calculate trajectory detailed information

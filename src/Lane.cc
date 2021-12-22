@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-21 14:46:07
+ * @LastEditTime: 2021-12-22 11:10:48
  * @Description: Lane components
  */
 
@@ -256,7 +256,6 @@ int Lane::findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& posit
             break;
         }
         if (i == static_cast<int>(lane_coorination_.size()) - 1) {
-            // TODO: add logic to handle this situation 
             printf("[Lane] current position responses to the last point in the lane.\n");
             nearest_point_index = i;
             break;
@@ -265,6 +264,25 @@ int Lane::findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& posit
     }
 
     return nearest_point_index;
+
+    // std::function <double (double, double)> dis = [&](const double x, const double y) {return sqrt((x - position(0)) * (x - position(0)) + (y - position(1)) * (y - position(1)));};
+    
+    // // Binary search the nearest index in the trajectory from the ego vehicle position
+    // // TODO: check this logic
+    // int left = 0;
+    // int right = static_cast<int>(lane_coorination_.size()) - 1;
+    // while (left < right) {
+    //     int mid = left + (right - left) / 2;
+    //     if (mid == 0 || mid == static_cast<int>(lane_coorination_.size()) - 1) {
+    //         break;
+    //     }
+    //     if (dis(lane_coorination_[mid].worldpos_.position_.x_, lane_coorination_[mid].worldpos_.position_.y_) >= dis(lane_coorination_[mid - 1].worldpos_.position_.x_, lane_coorination_[mid - 1].worldpos_.position_.y_)) {
+    //         right = mid;
+    //     } else {
+    //         left = mid + 1;
+    //     }
+    // }
+    // return left;
 }
 
 // Judge position whether in lane
