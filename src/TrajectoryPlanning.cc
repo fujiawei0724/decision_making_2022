@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-24 11:12:47
+ * @LastEditTime: 2021-12-25 17:39:26
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -97,6 +97,11 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     // Trajectory planning
     std::vector<Common::Point3f> trajectory;
     bool result = false;
+    if (!reference_lane_.lane_existance_) {
+        *trajectory_planning_result = false;
+        printf("[SscPlanner] unknown reference lane information.\n");
+        return;
+    }
     SscPlanner::SscTrajectoryPlanningCore* ssc_planning_core = new SscPlanner::SscTrajectoryPlanningCore();
     ssc_planning_core->load(ego_vehicle, reference_lane_, ego_trajectory_, surround_trajectories_, unlaned_obstacles_);
     ssc_planning_core->runOnce(&result, &trajectory);

@@ -640,10 +640,10 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         // Visualization executed trajectory
         VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
 
-        // DEBUG 
-        // Test control deviance
-        sleep(1);
-        // END DEBUG
+        // // DEBUG 
+        // // Test control deviance
+        // sleep(1);
+        // // END DEBUG
 
         loop_rate.sleep();
 

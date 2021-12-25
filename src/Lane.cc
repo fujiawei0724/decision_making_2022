@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-22 11:10:48
+ * @LastEditTime: 2021-12-25 17:17:10
  * @Description: Lane components
  */
 
@@ -230,11 +230,14 @@ double Lane::calculateDistanceFromPosition(const Eigen::Matrix<double, 2, 1>& cu
 // Calculate target lane point from a position and a specified distance
 Eigen::Matrix<double, 2, 1> Lane::calculateTargetLanePosition(const Eigen::Matrix<double, 2, 1>& position, double distance) {
     // Calculate nearest lane index
-    int position_x = position(0), position_y = position(1);
-    size_t lane_point_index = findCurrenPositionIndexInLane(position_x, position_y);
+    int lane_point_index = findCurrenPositionIndexInLane(position);
     
     // Calculate target point 
-    size_t target_lane_point_index = lane_point_index + static_cast<size_t>(distance / 0.1);
+    int target_lane_point_index = lane_point_index + static_cast<int>(distance / 0.1);
+    if (target_lane_point_index >= static_cast<int>(lane_coorination_.size())) {
+        // printf("[Lane] target position responses to the last point in the lane, with the gap index %d.\n", target_lane_point_index - static_cast<int>(lane_coorination_.size()) + 1);
+        target_lane_point_index = static_cast<int>(lane_coorination_.size()) - 1;
+    }
     PathPlanningUtilities::CoordinationPoint target_path_point = lane_coorination_[target_lane_point_index];
     Eigen::Matrix<double, 2, 1> target_point{target_path_point.worldpos_.position_.x_, target_path_point.worldpos_.position_.y_};
 

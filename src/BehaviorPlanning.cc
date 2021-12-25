@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-22 21:39:49
+ * @LastEditTime: 2021-12-25 17:26:03
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -87,7 +87,11 @@ namespace BehaviorPlanner {
                 return LaneId::LeftLane;
             } else if (lat_beh == LateralBehavior::LaneChangeLeft) {
                 // printf("[BehaviorPlanner]: keeping lang change left.\n");
-                return LaneId::LeftLane;
+                if (left_lane_exist_) {
+                    return LaneId::LeftLane;
+                } else {
+                    return LaneId::CenterLane;
+                }
             } else if (lat_beh == LateralBehavior::LaneChangeRight) {
                 return LaneId::CenterLane;
             } else {
@@ -100,7 +104,11 @@ namespace BehaviorPlanner {
                 return LaneId::CenterLane;
             } else if (lat_beh == LateralBehavior::LaneChangeRight) {
                 // printf("[BehaviorPlanner]: keeping lang change right.\n");
-                return LaneId::RightLane;
+                if (right_lane_exist_) {
+                    return LaneId::RightLane;
+                } else {
+                    return LaneId::CenterLane;
+                }
             } else {
                 assert(false);
             }
@@ -173,7 +181,12 @@ namespace BehaviorPlanner {
 
         // Update reference lane
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, ego_vehicle_lat_beh);
-        Lane reference_lane = lane_set_[reference_lane_id];
+        Lane reference_lane;
+        if (lane_set_[reference_lane_id].lane_existance_) {
+            reference_lane = lane_set_[reference_lane_id];
+        } else {
+            reference_lane = nearest_lane;
+        }
 
         return SemanticVehicle(ego_vehicle, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
     }
