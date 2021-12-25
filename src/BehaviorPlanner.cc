@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-24 11:12:53
+ * @LastEditTime: 2021-12-25 20:11:43
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -166,6 +166,8 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
     hpdm_planner->runHpdmPlanner(3, &ego_trajectory_, &surround_trajectories_, &reference_lane_, &is_safe, &cost);
     clock_t hpdm_planning_end_time = clock();
     printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);
+
+    delete hpdm_planner;
 
     *result = is_safe;
 }

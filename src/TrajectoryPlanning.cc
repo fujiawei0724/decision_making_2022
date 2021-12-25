@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 17:39:26
+ * @LastEditTime: 2021-12-25 20:35:27
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -115,6 +115,8 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     // }
     // // END DEBUG
     
+    delete ssc_planning_core;
+
     if (result) {
         generated_trajectory_ = trajectory;
     }

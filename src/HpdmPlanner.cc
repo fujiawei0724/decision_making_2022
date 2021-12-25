@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 19:59:41
+ * @LastEditTime: 2021-12-25 21:05:41
  * @Description: Hpdm planner.
  */
 
@@ -507,6 +507,10 @@ namespace HpdmPlanner {
                 win_cost = candi_costs_[i];
             }
         }
+        if (win_idx == -1) {
+            *safe = false;
+            return;
+        }
 
         // Cache
         *ego_traj = candi_ego_trajs_[win_idx];
@@ -677,6 +681,10 @@ namespace HpdmPlanner {
         } else {
             assert(false);
         }
+
+        // // DEBUG
+        // printf("DEBUG valid behavior sequence number: %d.\n", behavior_sequence_vec.size());
+        // // END DEBUG
 
         // ~Stage IV: generate trajectories for all vehicles and additional information 
         std::vector<Vehicle> ego_trajectory;
