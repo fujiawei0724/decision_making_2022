@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 16:27:08
+ * @LastEditTime: 2021-12-25 19:45:54
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -197,6 +197,7 @@ class HpdmPlannerCore {
     // Run HPDM planner
     void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost);
 
+    BehaviorPlanner::MapInterface* map_itf_{nullptr};
     TrajectoryGenerator* traj_generator_{nullptr};
     StateInterface* state_itf_{nullptr};
     TorchInterface* torch_itf_{nullptr};

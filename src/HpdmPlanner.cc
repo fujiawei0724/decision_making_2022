@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 16:30:17
+ * @LastEditTime: 2021-12-25 19:59:41
  * @Description: Hpdm planner.
  */
 
@@ -609,11 +609,13 @@ namespace HpdmPlanner {
     }
 
     HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
+        map_itf_ = map_itf;
         traj_generator_ = new TrajectoryGenerator(map_itf);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
     }
     HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub) {
+        map_itf_ = map_itf;
         traj_generator_ = new TrajectoryGenerator(map_itf);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
@@ -645,13 +647,33 @@ namespace HpdmPlanner {
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
-        // ~Stage III: generate behavior / intention sequence from action index 
+        // ~Stage III: generate behavior / intention sequence from action index, and do pre-process
+        std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec_raw;
+        std::vector<std::vector<VehicleIntention>> intention_sequence_vec_raw;
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec;
         std::vector<std::vector<VehicleIntention>> intention_sequence_vec;
         if (lon_candidate_num == 3) {
-            behavior_sequence_vec = ActionInterface::indexVecToBehSeqVec(candi_action_idxs);
+            behavior_sequence_vec_raw = ActionInterface::indexVecToBehSeqVec(candi_action_idxs);
+            for (const auto& beh_seq : behavior_sequence_vec_raw) {
+                if (beh_seq.back().lat_beh_ == LateralBehavior::LaneChangeLeft && !map_itf_->left_lane_exist_) {
+                    continue;
+                }
+                if (beh_seq.back().lat_beh_ == LateralBehavior::LaneChangeRight && !map_itf_->right_lane_exist_) {
+                    continue;
+                }
+                behavior_sequence_vec.emplace_back(beh_seq);
+            }
         } else if (lon_candidate_num == 11) {
-            intention_sequence_vec = ActionInterface::indexVecToIntentionSeqVec(candi_action_idxs);
+            intention_sequence_vec_raw = ActionInterface::indexVecToIntentionSeqVec(candi_action_idxs);
+            for (const auto& intention_seq : intention_sequence_vec_raw) {
+                if (intention_seq.back().lat_beh_ == LateralBehavior::LaneChangeLeft && !map_itf_->left_lane_exist_) {
+                    continue;
+                }
+                if (intention_seq.back().lat_beh_ == LateralBehavior::LaneChangeRight && !map_itf_->right_lane_exist_) {
+                    continue;
+                }
+                intention_sequence_vec.emplace_back(intention_seq);
+            }
         } else {
             assert(false);
         }
