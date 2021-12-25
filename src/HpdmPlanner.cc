@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 16:13:58
+ * @LastEditTime: 2021-12-25 16:30:17
  * @Description: Hpdm planner.
  */
 
@@ -229,7 +229,7 @@ namespace HpdmPlanner {
         auto top_idxs = std::get<1>(result).view(-1);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
 
-        printf("[HpdmPlanner] candidate action indices include: .\n");
+        printf("[HpdmPlanner] candidate action indices include: \n");
         for (int i = 0; i < static_cast<int>(res.size()); i++) {
             printf("%d, ", res[i]);
         }
@@ -477,7 +477,7 @@ namespace HpdmPlanner {
      * @param {*}
      * @return {*}
      */
-    void TrajectoryGenerator::simulateCandidatesBehaviorSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane) {
+    void TrajectoryGenerator::simulateCandidatesBehaviorSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index) {
         // Initialize containers
         int candi_length = static_cast<int>(candi_sequences.size());
         candi_ego_trajs_.resize(candi_length);
@@ -513,9 +513,7 @@ namespace HpdmPlanner {
         *safe = candi_safes_[win_idx];
         *cost = win_cost;
         *target_reference_lane = candi_reference_lanes_[win_idx];
-
-        printf("[HpdmPLanner] action index: %d, is safe: %d, cost: %lf.\n", win_idx, candi_safes_[win_idx], win_cost);
-
+        *final_action_index = win_idx;
     }
 
     /**
@@ -523,7 +521,7 @@ namespace HpdmPlanner {
      * @param {*}
      * @return {*}
      */
-    void TrajectoryGenerator::simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane) {
+    void TrajectoryGenerator::simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index) {
         // Initialize containers
         int candi_length = static_cast<int>(candi_sequences.size());
         candi_ego_trajs_.resize(candi_length);
@@ -559,9 +557,7 @@ namespace HpdmPlanner {
         *safe = candi_safes_[win_idx];
         *cost = win_cost;
         *target_reference_lane = candi_reference_lanes_[win_idx];
-
-        printf("[HpdmPLanner] action index: %d, is safe: %d, cost: %lf.\n", win_idx, candi_safes_[win_idx], win_cost);
-
+        *final_action_index = win_idx;
     }
 
     /**
@@ -666,17 +662,19 @@ namespace HpdmPlanner {
         bool is_safe = false;
         double policy_cost = 0.0;
         Lane target_ref_lane;
+        int final_win_index = -1;
 
         if (lon_candidate_num == 3) {
-            traj_generator_->simulateCandidatesBehaviorSequences(ego_vehicle_, surround_vehicles_, behavior_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane);
+            traj_generator_->simulateCandidatesBehaviorSequences(ego_vehicle_, surround_vehicles_, behavior_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
         } else if (lon_candidate_num == 11) {
-            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane);
+            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
         } else {
             assert(false);
         }
 
-        // Visualization
+        // Visualization and print
         VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 0);
+        printf("[HpdmPLanner] selected action index: %d, is safe: %d, cost: %lf.\n", candi_action_idxs[final_win_index], is_safe, policy_cost);
 
 
         *ego_traj = ego_trajectory;

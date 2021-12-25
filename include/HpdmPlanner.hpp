@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 16:14:31
+ * @LastEditTime: 2021-12-25 16:27:08
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -152,14 +152,14 @@ class TrajectoryGenerator {
      * @param {*}
      * @return {*}
      */
-    void simulateCandidatesBehaviorSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane);
+    void simulateCandidatesBehaviorSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index);
 
     /**
      * @brief simulate all candidates behavior
      * @param {*}
      * @return {*}
      */
-    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane);
+    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index);
 
     /**
      * @brief multi thread interface 
@@ -174,8 +174,6 @@ class TrajectoryGenerator {
      * @return {*}
      */    
     void simulateSingleCandiIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& executed_sequence, int index);
-
-
 
     std::vector<Trajectory> candi_ego_trajs_{};
     std::vector<std::unordered_map<int, Trajectory>> candi_sur_trajs_{};
