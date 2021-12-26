@@ -505,6 +505,7 @@ void DecisionMaking::SubVehicle::triggerThread() {
         if (executed_trajectory_.empty()) {
             // printf("[Trigger] no executed trajectory, waiting.\n");
             replanning_from_previous_trajectory_state_ = false;
+            need_replanning_ = true;
             continue;
         }
 
@@ -526,9 +527,11 @@ void DecisionMaking::SubVehicle::triggerThread() {
         double current_vehicle_steer = current_vehicle_steer_;
         current_vehicle_steer_metex_.unlock();
 
-        trigger->load(executed_trajectory_, executed_traj_thetas_, executed_traj_curvatures_, executed_traj_velocities_, executed_traj_accelerations_, start_point_in_world, start_point_movement);
+        trigger->load(trajectory_update_time_stamp_, executed_trajectory_, executed_traj_thetas_, executed_traj_curvatures_, executed_traj_velocities_, executed_traj_accelerations_, start_point_in_world, start_point_movement);
         bool replanning_from_previous_trajectory = trigger->runOnce(&prev_traj_corres_veh_state_, &prev_traj_corres_veh_movement_state_);
+        bool need_replanning = trigger->needReplanning();
         replanning_from_previous_trajectory_state_ = replanning_from_previous_trajectory;
+        need_replanning_ = need_replanning;
     }
 }
 
@@ -600,21 +603,21 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             }
         }
 
-        // // Run behavior planner
-        // bool is_behavior_planning_success = false;
-        // behaviorPlanning(&is_behavior_planning_success);
-        // if (!is_behavior_planning_success) {
-        //     printf("[MainPineline] behavior planning failed.\n");
-        //     continue;
-        // }
-
-        // Run HPDM
-        bool is_hpdm_planning_success = false;
-        hpdmPlanning(&is_hpdm_planning_success);
-        if (!is_hpdm_planning_success) {
-            printf("[MainPineline] hpdm planning failed.\n");
+        // Run behavior planner
+        bool is_behavior_planning_success = false;
+        behaviorPlanning(&is_behavior_planning_success);
+        if (!is_behavior_planning_success) {
+            printf("[MainPineline] behavior planning failed.\n");
             continue;
         }
+
+        // // Run HPDM
+        // bool is_hpdm_planning_success = false;
+        // hpdmPlanning(&is_hpdm_planning_success);
+        // if (!is_hpdm_planning_success) {
+        //     printf("[MainPineline] hpdm planning failed.\n");
+        //     continue;
+        // }
 
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
@@ -636,9 +639,13 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
 
 
         // Publish trajectory
-        trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
-        // Visualization executed trajectory
-        VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
+        if (need_replanning_) {
+            trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
+            // Visualization executed trajectory
+            VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
+            printf("[MainPineline] execute replanning.\n");
+        }
+
 
         // // DEBUG 
         // // Test control deviance

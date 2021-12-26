@@ -1022,6 +1022,8 @@ class SubVehicle{
     bool replanning_from_previous_trajectory_state_{false};
     PathPlanningUtilities::VehicleState prev_traj_corres_veh_state_;  
     PathPlanningUtilities::VehicleMovementState prev_traj_corres_veh_movement_state_;  
+    clock_t trajectory_update_time_stamp_;
+    bool need_replanning_{false};
 
     
 };

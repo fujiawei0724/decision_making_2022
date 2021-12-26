@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-15 10:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-22 19:20:11
+ * @LastEditTime: 2021-12-26 18:58:30
  * @Description: Utils for trajectory planning.
  */
 
@@ -48,6 +48,7 @@ void DecisionMaking::SubVehicle::trajectoryPublish(const std::vector<double>& th
     executed_traj_curvatures_ = curvatures;
     executed_traj_velocities_ = velocities;
     executed_traj_accelerations_ = accelerations;
+    trajectory_update_time_stamp_ = clock();
 
 }
 
@@ -66,7 +67,7 @@ Utils::Trigger::~Trigger() = default;
  * @brief update data
  * @param {*}
  */
-void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const std::vector<double>& thetas, const std::vector<double>& curvatures, const std::vector<double>& velocities, const std::vector<double>& accelerations, const PathPlanningUtilities::VehicleState& current_vehicle_state, const PathPlanningUtilities::VehicleMovementState& current_vehicle_movement_state) {
+void Utils::Trigger::load(const clock_t& last_update_time_stamp, const std::vector<Point3f>& executed_trajectory, const std::vector<double>& thetas, const std::vector<double>& curvatures, const std::vector<double>& velocities, const std::vector<double>& accelerations, const PathPlanningUtilities::VehicleState& current_vehicle_state, const PathPlanningUtilities::VehicleMovementState& current_vehicle_movement_state) {
     current_vehicle_state_ = current_vehicle_state;
     current_vehicle_movement_state_ = current_vehicle_movement_state;
     traj_ = executed_trajectory;
@@ -74,6 +75,7 @@ void Utils::Trigger::load(const std::vector<Point3f>& executed_trajectory, const
     traj_curvatures_ = curvatures;
     traj_velocities_ = velocities;
     traj_accelerations_ = accelerations;
+    update_time_stamp_ = last_update_time_stamp;
 }
 
 /**
@@ -129,6 +131,35 @@ int Utils::Trigger::findCorrespondingTrajIndex() {
     }
 
     return left;
+}
+
+/**
+ * @brief judge whether replanning from remain time
+ * @param {*}
+ * @return {*}
+ */    
+void Utils::Trigger::checkTrajRemainTime(bool* need_replanning) {
+    clock_t current_time_stamp = clock();
+    if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > 0.5) {
+        *need_replanning = true;
+    } else {
+        *need_replanning = false;
+    }
+}
+
+/**
+ * @brief need replanning
+ * @param {*}
+ * @return {*}
+ */    
+bool Utils::Trigger::needReplanning() {
+    bool replanning_due_to_remain_time = false;
+    checkTrajRemainTime(&replanning_due_to_remain_time);
+    
+    // TODO: add collision avoidance check here, need add vehicles information to do this
+    bool replanning_due_to_collision = false;
+
+    return replanning_due_to_remain_time || replanning_due_to_collision;
 }
 
 
