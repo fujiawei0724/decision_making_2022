@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 21:05:41
+ * @LastEditTime: 2021-12-26 11:55:30
  * @Description: Hpdm planner.
  */
 
@@ -365,8 +365,7 @@ namespace HpdmPlanner {
         std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = map_itf_->getSurroundSemanticVehicles(surround_vehicles);
 
         // Determine desired speed based on longitudinal speed
-        // TODO: add logic to calculate the desired speed
-        double ego_vehicle_desired_speed = ego_vehicle.state_.velocity_ + intention_sequence[0].lon_vel_comp_;
+        double ego_vehicle_desired_speed = std::max(ego_vehicle.state_.velocity_ + intention_sequence[0].lon_vel_comp_, 0.0);
 
         // // DEBUG
         // std::cout << "Ego vehicle desired speed: " << ego_vehicle_desired_speed << std::endl;
@@ -534,14 +533,20 @@ namespace HpdmPlanner {
         candi_costs_.resize(candi_length);
         candi_reference_lanes_.resize(candi_length);
 
-        // Calculate with multi threads
-        std::vector<std::thread> threads(candi_length);
+        // // Calculate with multi threads
+        // std::vector<std::thread> threads(candi_length);
+        // for (int i = 0; i < candi_length; i++) {
+        //     threads[i] = std::thread(&TrajectoryGenerator::simulateSingleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences[i], i);
+        // }
+        // for (int i = 0; i < candi_length; i++) {
+        //     threads[i].join();
+        // }
+
+        // DEBUG
         for (int i = 0; i < candi_length; i++) {
-            threads[i] = std::thread(&TrajectoryGenerator::simulateSingleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences[i], i);
+            simulateSingleCandiIntentionSequence(ego_vehicle, surround_vehicles, candi_sequences[i], i);
         }
-        for (int i = 0; i < candi_length; i++) {
-            threads[i].join();
-        }
+        // END DEBUG
 
         // Select the best sequence
         int win_idx = -1;

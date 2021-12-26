@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 20:11:43
+ * @LastEditTime: 2021-12-26 11:38:21
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -156,14 +156,14 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
 
     // Run HPDM
     // Load information
-    std::string model_path = "/home/fjw/PioneerTest/catkin_ws/src/planning/motion_planning/model/model0.pt";
+    std::string model_path = "/home/fjw/PioneerTest/catkin_ws/src/planning/motion_planning/model/model1.pt";
     clock_t hpdm_planning_start_time = clock();
     HpdmPlanner::HpdmPlannerCore* hpdm_planner = new HpdmPlanner::HpdmPlannerCore(&map_interface, nearest_lane, model_path, vis_behavior_planner_ego_states_pub_);
     hpdm_planner->load(ego_vehicle, surround_vehicles, lane_info);
     // Get additional information
     bool is_safe = false;
     double cost = 0.0;
-    hpdm_planner->runHpdmPlanner(3, &ego_trajectory_, &surround_trajectories_, &reference_lane_, &is_safe, &cost);
+    hpdm_planner->runHpdmPlanner(11, &ego_trajectory_, &surround_trajectories_, &reference_lane_, &is_safe, &cost);
     clock_t hpdm_planning_end_time = clock();
     printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);
 
