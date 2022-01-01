@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-26 11:55:30
+ * @LastEditTime: 2022-01-01 15:35:27
  * @Description: Hpdm planner.
  */
 
@@ -559,6 +559,10 @@ namespace HpdmPlanner {
                 win_idx = i;
                 win_cost = candi_costs_[i];
             }
+        }
+        if (win_idx == -1) {
+            *safe = false;
+            return;
         }
 
         // Cache
