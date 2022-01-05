@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-01 15:35:27
+ * @LastEditTime: 2022-01-05 17:10:47
  * @Description: Hpdm planner.
  */
 
@@ -533,20 +533,20 @@ namespace HpdmPlanner {
         candi_costs_.resize(candi_length);
         candi_reference_lanes_.resize(candi_length);
 
-        // // Calculate with multi threads
-        // std::vector<std::thread> threads(candi_length);
-        // for (int i = 0; i < candi_length; i++) {
-        //     threads[i] = std::thread(&TrajectoryGenerator::simulateSingleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences[i], i);
-        // }
-        // for (int i = 0; i < candi_length; i++) {
-        //     threads[i].join();
-        // }
-
-        // DEBUG
+        // Calculate with multi threads
+        std::vector<std::thread> threads(candi_length);
         for (int i = 0; i < candi_length; i++) {
-            simulateSingleCandiIntentionSequence(ego_vehicle, surround_vehicles, candi_sequences[i], i);
+            threads[i] = std::thread(&TrajectoryGenerator::simulateSingleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences[i], i);
         }
-        // END DEBUG
+        for (int i = 0; i < candi_length; i++) {
+            threads[i].join();
+        }
+
+        // // DEBUG
+        // for (int i = 0; i < candi_length; i++) {
+        //     simulateSingleCandiIntentionSequence(ego_vehicle, surround_vehicles, candi_sequences[i], i);
+        // }
+        // // END DEBUG
 
         // Select the best sequence
         int win_idx = -1;
