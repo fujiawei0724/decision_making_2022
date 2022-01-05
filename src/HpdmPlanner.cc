@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-05 19:29:35
+ * @LastEditTime: 2022-01-05 19:31:50
  * @Description: Hpdm planner.
  */
 
@@ -661,6 +661,7 @@ namespace HpdmPlanner {
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
         // Superimpose the backup behaviors
+        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
         if (lon_candidate_num == 3) {
 
         } else if (lon_candidate_num == 11) {
