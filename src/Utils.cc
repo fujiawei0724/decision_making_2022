@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-15 10:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-01 15:39:11
+ * @LastEditTime: 2022-01-05 14:48:59
  * @Description: Utils for trajectory planning.
  */
 
@@ -140,7 +140,7 @@ int Utils::Trigger::findCorrespondingTrajIndex() {
  */    
 void Utils::Trigger::checkTrajRemainTime(bool* need_replanning) {
     clock_t current_time_stamp = clock();
-    if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > 2.0) {
+    if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > 1.2) {
         *need_replanning = true;
     } else {
         *need_replanning = false;

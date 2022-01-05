@@ -644,6 +644,18 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             // Visualization executed trajectory
             VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
             printf("[MainPineline] execute replanning.\n");
+
+            // Store trajectory information
+            std::string root_path = ros::package::getPath("motion_planning");
+            std::string log_file_path = "/trajectory_record/" + Tools::returnCurrentTimeAndDate() + ".csv";
+            log_file_path = root_path + log_file_path;
+            std::ofstream file(log_file_path);
+            if (file) {
+                for (int i = 0; i < static_cast<int>(executed_trajectory_.size()); i++) {
+                    file << std::setprecision(14) << executed_trajectory_[i].x_ << "," << executed_trajectory_[i].y_ << "," << executed_traj_thetas_[i] << "," << executed_traj_curvatures_[i] << "," << executed_traj_velocities_[i] << "," << executed_traj_accelerations_[i] << "\n";
+                }
+            }
+            file.close();
         }
 
 
