@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-05 19:31:50
+ * @LastEditTime: 2022-01-05 20:55:02
  * @Description: Hpdm planner.
  */
 
@@ -224,7 +224,7 @@ namespace HpdmPlanner {
         
         // Forward 
         torch::Tensor pred_res = module.forward(inputs).toTensor();
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(16, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
         auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
