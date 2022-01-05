@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-05 17:10:47
+ * @LastEditTime: 2022-01-05 19:29:35
  * @Description: Hpdm planner.
  */
 
@@ -659,6 +659,23 @@ namespace HpdmPlanner {
         // ~Stage II: model predict to generate action index
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
+
+        // Superimpose the backup behaviors
+        if (lon_candidate_num == 3) {
+
+        } else if (lon_candidate_num == 11) {
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(147);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(148);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(167);
+            }
+        } else {
+            assert(false);
+        }
 
         // ~Stage III: generate behavior / intention sequence from action index, and do pre-process
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec_raw;
