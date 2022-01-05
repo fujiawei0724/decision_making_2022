@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-26 19:15:49
+ * @LastEditTime: 2022-01-05 20:10:43
  * @Description: Components for ssc planner.
  */
 
@@ -1587,7 +1587,15 @@ namespace SscPlanner {
         current_vehicle_state_ = cur_vehicle_state;
         reference_lane_ = reference_lane;
         ego_traj_ = ego_traj;
+
+        // Inflate surround vehicles' width to compensate ego vehicle's width
         sur_laned_veh_trajs_ = sur_laned_veh_trajs;
+        for (auto& sur_laned_traj_info : sur_laned_veh_trajs_) {
+            for (auto& sur_laned_traj_snap : sur_laned_traj_info.second) {
+                sur_laned_traj_snap.width_ += 1.8;
+            }
+        }
+
         sur_unlaned_obs_ = Tools::filtUnlanedObstaclesForSimulation(sur_unlaned_obs, cur_vehicle_state.state_.position_);
     }
 
