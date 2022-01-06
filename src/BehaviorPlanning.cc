@@ -665,6 +665,9 @@ namespace BehaviorPlanner {
         Eigen::Matrix<double, 2, 1> corresponding_point{pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].x_, pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].y_};
         double distance = (current_desired_state.state_.position_ - corresponding_point).norm();
         consistence_cost += distance / 10.0;
+        // if (consistence_cost > 0.2) {
+        //     consistence_cost += 5.0;
+        // }
 
         return consistence_cost;
     }

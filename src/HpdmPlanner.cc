@@ -369,7 +369,7 @@ namespace HpdmPlanner {
      * @param safe
      * @param cost
      */    
-    void TrajectoryGenerator::simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane, bool* is_lane_changed) {
+    void TrajectoryGenerator::simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, const int& action_index, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane, bool* is_lane_changed) {
         
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
         SemanticVehicle ego_semantic_vehicle = map_itf_->getEgoSemanticVehicle(ego_vehicle, intention_sequence[0].lat_beh_);
@@ -451,7 +451,11 @@ namespace HpdmPlanner {
 
         // Calculate consistence cost addtionally
         if (with_consistence_) {
-            behavior_cost += BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_);
+            double consistence_cost = BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_);
+            behavior_cost += consistence_cost;
+            if (consistence_cost > 0.2) {
+                is_safe = false;
+            }
         }
 
         // Cache
@@ -632,7 +636,7 @@ namespace HpdmPlanner {
         bool is_lane_changed = false;
 
         // Calculate 
-        simulateSingleIntentionSequence(ego_vehicle, surround_vehicles, executed_sequence, &ego_traj, &sur_trajs, &safe, &cost, &target_reference_lane, &is_lane_changed);
+        simulateSingleIntentionSequence(ego_vehicle, surround_vehicles, executed_sequence, index, &ego_traj, &sur_trajs, &safe, &cost, &target_reference_lane, &is_lane_changed);
 
         // Cache
         candi_ego_trajs_[index] = ego_traj;
@@ -767,7 +771,9 @@ namespace HpdmPlanner {
         }
 
         // Visualization and print
-        VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 0);
+        if (is_safe) {
+            VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 0);
+        }
         printf("[HpdmPLanner] selected action index: %d, is safe: %d, cost: %lf.\n", candi_action_idxs[final_win_index], is_safe, policy_cost);
 
 

@@ -162,17 +162,25 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
     } else {
         hpdm_planner->load(ego_vehicle, surround_vehicles, lane_info);
     }
-    // Clear information 
-    ego_trajectory_.clear();
-    surround_trajectories_.clear();
     // Get additional information
     bool is_safe = false;
     double cost = 0.0;
-    hpdm_planner->runHpdmPlanner(11, &ego_trajectory_, &surround_trajectories_, &reference_lane_, &is_safe, &cost, &is_previous_behavior_lane_changed_);
+    // Tmp cache
+    Trajectory current_episode_ego_trajectory;
+    std::unordered_map<int, Trajectory> current_episode_surround_trajectories;
+    bool current_episode_lane_chaned = false;
+    Lane current_episode_reference_lane;
+    hpdm_planner->runHpdmPlanner(11, &current_episode_ego_trajectory, &current_episode_surround_trajectories, &current_episode_reference_lane, &is_safe, &cost, &current_episode_lane_chaned);
     clock_t hpdm_planning_end_time = clock();
     printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);
 
     delete hpdm_planner;
 
     *result = is_safe;
+    if (is_safe) {
+        ego_trajectory_ = current_episode_ego_trajectory;
+        surround_trajectories_ = current_episode_surround_trajectories;
+        is_previous_behavior_lane_changed_ = current_episode_lane_chaned;
+        reference_lane_ = current_episode_reference_lane;
+    }
 }

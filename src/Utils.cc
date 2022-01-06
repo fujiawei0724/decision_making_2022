@@ -140,7 +140,7 @@ int Utils::Trigger::findCorrespondingTrajIndex() {
  */    
 void Utils::Trigger::checkTrajRemainTime(bool* need_replanning) {
     clock_t current_time_stamp = clock();
-    if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > 1.2) {
+    if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > 1.0) {
         *need_replanning = true;
     } else {
         *need_replanning = false;
