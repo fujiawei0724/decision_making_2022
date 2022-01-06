@@ -452,7 +452,6 @@ namespace HpdmPlanner {
         // Calculate consistence cost addtionally
         if (with_consistence_) {
             behavior_cost += BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_);
-            printf("DEBUG consistence cost: %lf.\n", BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_));
         }
 
         // Cache
