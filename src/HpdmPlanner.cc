@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-05 20:55:02
+ * @LastEditTime: 2022-01-06 14:42:57
  * @Description: Hpdm planner.
  */
 
@@ -247,6 +247,17 @@ namespace HpdmPlanner {
     TrajectoryGenerator::~TrajectoryGenerator() = default;
 
     /**
+     * @brief Load data for replanning
+     * @param {*}
+     * @return {*}
+     */    
+    void TrajectoryGenerator::load(const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
+        with_consistence_ = true;
+        pre_reference_lane_ = pre_reference_lane;
+        pre_ego_desired_vehicle_state_ = pre_ego_desired_vehicle_state;
+    }
+
+    /**
      * @brief Simulate single behavior sequence
      * @param surround_vehicles
      * @param ego_vehicle
@@ -358,7 +369,7 @@ namespace HpdmPlanner {
      * @param safe
      * @param cost
      */    
-    void TrajectoryGenerator::simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane) {
+    void TrajectoryGenerator::simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane, bool* is_lane_changed) {
         
         // Initialize semantic vehicles (include ego semantic vehicle and surround semantic vehicles)
         SemanticVehicle ego_semantic_vehicle = map_itf_->getEgoSemanticVehicle(ego_vehicle, intention_sequence[0].lat_beh_);
@@ -420,9 +431,11 @@ namespace HpdmPlanner {
         for (const VehicleIntention& veh_intention: intention_sequence) {
             if (veh_intention.lat_beh_ != LateralBehavior::LaneKeeping) {
                 lane_change_flag = true;
+                *is_lane_changed = true;
                 break;
             }
         }
+    
 
         // Calculate target speed in nearest lane
         // Calculate ego vehicle's last predict state
@@ -435,6 +448,12 @@ namespace HpdmPlanner {
 
         // Calculate policy situation cost
         double behavior_cost = BehaviorPlanner::PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, lane_change_flag, speed_limit);
+
+        // Calculate consistence cost addtionally
+        if (with_consistence_) {
+            behavior_cost += BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_);
+            printf("DEBUG consistence cost: %lf.\n", BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_));
+        }
 
         // Cache
         *ego_traj = ego_trajectory;
@@ -524,7 +543,7 @@ namespace HpdmPlanner {
      * @param {*}
      * @return {*}
      */
-    void TrajectoryGenerator::simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index) {
+    void TrajectoryGenerator::simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed) {
         // Initialize containers
         int candi_length = static_cast<int>(candi_sequences.size());
         candi_ego_trajs_.resize(candi_length);
@@ -532,6 +551,7 @@ namespace HpdmPlanner {
         candi_safes_.resize(candi_length);
         candi_costs_.resize(candi_length);
         candi_reference_lanes_.resize(candi_length);
+        candi_is_lane_changed_.resize(candi_length);
 
         // Calculate with multi threads
         std::vector<std::thread> threads(candi_length);
@@ -571,6 +591,7 @@ namespace HpdmPlanner {
         *cost = win_cost;
         *target_reference_lane = candi_reference_lanes_[win_idx];
         *final_action_index = win_idx;
+        *is_final_lane_changed = candi_is_lane_changed_[win_idx];
     }
 
     /**
@@ -609,9 +630,10 @@ namespace HpdmPlanner {
         bool safe = false;
         double cost = 0.0; 
         Lane target_reference_lane;
+        bool is_lane_changed = false;
 
         // Calculate 
-        simulateSingleIntentionSequence(ego_vehicle, surround_vehicles, executed_sequence, &ego_traj, &sur_trajs, &safe, &cost, &target_reference_lane);
+        simulateSingleIntentionSequence(ego_vehicle, surround_vehicles, executed_sequence, &ego_traj, &sur_trajs, &safe, &cost, &target_reference_lane, &is_lane_changed);
 
         // Cache
         candi_ego_trajs_[index] = ego_traj;
@@ -619,6 +641,7 @@ namespace HpdmPlanner {
         candi_safes_[index] = safe;
         candi_costs_[index] = cost;
         candi_reference_lanes_[index] = target_reference_lane;
+        candi_is_lane_changed_[index] = is_lane_changed;
     }
 
     HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
@@ -637,6 +660,17 @@ namespace HpdmPlanner {
     }
     HpdmPlannerCore::~HpdmPlannerCore() = default;
 
+    // Load data with consistence, which means in an replanning circle
+    void HpdmPlannerCore::load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
+        ego_vehicle_ = ego_vehicle;
+        surround_vehicles_ = surround_vehicles;
+        lane_info_ = lane_info;
+        with_consistence_ = true;
+        pre_reference_lane_ = pre_reference_lane;
+        pre_ego_desired_vehicle_state_ = pre_ego_desired_vehicle_state;
+    }
+
+
     // Load data
     void HpdmPlannerCore::load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info) {
         ego_vehicle_ = ego_vehicle;
@@ -645,7 +679,7 @@ namespace HpdmPlanner {
     }
 
     // Run HPDM planner
-    void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost) {
+    void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed) {
         // ~Stage I: construct state array
         std::vector<double> state_array;
         state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, &state_array);
@@ -663,7 +697,7 @@ namespace HpdmPlanner {
         // Superimpose the backup behaviors
         // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
         if (lon_candidate_num == 3) {
-
+            // TODO: add backup behaviors here 
         } else if (lon_candidate_num == 11) {
             if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
                 candi_action_idxs.emplace_back(147);
@@ -714,17 +748,21 @@ namespace HpdmPlanner {
         // // END DEBUG
 
         // ~Stage IV: generate trajectories for all vehicles and additional information 
+        if (with_consistence_) {
+            traj_generator_->load(pre_reference_lane_, pre_ego_desired_vehicle_state_);
+        }
         std::vector<Vehicle> ego_trajectory;
         std::unordered_map<int, std::vector<Vehicle>> sur_trajectories;
         bool is_safe = false;
         double policy_cost = 0.0;
         Lane target_ref_lane;
         int final_win_index = -1;
+        bool is_final_lane_changed = false;
 
         if (lon_candidate_num == 3) {
             traj_generator_->simulateCandidatesBehaviorSequences(ego_vehicle_, surround_vehicles_, behavior_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
         } else if (lon_candidate_num == 11) {
-            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
+            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
         } else {
             assert(false);
         }
@@ -739,6 +777,7 @@ namespace HpdmPlanner {
         *safe = is_safe;
         *cost = policy_cost;
         *target_reference_lane = target_ref_lane;
+        *is_lane_changed = is_final_lane_changed;
     }
     
 } // End of HpdmPlanner

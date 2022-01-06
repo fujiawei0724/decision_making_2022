@@ -648,6 +648,27 @@ namespace BehaviorPlanner {
         return efficiency_cost;
     }
 
+    // Calculate consistence cost
+    double PolicyEvaluater::calculateConsistenceCost(const Trajectory& ego_trajectory, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
+        double consistence_cost = 0.0;
+        
+        // Calculate velocities gap between current desired state and previous desired state
+        Vehicle current_desired_state = ego_trajectory.back();
+        double velocities_gap = fabs(current_desired_state.state_.velocity_ - pre_ego_desired_vehicle_state.state_.velocity_);
+        if (velocities_gap > 4.0) {
+            consistence_cost += 0.2;
+        }
+
+        // Calculate the deviance between current desired state and previous reference lane
+        int corresponding_index = pre_reference_lane.findCurrenPositionIndexInLane(current_desired_state.state_.position_);
+        Eigen::Matrix<double, 2, 1> corresponding_point{pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].x_, pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].y_};
+        double distance = (current_desired_state.state_.position_ - corresponding_point).norm();
+        printf("DEBUG distance: %lf.\n", distance);
+        consistence_cost += distance / 10.0;
+
+        return consistence_cost;
+    }
+
     // Judge is safe
     bool PolicyEvaluater::calculateSafe(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, double speed_limit) {
         // Judge whether excess the lane speed limit

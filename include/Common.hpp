@@ -1008,6 +1008,7 @@ class SubVehicle{
     std::unordered_map<int, Trajectory> surround_trajectories_;
     std::vector<Obstacle> unlaned_obstacles_;
     Lane reference_lane_;
+    bool is_previous_behavior_lane_changed_{false};
 
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;

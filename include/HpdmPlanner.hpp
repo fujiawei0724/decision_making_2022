@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 19:45:54
+ * @LastEditTime: 2022-01-06 14:46:49
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -117,6 +117,13 @@ class TrajectoryGenerator {
     ~TrajectoryGenerator();
 
     /**
+     * @brief Load data for replanning
+     * @param {*}
+     * @return {*}
+     */    
+    void load(const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+
+    /**
      * @brief Simulate single behavior sequence
      * @param surround_vehicles
      * @param ego_vehicle
@@ -136,7 +143,7 @@ class TrajectoryGenerator {
      * @param safe
      * @param cost
      */    
-    void simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane);
+    void simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane, bool* is_lane_changed);
 
     /**
      * @brief simulate single behavior in a sequence 
@@ -159,7 +166,7 @@ class TrajectoryGenerator {
      * @param {*}
      * @return {*}
      */
-    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index);
+    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed);
 
     /**
      * @brief multi thread interface 
@@ -180,9 +187,13 @@ class TrajectoryGenerator {
     std::vector<bool> candi_safes_{};
     std::vector<double> candi_costs_{};
     std::vector<Lane> candi_reference_lanes_{};
+    std::vector<bool> candi_is_lane_changed_{};
 
     BehaviorPlanner::MapInterface* map_itf_{nullptr};
     double dt_{0.0};
+    bool with_consistence_ = false;
+    Lane pre_reference_lane_;
+    Vehicle pre_ego_desired_vehicle_state_;
 };
 
 class HpdmPlannerCore {
@@ -191,11 +202,14 @@ class HpdmPlannerCore {
     HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub);
     ~HpdmPlannerCore();
 
-    // Load data
+    // Load data with consistence, which means in an replanning circle
+    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+
+    // Load data without consistence
     void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info);
 
     // Run HPDM planner
-    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost);
+    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed);
 
     BehaviorPlanner::MapInterface* map_itf_{nullptr};
     TrajectoryGenerator* traj_generator_{nullptr};
@@ -207,6 +221,9 @@ class HpdmPlannerCore {
     Vehicle ego_vehicle_;
     std::unordered_map<int, Vehicle> surround_vehicles_;
     std::vector<double> lane_info_;
+    bool with_consistence_ = false;
+    Lane pre_reference_lane_;
+    Vehicle pre_ego_desired_vehicle_state_;
 
 };
 

@@ -215,6 +215,9 @@ public:
     // Calculate efficiency cost, due to ego current velocity and lane limit velocity
     static double calculateEfficiencyCost(const Trajectory& ego_trajectory, const double& speed_limit);
 
+    // Calculate consistence cost
+    static double calculateConsistenceCost(const Trajectory& ego_trajectory, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+
     // Judge is safe
     static bool calculateSafe(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, double speed_limit);
 };
