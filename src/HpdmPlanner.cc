@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-06 14:42:57
+ * @LastEditTime: 2022-01-07 15:51:23
  * @Description: Hpdm planner.
  */
 
@@ -224,7 +224,7 @@ namespace HpdmPlanner {
         
         // Forward 
         torch::Tensor pred_res = module.forward(inputs).toTensor();
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(16, 1);
         auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
@@ -697,23 +697,23 @@ namespace HpdmPlanner {
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
-        // Superimpose the backup behaviors
-        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        if (lon_candidate_num == 3) {
-            // TODO: add backup behaviors here 
-        } else if (lon_candidate_num == 11) {
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(147);
-            }
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(148);
-            }
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(167);
-            }
-        } else {
-            assert(false);
-        }
+        // // Superimpose the backup behaviors
+        // // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
+        // if (lon_candidate_num == 3) {
+        //     // TODO: add backup behaviors here 
+        // } else if (lon_candidate_num == 11) {
+        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
+        //         candi_action_idxs.emplace_back(147);
+        //     }
+        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
+        //         candi_action_idxs.emplace_back(148);
+        //     }
+        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+        //         candi_action_idxs.emplace_back(167);
+        //     }
+        // } else {
+        //     assert(false);
+        // }
 
         // ~Stage III: generate behavior / intention sequence from action index, and do pre-process
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec_raw;
