@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-07 15:51:23
+ * @LastEditTime: 2022-01-14 14:36:32
  * @Description: Hpdm planner.
  */
 
@@ -375,6 +375,18 @@ namespace HpdmPlanner {
         SemanticVehicle ego_semantic_vehicle = map_itf_->getEgoSemanticVehicle(ego_vehicle, intention_sequence[0].lat_beh_);
         std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = map_itf_->getSurroundSemanticVehicles(surround_vehicles);
 
+        // Shield these vehicles in other lane
+        SemanticVehicle virtual_ego_semantic_vehicle_last_state = map_itf_->getEgoSemanticVehicle(ego_vehicle, intention_sequence.back().lat_beh_);
+        std::unordered_map<int, SemanticVehicle> filted_surround_semantic_vehicles;
+        std::unordered_map<int, Vehicle> filted_surround_vehicles;
+        // TODO: zip these code to a function
+        for (const auto& single_sur_sementic_veh_info : surround_semantic_vehicles) {
+            if (single_sur_sementic_veh_info.second.nearest_lane_id_ == ego_semantic_vehicle.nearest_lane_id_ || single_sur_sementic_veh_info.second.nearest_lane_id_ == ego_semantic_vehicle.reference_lane_id_ || single_sur_sementic_veh_info.second.nearest_lane_id_ == virtual_ego_semantic_vehicle_last_state.nearest_lane_id_ || single_sur_sementic_veh_info.second.nearest_lane_id_ == virtual_ego_semantic_vehicle_last_state.reference_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == ego_semantic_vehicle.nearest_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == ego_semantic_vehicle.reference_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == virtual_ego_semantic_vehicle_last_state.nearest_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == virtual_ego_semantic_vehicle_last_state.reference_lane_id_) {
+                filted_surround_semantic_vehicles.insert(single_sur_sementic_veh_info);
+                filted_surround_vehicles.insert({single_sur_sementic_veh_info.first, single_sur_sementic_veh_info.second.vehicle_});
+            }
+        }
+
         // Determine desired speed based on longitudinal speed
         double ego_vehicle_desired_speed = std::max(ego_vehicle.state_.velocity_ + intention_sequence[0].lon_vel_comp_, 0.0);
 
@@ -386,13 +398,13 @@ namespace HpdmPlanner {
         Trajectory ego_trajectory;
         std::unordered_map<int, Trajectory> surround_trajectories;
         ego_trajectory.emplace_back(ego_vehicle);
-        for (auto sur_veh : surround_vehicles) {
+        for (auto sur_veh : filted_surround_vehicles) {
             surround_trajectories[sur_veh.first].emplace_back(sur_veh.second);
         }
 
         // State cache
         Vehicle current_ego_vehicle = ego_vehicle;
-        std::unordered_map<int, Vehicle> current_surround_vehicles = surround_vehicles;
+        std::unordered_map<int, Vehicle> current_surround_vehicles = filted_surround_vehicles;
         // std::unordered_map<int, Vehicle> all_vehicles = surround_vehicles;
         // all_vehicles.insert({0, ego_vehicle});
 
@@ -408,7 +420,7 @@ namespace HpdmPlanner {
             std::unordered_map<int, Vehicle> surround_desired_states;
 
             // Simulate single behavior
-            simulateSingleBehavior(ego_semantic_vehicle, surround_semantic_vehicles, ego_vehicle_desired_speed, ego_desired_state, surround_desired_states);
+            simulateSingleBehavior(ego_semantic_vehicle, filted_surround_semantic_vehicles, ego_vehicle_desired_speed, ego_desired_state, surround_desired_states);
 
             // Update trajectories
             ego_trajectory.emplace_back(ego_desired_state);
@@ -421,7 +433,7 @@ namespace HpdmPlanner {
             current_ego_vehicle = ego_desired_state;
             current_surround_vehicles = surround_desired_states;
             ego_semantic_vehicle.vehicle_ = current_ego_vehicle;
-            for (auto& sur_semantic_vehicle_info: surround_semantic_vehicles) {
+            for (auto& sur_semantic_vehicle_info: filted_surround_semantic_vehicles) {
                 sur_semantic_vehicle_info.second.vehicle_ = current_surround_vehicles[sur_semantic_vehicle_info.first];
             }
         }

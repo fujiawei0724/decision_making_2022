@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2021-12-25 17:26:03
+ * @LastEditTime: 2022-01-14 14:09:19
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -186,6 +186,7 @@ namespace BehaviorPlanner {
             reference_lane = lane_set_[reference_lane_id];
         } else {
             reference_lane = nearest_lane;
+            reference_lane_id = nearest_lane_id;
         }
 
         return SemanticVehicle(ego_vehicle, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
