@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-01-14 14:09:19
+ * @LastEditTime: 2022-01-14 16:23:21
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -313,6 +313,11 @@ namespace BehaviorPlanner {
         return lane_set_[calculateNearestLaneId(vehicle)];
     }
     
+    IDM::IDM() = default;
+
+    IDM::~IDM() = default;
+
+
     double IDM::calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity) {
         double a_free = cur_velocity <= (desired_velocity + MIDDLE_EPS) ? acceleration_ * (1 - pow(cur_velocity / (desired_velocity + SMALL_EPS), exponent_)) : -comfortable_braking_deceleration_ * (1 - pow(desired_velocity / (cur_velocity + SMALL_EPS), acceleration_ * exponent_ / comfortable_braking_deceleration_));
 
@@ -333,33 +338,60 @@ namespace BehaviorPlanner {
 
     double IDM::calculateVelocity(double input_cur_s, double input_leading_s, double input_cur_velocity, double input_leading_velocity, double dt, double desired_velocity) {
         
-        // Define linear predict function
-        // TODO: use odeint to speed up calculation consumption  
-        std::function<std::vector<double> (std::vector<double>, double)> linearPredict = [&](const std::vector<double>& current_states, double t_gap) {
-            double cur_s = current_states[0], leading_s = current_states[1], cur_velocity = current_states[2], leading_velocity = current_states[3];
+        // // Define linear predict function
+        // // TODO: use odeint to speed up calculation consumption  
+        // std::function<std::vector<double> (std::vector<double>, double)> linearPredict = [&](const std::vector<double>& current_states, double t_gap) {
+        //     double cur_s = current_states[0], leading_s = current_states[1], cur_velocity = current_states[2], leading_velocity = current_states[3];
 
-            double acc = calculateAcceleration(cur_s, leading_s, cur_velocity, leading_velocity, desired_velocity);
-            acc = std::max(acc, -std::min(hard_braking_deceleration_, cur_velocity / t_gap));
-            double next_cur_s = cur_s + cur_velocity * t_gap + 0.5 * acc * t_gap * t_gap;
-            double next_leading_s = leading_s + leading_velocity * t_gap;
-            double next_cur_velocity = cur_velocity + acc * t_gap;
-            double next_leading_velocity = leading_velocity;
+        //     double acc = calculateAcceleration(cur_s, leading_s, cur_velocity, leading_velocity, desired_velocity);
+        //     acc = std::max(acc, -std::min(hard_braking_deceleration_, cur_velocity / t_gap));
+        //     double next_cur_s = cur_s + cur_velocity * t_gap + 0.5 * acc * t_gap * t_gap;
+        //     double next_leading_s = leading_s + leading_velocity * t_gap;
+        //     double next_cur_velocity = cur_velocity + acc * t_gap;
+        //     double next_leading_velocity = leading_velocity;
 
-            std::vector<double> next_states{next_cur_s, next_leading_s, next_cur_velocity, next_leading_velocity};
+        //     std::vector<double> next_states{next_cur_s, next_leading_s, next_cur_velocity, next_leading_velocity};
 
-            return next_states;
-        };
+        //     return next_states;
+        // };
 
-        // States cache
-        std::vector<double> predicted_states{input_cur_s, input_leading_s, input_cur_velocity, input_leading_velocity};
+        internal_state_[0] = input_cur_s;
+        internal_state_[1] = input_leading_s;
+        internal_state_[2] = input_cur_velocity;
+        internal_state_[3] = input_leading_velocity;
+        desired_velocity_ = desired_velocity;
 
-        int iteration_num = 40;
-        for (int i = 0; i < iteration_num; i++) {
-            predicted_states = linearPredict(predicted_states, dt / static_cast<double>(iteration_num));
-        }
+        boost::numeric::odeint::integrate(boost::ref(*this), internal_state_, 0.0, dt, dt);
 
-        return predicted_states[2];
+
+        // // States cache
+        // std::vector<double> predicted_states{input_cur_s, input_leading_s, input_cur_velocity, input_leading_velocity};
+
+        // int iteration_num = 40;
+        // for (int i = 0; i < iteration_num; i++) {
+        //     predicted_states = linearPredict(predicted_states, dt / static_cast<double>(iteration_num));
+        // }
+
+        return internal_state_[2];
     }
+
+
+    // For odeint use
+    void IDM::operator()(const InternalState &x, InternalState &dxdt, const double dt) {
+        double input_cur_s = x[0];
+        double input_leading_s = x[1];
+        double input_cur_velocity = x[2];
+        double input_leading_velocity = x[3];
+
+        double acc = calculateAcceleration(input_cur_s, input_leading_s, input_cur_velocity, input_leading_velocity, desired_velocity_);
+        acc = std::max(acc, -std::min(hard_braking_deceleration_, input_cur_s / dt));
+        dxdt[0] = input_cur_velocity;
+        dxdt[1] = input_leading_velocity;
+        dxdt[2] = acc;
+        dxdt[3] = 0.0;  // assume other vehicle keep the current velocity
+    }
+
+
 
     constexpr double IDM::vehicle_length_;
     constexpr double IDM::minimum_spacing_;
@@ -425,31 +457,33 @@ namespace BehaviorPlanner {
         desired_lon_acc_ = (control_.second - state_.velocity_) / dt;
         desired_steer_rate_ = Tools::safeThetaTransform(control_.first - state_.steer_);
 
-        // TODO: use odeint to speed up calculation consumption
-        std::function<Eigen::Matrix<double, 5, 1> (Eigen::Matrix<double, 5, 1>, double)> linearPredict = [&](const Eigen::Matrix<double, 5, 1>& cur_state, double t_gap) {
-            Eigen::Matrix<double, 5, 1> predicted_state{Eigen::Matrix<double, 5, 1>::Zero()};
-            predicted_state[0] = cur_state[0] + t_gap * cos(cur_state[2]) * cur_state[3];
-            predicted_state[1] = cur_state[1] + t_gap * sin(cur_state[2]) * cur_state[3];
-            predicted_state[2] = cur_state[2] + t_gap * tan(cur_state[4]) * cur_state[3] / wheelbase_len_;
-            predicted_state[3] = cur_state[3] + t_gap * desired_lon_acc_;
-            predicted_state[4] = cur_state[4] + t_gap * desired_steer_rate_;
+        // // TODO: use odeint to speed up calculation consumption
+        // std::function<Eigen::Matrix<double, 5, 1> (Eigen::Matrix<double, 5, 1>, double)> linearPredict = [&](const Eigen::Matrix<double, 5, 1>& cur_state, double t_gap) {
+        //     Eigen::Matrix<double, 5, 1> predicted_state{Eigen::Matrix<double, 5, 1>::Zero()};
+        //     predicted_state[0] = cur_state[0] + t_gap * cos(cur_state[2]) * cur_state[3];
+        //     predicted_state[1] = cur_state[1] + t_gap * sin(cur_state[2]) * cur_state[3];
+        //     predicted_state[2] = cur_state[2] + t_gap * tan(cur_state[4]) * cur_state[3] / wheelbase_len_;
+        //     predicted_state[3] = cur_state[3] + t_gap * desired_lon_acc_;
+        //     predicted_state[4] = cur_state[4] + t_gap * desired_steer_rate_;
             
-            return predicted_state;
-        };
+        //     return predicted_state;
+        // };
         
-        Eigen::Matrix<double, 5, 1> predict_state = internal_state_;
-        int iteration_num = 40;
-        for (int i = 0; i < iteration_num; i++) {
-            predict_state = linearPredict(predict_state, dt / static_cast<double>(iteration_num));
-        }
+        // Eigen::Matrix<double, 5, 1> predict_state = internal_state_;
+        // int iteration_num = 40;
+        // for (int i = 0; i < iteration_num; i++) {
+        //     predict_state = linearPredict(predict_state, dt / static_cast<double>(iteration_num));
+        // }
 
-        state_.position_(0) = predict_state[0];
-        state_.position_(1) = predict_state[1];
-        state_.theta_ = Tools::safeThetaTransform(predict_state[2]);
-        state_.velocity_ = predict_state[3];
+        boost::numeric::odeint::integrate(boost::ref(*this), internal_state_, 0.0, dt, dt);
+
+        state_.position_(0) = internal_state_[0];
+        state_.position_(1) = internal_state_[1];
+        state_.theta_ = Tools::safeThetaTransform(internal_state_[2]);
+        state_.velocity_ = internal_state_[3];
         state_.acceleration_ = desired_lon_acc_;
-        state_.curvature_ = tan(predict_state[4]) * 1.0 / wheelbase_len_;
-        state_.steer_ = Tools::safeThetaTransform(predict_state[4]);
+        state_.curvature_ = tan(internal_state_[4]) * 1.0 / wheelbase_len_;
+        state_.steer_ = Tools::safeThetaTransform(internal_state_[4]);
 
         // Note that the time stamp of state is not update here, that value should be updated in the forward extender
 
@@ -463,6 +497,22 @@ namespace BehaviorPlanner {
         internal_state_[2] = state_.theta_;
         internal_state_[3] = state_.velocity_;
         internal_state_[4] = state_.steer_;
+    }
+
+    // For odeint use
+    void IdealSteerModel::operator()(const InternalState &x, InternalState &dxdt, const double /* t */) {
+        State cur_state;
+        cur_state.position_(0) = x[0];
+        cur_state.position_(1) = x[1];
+        cur_state.theta_ = x[2];
+        cur_state.velocity_ = x[3];
+        cur_state.steer_ = x[4];
+
+        dxdt[0] = cos(cur_state.theta_) * cur_state.velocity_;
+        dxdt[1] = sin(cur_state.theta_) * cur_state.velocity_;
+        dxdt[2] = tan(cur_state.steer_) * cur_state.velocity_ / wheelbase_len_;
+        dxdt[3] = desired_lon_acc_;
+        dxdt[4] = desired_steer_rate_;
     }
 
     // Calculate vehicle steer 
@@ -491,12 +541,13 @@ namespace BehaviorPlanner {
         // Calculate leading vehicle
         Vehicle leading_vehicle;
         bool leading_vehicle_exist = mtf->getLeadingVehicle(cur_semantic_vehicle, semantic_vehicles, leading_vehicle);
+        IDM idm;
 
         double target_velocity = 0.0;
         if (!leading_vehicle_exist) {
             // Don't exist leading vehicle
             double virtual_leading_vehicle_distance = 100.0 + 100.0 * cur_semantic_vehicle.vehicle_.state_.velocity_;
-            target_velocity = IDM::calculateVelocity(0.0, virtual_leading_vehicle_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, cur_semantic_vehicle.vehicle_.state_.velocity_, dt, desired_velocity);
+            target_velocity = idm.calculateVelocity(0.0, virtual_leading_vehicle_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, cur_semantic_vehicle.vehicle_.state_.velocity_, dt, desired_velocity);
         } else {
             // The distance between leading vehicle and ego vehicle could also be calculated in frenet frame
             // With leading vehicle
@@ -509,7 +560,7 @@ namespace BehaviorPlanner {
             // Calculate gap distance
             double leading_cur_distance = (static_cast<int>(leading_vehicle_index) - static_cast<int>(cur_vehicle_index)) * 0.1;
 
-            target_velocity = IDM::calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_, dt, desired_velocity);
+            target_velocity = idm.calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_, dt, desired_velocity);
         }
 
         // std::cout << "Target velocity: " << target_velocity << std::endl;

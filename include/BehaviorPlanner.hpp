@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-14 11:12:50
+ * @LastEditTime: 2022-01-14 16:21:07
  * @Descripttion: Behavior planner core.
  */
 
@@ -100,9 +100,17 @@ public:
 // Intelligent driver model
 class IDM {
 public:
-    static double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity);
+    IDM();
+    ~IDM();
 
-    static double calculateVelocity(double input_cur_s, double input_leading_s, double input_cur_velocity, double input_leading_velocity, double dt, double desired_velocity);
+    double calculateAcceleration(double cur_s, double leading_s, double cur_velocity, double leading_velocity, double desired_velocity);
+
+    double calculateVelocity(double input_cur_s, double input_leading_s, double input_cur_velocity, double input_leading_velocity, double dt, double desired_velocity);
+
+    typedef boost::array<double, 4> InternalState;
+    void operator()(const InternalState &x, InternalState &dxdt, const double /* t */);
+    InternalState internal_state_;
+    double desired_velocity_{0.0};
 
     static constexpr double vehicle_length_{5.0};
     static constexpr double minimum_spacing_{2.0};
@@ -111,6 +119,7 @@ public:
     static constexpr double comfortable_braking_deceleration_{3.0};
     static constexpr double hard_braking_deceleration_{5.0};
     static constexpr double exponent_{4.0};
+
 };
 
 // Predict the vehicle desired state use velocity and steer
@@ -132,6 +141,9 @@ public:
     // Update internal state
     void updateInternalState();
 
+    typedef boost::array<double, 5> InternalState;
+    void operator()(const InternalState &x, InternalState &dxdt, const double /* t */);
+
     double wheelbase_len_;
     double max_lon_acc_;
     double max_lon_dec_;
@@ -147,7 +159,8 @@ public:
     std::pair<double, double> control_{0.0, 0.0};
     State state_;
     // Internal_state[0] means x position, internal_state[1] means y position, internal_state[2] means angle, internal_state[3] means velocity, internal_state[4] means steer
-    Eigen::Matrix<double, 5, 1> internal_state_{Eigen::Matrix<double, 5, 1>::Zero()};
+    // Eigen::Matrix<double, 5, 1> internal_state_{Eigen::Matrix<double, 5, 1>::Zero()};
+    InternalState internal_state_;
 
     // Parameters need to calculated
     double desired_lon_acc_{0.0};

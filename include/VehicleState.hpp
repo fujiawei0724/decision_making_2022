@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-17 22:03:43
+ * @LastEditTime: 2022-01-14 15:25:12
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -27,6 +27,9 @@
 #include <CGAL/MP_Float.h>
 #include <torch/torch.h>
 #include <torch/script.h>
+#include <boost/numeric/odeint.hpp>
+#include <boost/array.hpp>
+#include <boost/bind.hpp>
 #include "QpGenData.h"
 #include "QpGenVars.h"
 #include "QpGenResiduals.h"
