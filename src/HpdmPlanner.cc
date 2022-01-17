@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-14 14:36:32
+ * @LastEditTime: 2022-01-17 14:10:41
  * @Description: Hpdm planner.
  */
 
@@ -602,6 +602,7 @@ namespace HpdmPlanner {
 
         // Cache
         *ego_traj = candi_ego_trajs_[win_idx];
+        *sur_trajs = candi_sur_trajs_[win_idx];
         *safe = candi_safes_[win_idx];
         *cost = win_cost;
         *target_reference_lane = candi_reference_lanes_[win_idx];

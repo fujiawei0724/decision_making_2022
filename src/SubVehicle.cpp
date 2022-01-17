@@ -645,6 +645,16 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
             printf("[MainPineline] execute replanning.\n");
 
+            // Calculate the minimum distance to obstacles
+            double min_distance_to_obstacles = MAX_VALUE;
+            int predicted_states_num = static_cast<int>(ego_trajectory_.size());
+            for (int i = 0; i < predicted_states_num; i++) {
+                for (const auto& sur_veh_info : surround_trajectories_) {
+                    double cur_veh_dis = (ego_trajectory_[i].state_.position_ - sur_veh_info.second[i].state_.position_).norm();
+                    min_distance_to_obstacles = std::min(min_distance_to_obstacles, cur_veh_dis);
+                }
+            }
+
             // Store trajectory information
             std::string root_path = ros::package::getPath("motion_planning");
             std::string log_file_path = "/trajectory_record/" + Tools::returnCurrentTimeAndDate() + ".csv";
@@ -652,7 +662,7 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             std::ofstream file(log_file_path);
             if (file) {
                 for (int i = 0; i < static_cast<int>(executed_trajectory_.size()); i++) {
-                    file << std::setprecision(14) << executed_trajectory_[i].x_ << "," << executed_trajectory_[i].y_ << "," << executed_traj_thetas_[i] << "," << executed_traj_curvatures_[i] << "," << executed_traj_velocities_[i] << "," << executed_traj_accelerations_[i] << "\n";
+                    file << std::setprecision(14) << executed_trajectory_[i].x_ << "," << executed_trajectory_[i].y_ << "," << executed_traj_thetas_[i] << "," << executed_traj_curvatures_[i] << "," << executed_traj_velocities_[i] << "," << executed_traj_accelerations_[i] << "," << min_distance_to_obstacles << "\n";
                 }
             }
             file.close();
