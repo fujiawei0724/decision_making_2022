@@ -2,13 +2,13 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-12 13:37:39
+ * @LastEditTime: 2022-01-17 16:34:33
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
 #include "Common.hpp"
 
-void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
+void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_consumption) {
     // Update information for behavior planning
     updateMapInformation();
     updateValidateTrafficRuleInformation();
@@ -94,10 +94,11 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result) {
     // }
 
     *result = is_behavior_planning_success;
+    *time_consumption = static_cast<double>((behavior_planning_end_time - behavior_planning_start_time)) / CLOCKS_PER_SEC;
 
 }
 
-void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
+void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consumption) {
     // Update information for behavior planning
     updateMapInformation();
     updateObstacleInformation();
@@ -177,6 +178,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result) {
     delete hpdm_planner;
 
     *result = is_safe;
+    *time_consumption = static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC;
     if (is_safe) {
         ego_trajectory_ = current_episode_ego_trajectory;
         surround_trajectories_ = current_episode_surround_trajectories;

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-17 14:10:41
+ * @LastEditTime: 2022-01-17 16:09:49
  * @Description: Hpdm planner.
  */
 
@@ -727,6 +727,13 @@ namespace HpdmPlanner {
         // } else {
         //     assert(false);
         // }
+        if (ego_vehicle_.state_.velocity_ < 8.0) {
+            if (lon_candidate_num == 11) {
+                if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+                    candi_action_idxs.emplace_back(167);
+                }
+            }
+        }
 
         // ~Stage III: generate behavior / intention sequence from action index, and do pre-process
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec_raw;

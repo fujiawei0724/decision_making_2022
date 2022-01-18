@@ -990,9 +990,9 @@ class SubVehicle{
      * The content below is for trajectory planning 2021, includes EUDM and SSC.
      */
 
-    void behaviorPlanning(bool* result);
+    void behaviorPlanning(bool* result, double* time_consumption);
 
-    void hpdmPlanning(bool* result);
+    void hpdmPlanning(bool* result, double* time_consumption);
 
     void trajectoryPlanning(bool* trajectory_planning_result);
 

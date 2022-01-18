@@ -603,21 +603,23 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             }
         }
 
-        // // Run behavior planner
-        // bool is_behavior_planning_success = false;
-        // behaviorPlanning(&is_behavior_planning_success);
-        // if (!is_behavior_planning_success) {
-        //     printf("[MainPineline] behavior planning failed.\n");
-        //     continue;
-        // }
-
-        // Run HPDM
-        bool is_hpdm_planning_success = false;
-        hpdmPlanning(&is_hpdm_planning_success);
-        if (!is_hpdm_planning_success) {
-            printf("[MainPineline] hpdm planning failed.\n");
+        // Run behavior planner
+        bool is_behavior_planning_success = false;
+        double time_cons = 0.0;
+        behaviorPlanning(&is_behavior_planning_success, &time_cons);
+        if (!is_behavior_planning_success) {
+            printf("[MainPineline] behavior planning failed.\n");
             continue;
         }
+
+        // // Run HPDM
+        // bool is_hpdm_planning_success = false;
+        // double time_cons = 0.0;
+        // hpdmPlanning(&is_hpdm_planning_success, &time_cons);
+        // if (!is_hpdm_planning_success) {
+        //     printf("[MainPineline] hpdm planning failed.\n");
+        //     continue;
+        // }
 
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
@@ -661,8 +663,9 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             log_file_path = root_path + log_file_path;
             std::ofstream file(log_file_path);
             if (file) {
+                file << std::setprecision(14) << min_distance_to_obstacles << "," << time_cons << "\n";
                 for (int i = 0; i < static_cast<int>(executed_trajectory_.size()); i++) {
-                    file << std::setprecision(14) << executed_trajectory_[i].x_ << "," << executed_trajectory_[i].y_ << "," << executed_traj_thetas_[i] << "," << executed_traj_curvatures_[i] << "," << executed_traj_velocities_[i] << "," << executed_traj_accelerations_[i] << "," << min_distance_to_obstacles << "\n";
+                    file << std::setprecision(14) << executed_trajectory_[i].x_ << "," << executed_trajectory_[i].y_ << "," << executed_traj_thetas_[i] << "," << executed_traj_curvatures_[i] << "," << executed_traj_velocities_[i] << "," << executed_traj_accelerations_[i] << "\n";
                 }
             }
             file.close();

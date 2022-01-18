@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-01-14 16:23:21
+ * @LastEditTime: 2022-01-18 10:31:30
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -886,6 +886,10 @@ namespace BehaviorPlanner {
         int sequence_num = static_cast<int>(behavior_set.size());
 
         // // DEBUG
+        // printf("Behavior set length: %d.\n", static_cast<int>(behavior_set.size()));
+        // // END DEBUG
+
+        // // DEBUG
         // for (int i = 0; i < static_cast<int>(behavior_set.size()); i++) {
         //     std::cout << "Index: " << i << " ";
         //     std::cout << static_cast<std::underlying_type<LongitudinalBehavior>::type>(behavior_set[i][0].lon_beh_) << " ";
@@ -923,6 +927,18 @@ namespace BehaviorPlanner {
         SemanticVehicle ego_semantic_vehicle = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence[0].lat_beh_);
         std::unordered_map<int, SemanticVehicle> surround_semantic_vehicles = mtf_->getSurroundSemanticVehicles(surround_vehicles);
 
+        // Shield these vehicles in other lane
+        SemanticVehicle virtual_ego_semantic_vehicle_last_state = mtf_->getEgoSemanticVehicle(ego_vehicle, behavior_sequence.back().lat_beh_);
+        std::unordered_map<int, SemanticVehicle> filted_surround_semantic_vehicles;
+        std::unordered_map<int, Vehicle> filted_surround_vehicles;
+        // TODO: zip these code to a function
+        for (const auto& single_sur_sementic_veh_info : surround_semantic_vehicles) {
+            if (single_sur_sementic_veh_info.second.nearest_lane_id_ == ego_semantic_vehicle.nearest_lane_id_ || single_sur_sementic_veh_info.second.nearest_lane_id_ == ego_semantic_vehicle.reference_lane_id_ || single_sur_sementic_veh_info.second.nearest_lane_id_ == virtual_ego_semantic_vehicle_last_state.nearest_lane_id_ || single_sur_sementic_veh_info.second.nearest_lane_id_ == virtual_ego_semantic_vehicle_last_state.reference_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == ego_semantic_vehicle.nearest_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == ego_semantic_vehicle.reference_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == virtual_ego_semantic_vehicle_last_state.nearest_lane_id_ || single_sur_sementic_veh_info.second.reference_lane_id_ == virtual_ego_semantic_vehicle_last_state.reference_lane_id_) {
+                filted_surround_semantic_vehicles.insert(single_sur_sementic_veh_info);
+                filted_surround_vehicles.insert({single_sur_sementic_veh_info.first, single_sur_sementic_veh_info.second.vehicle_});
+            }
+        }
+
         // Determine desired speed based on longitudinal speed
         // TODO: add logic to calculate the desired speed
         double ego_vehicle_desired_speed = ego_vehicle.state_.velocity_;
@@ -942,13 +958,13 @@ namespace BehaviorPlanner {
         Trajectory ego_trajectory;
         std::unordered_map<int, Trajectory> surround_trajectories;
         ego_trajectory.emplace_back(ego_vehicle);
-        for (auto sur_veh : surround_vehicles) {
+        for (auto sur_veh : filted_surround_vehicles) {
             surround_trajectories[sur_veh.first].emplace_back(sur_veh.second);
         }
 
         // State cache
         Vehicle current_ego_vehicle = ego_vehicle;
-        std::unordered_map<int, Vehicle> current_surround_vehicles = surround_vehicles;
+        std::unordered_map<int, Vehicle> current_surround_vehicles = filted_surround_vehicles;
         // std::unordered_map<int, Vehicle> all_vehicles = surround_vehicles;
         // all_vehicles.insert({0, ego_vehicle});
 
@@ -964,7 +980,7 @@ namespace BehaviorPlanner {
             std::unordered_map<int, Vehicle> surround_desired_states;
 
             // Simulate single behavior
-            simulateSingleBehavior(ego_semantic_vehicle, surround_semantic_vehicles, ego_vehicle_desired_speed, ego_desired_state, surround_desired_states);
+            simulateSingleBehavior(ego_semantic_vehicle, filted_surround_semantic_vehicles, ego_vehicle_desired_speed, ego_desired_state, surround_desired_states);
 
             // Update trajectories
             ego_trajectory.emplace_back(ego_desired_state);
@@ -977,7 +993,7 @@ namespace BehaviorPlanner {
             current_ego_vehicle = ego_desired_state;
             current_surround_vehicles = surround_desired_states;
             ego_semantic_vehicle.vehicle_ = current_ego_vehicle;
-            for (auto& sur_semantic_vehicle_info: surround_semantic_vehicles) {
+            for (auto& sur_semantic_vehicle_info: filted_surround_semantic_vehicles) {
                 sur_semantic_vehicle_info.second.vehicle_ = current_surround_vehicles[sur_semantic_vehicle_info.first];
             }
         }
@@ -1017,6 +1033,10 @@ namespace BehaviorPlanner {
 
         // Calculate policy situation cost
         behavior_sequence_cost_[index] = PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, lane_change_flag, speed_limit);
+
+        // // DEBUG
+        // std::cout << "Index: " << index << std::endl;
+        // // END DEBUG
 
     }
 
