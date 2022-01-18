@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-01-18 10:31:30
+ * @LastEditTime: 2022-01-18 13:46:37
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -620,7 +620,7 @@ namespace BehaviorPlanner {
 
     }
 
-    // Generate vehicle behavior sequence
+    // Generate EUDM vehicle behavior sequence
     std::vector<std::vector<VehicleBehavior>> BehaviorGenerator::generateBehaviorSequence() {
         // Initialize result
         std::vector<std::vector<VehicleBehavior>> veh_beh_seq;
@@ -655,6 +655,36 @@ namespace BehaviorPlanner {
 
         return veh_beh_seq;
 
+    }
+
+    // Generate MPDM vehicle behavior sequence
+    std::vector<std::vector<VehicleBehavior>> BehaviorGenerator::generateMPDMBehavior() {
+        // Initialize result
+        std::vector<std::vector<VehicleBehavior>> veh_beh_set;
+
+        std::vector<VehicleBehavior> lane_keeping_beh;
+        for (int i = 0; i < sequence_length_; i++) {
+            lane_keeping_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior::Undefined));
+        }
+        veh_beh_set.emplace_back(lane_keeping_beh);
+
+        if (is_lane_change_left_available_) {
+            std::vector<VehicleBehavior> lane_change_left_beh;
+            for (int i = 0; i < sequence_length_; i++) {
+                lane_change_left_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeLeft, LongitudinalBehavior::Undefined));
+            }
+            veh_beh_set.emplace_back(lane_change_left_beh);
+        }
+
+        if (is_lane_change_right_available_) {
+            std::vector<VehicleBehavior> lane_change_right_beh;
+            for (int i = 0; i < sequence_length_; i++) {
+                lane_change_right_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeRight, LongitudinalBehavior::Undefined));
+            }
+            veh_beh_set.emplace_back(lane_change_right_beh);
+        }
+
+        return veh_beh_set;
     }
 
     // Add lane change behavior to supple behavior sequence
@@ -881,7 +911,8 @@ namespace BehaviorPlanner {
     void BehaviorPlannerCore::simulateAllBehaviors(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles) {
         // Generate all behavior sequences
         BehaviorGenerator* behavior_generator = new BehaviorGenerator(mtf_, static_cast<int>(predict_time_span_ / dt_));
-        std::vector<BehaviorSequence> behavior_set = behavior_generator->generateBehaviorSequence();
+        // std::vector<BehaviorSequence> behavior_set = behavior_generator->generateBehaviorSequence();
+        std::vector<BehaviorSequence> behavior_set = behavior_generator->generateMPDMBehavior();
         delete behavior_generator;
         int sequence_num = static_cast<int>(behavior_set.size());
 
@@ -946,8 +977,12 @@ namespace BehaviorPlanner {
             ego_vehicle_desired_speed += 5.0;
         } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Conservative) {
             ego_vehicle_desired_speed = std::max(0.0, ego_vehicle_desired_speed - 5.0);
-        } else {
+        } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Normal) {
             ego_vehicle_desired_speed = ego_vehicle.state_.velocity_;
+        } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Undefined) {
+            ego_vehicle_desired_speed = mtf_->calculateSpeedLimit(ego_vehicle);
+        } else {
+            assert(false);
         }
 
         // // DEBUG

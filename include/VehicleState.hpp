@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-14 15:25:12
+ * @LastEditTime: 2022-01-18 13:25:25
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -67,7 +67,8 @@ enum class LongitudinalBehavior {
     Conservative = 0,
     Normal,
     Aggressive,
-    MaxCount = 3,
+    MaxCount,
+    Undefined = 4,
 };
 
 // Vehicle behavior 

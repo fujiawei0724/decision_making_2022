@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-14 16:21:07
+ * @LastEditTime: 2022-01-18 13:35:00
  * @Descripttion: Behavior planner core.
  */
 
@@ -204,6 +204,9 @@ public:
 
     // Generate vehicle behavior sequence
     std::vector<std::vector<VehicleBehavior>> generateBehaviorSequence();
+
+    // Generate MPDM vehicle behavior sequence
+    std::vector<std::vector<VehicleBehavior>> generateMPDMBehavior();
 
     // Add lane change behavior to supple behavior sequence
     static std::vector<VehicleBehavior> completeBehaviorSequence(const std::vector<VehicleBehavior>& cur_beh_seq, LateralBehavior lat_beh, LongitudinalBehavior lon_beh, int num);
