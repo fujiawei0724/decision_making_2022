@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-15 10:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-09 15:50:04
+ * @LastEditTime: 2022-01-21 14:45:31
  * @Description: Utils for trajectory planning.
  */
 
@@ -143,7 +143,7 @@ void Utils::Trigger::checkTrajRemainTime(bool* need_replanning) {
     if (current_vehicle_movement_state_.velocity_ < 3.0) {
         replanning_interval = 0.0;
     } else {
-        replanning_interval = 1.0;
+        replanning_interval = 0.8;
     }
     clock_t current_time_stamp = clock();
     if (static_cast<double>((current_time_stamp - update_time_stamp_)) / CLOCKS_PER_SEC > replanning_interval) {

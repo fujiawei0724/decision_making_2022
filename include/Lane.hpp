@@ -79,7 +79,7 @@ class Lane{
     // 找出当前位置在道路中对应的下标
     // TODO: check this logic, maybe has problem
     // Note that although this method may has some problem, in the new tyrajectory planning, this calculation method is not used
-    size_t findCurrenPositionIndexInLane(double position_x, double position_y) const;
+    int findCurrenPositionIndexInLane(double position_x, double position_y) const;
 
     void setTurn(int turn);
 

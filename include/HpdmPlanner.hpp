@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-06 14:46:49
+ * @LastEditTime: 2022-01-21 14:29:53
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -174,6 +174,13 @@ class TrajectoryGenerator {
      * @return {*}
      */    
     void simulateSingleCandiBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& executed_sequence, int index);
+
+    /**
+     * @brief simulate multiple intention sequence
+     * @param {*}
+     * @return {*}
+     */    
+    void simulateMultipleCandiIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, const int& behavior_sequence_start_index, const int& behavior_sequence_executed_num, const int& sequence_num);
 
     /**
      * @brief multi thread interface 

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-25 20:46:06
+ * @LastEditTime: 2022-01-21 14:19:41
  * @Description: Lane components
  */
 
@@ -137,19 +137,21 @@ bool Lane::getGuidedFlag() const {
 // 找出当前位置在道路中对应的下标
 // TODO: check this logic, maybe has problem
 // Note that although this method may has some problem, in the new tyrajectory planning, this calculation method is not used
-size_t Lane::findCurrenPositionIndexInLane(double position_x, double position_y) const {
-    size_t index = lane_coorination_.size() - 1;
-    PathPlanningUtilities::Point2f current_position;
-    current_position.x_ = position_x;
-    current_position.y_ = position_y;
-    for (size_t i = 0; i < this->lane_coorination_.size(); i++) {
-        PathPlanningUtilities::Point2f local_position = Tools::calcNewCoordinationPosition(this->lane_coorination_[i].worldpos_, current_position);
-        if (!Tools::isLarge(local_position.x_, 0.0)) {
-            index = i;
-            break;
-        }
-    }
-    return index;
+int Lane::findCurrenPositionIndexInLane(double position_x, double position_y) const {
+    // size_t index = lane_coorination_.size() - 1;
+    // PathPlanningUtilities::Point2f current_position;
+    // current_position.x_ = position_x;
+    // current_position.y_ = position_y;
+    // for (size_t i = 0; i < this->lane_coorination_.size(); i++) {
+    //     PathPlanningUtilities::Point2f local_position = Tools::calcNewCoordinationPosition(this->lane_coorination_[i].worldpos_, current_position);
+    //     if (!Tools::isLarge(local_position.x_, 0.0)) {
+    //         index = i;
+    //         break;
+    //     }
+    // }
+    // return index;
+    Eigen::Matrix<double, 2, 1> pos{position_x, position_y};
+    return findCurrenPositionIndexInLane(pos);
 }
 
 void Lane::setTurn(int turn) {
@@ -259,7 +261,7 @@ int Lane::findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& posit
             break;
         }
         if (i == static_cast<int>(lane_coorination_.size()) - 1) {
-            printf("[Lane] current position responses to the last point in the lane.\n");
+            // printf("[Lane] current position responses to the last point in the lane.\n");
             nearest_point_index = i;
             break;
         } 

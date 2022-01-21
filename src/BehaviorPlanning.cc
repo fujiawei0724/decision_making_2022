@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-01-18 13:46:37
+ * @LastEditTime: 2022-01-21 15:17:03
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -945,10 +945,29 @@ namespace BehaviorPlanner {
         }
 
         // // DEBUG
-        // for (int i = 0; i < 1; i ++) {
-        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[62], 62);
+        // for (int i = 0; i < sequence_num; i ++) {
+        //     simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[i], i);
         // }
         // // END DEBUG
+
+        // // DEBUG
+        // int thread_num = 4;
+        // int single_thread_executed_num = std::ceil(static_cast<double>(sequence_num) / static_cast<double>(thread_num));
+        // std::vector<std::thread> thread_set(thread_num);
+        // for (int i = 0; i < thread_num; i++) {
+        //     thread_set[i] = std::thread(&BehaviorPlannerCore::simulateMultipleBehaviorSequence, this, ego_vehicle, surround_vehicles, behavior_set, i * single_thread_executed_num, single_thread_executed_num, sequence_num);
+        // }
+        // for (int i = 0; i < thread_num; i++) {
+        //     thread_set[i].join();
+        // }
+        // // END DEBUG
+    }
+
+    // Simluate multiple single behavior sequence synchronous
+    void BehaviorPlannerCore::simulateMultipleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& behavior_set, const int& behavior_sequence_start_index, const int& behavior_sequence_executed_num, const int& sequence_num) {
+        for (int i = behavior_sequence_start_index; i < std::min(behavior_sequence_start_index + behavior_sequence_executed_num, sequence_num); i++) {
+            simulateSingleBehaviorSequence(ego_vehicle, surround_vehicles, behavior_set[i], i);
+        }
     }
 
     // Simulate single behavior sequence

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-18 13:35:00
+ * @LastEditTime: 2022-01-21 13:38:33
  * @Descripttion: Behavior planner core.
  */
 
@@ -279,6 +279,9 @@ class BehaviorPlannerCore {
 
     // Simulate all situation and store trajectories information
     void simulateAllBehaviors(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles);
+
+    // Simluate multiple single behavior sequence synchronous
+    void simulateMultipleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& behavior_set, const int& behavior_sequence_start_index, const int& behavior_sequence_executed_num, const int& sequence_num);
 
     // Simulate single behavior sequence
     void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, int index);

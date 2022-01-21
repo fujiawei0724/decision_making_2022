@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-17 16:09:49
+ * @LastEditTime: 2022-01-21 14:39:51
  * @Description: Hpdm planner.
  */
 
@@ -465,9 +465,9 @@ namespace HpdmPlanner {
         if (with_consistence_) {
             double consistence_cost = BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_);
             behavior_cost += consistence_cost;
-            if (consistence_cost > 0.2) {
-                is_safe = false;
-            }
+            // if (consistence_cost > 0.2) {
+            //     is_safe = false;
+            // }
         }
 
         // Cache
@@ -568,20 +568,33 @@ namespace HpdmPlanner {
         candi_reference_lanes_.resize(candi_length);
         candi_is_lane_changed_.resize(candi_length);
 
-        // Calculate with multi threads
-        std::vector<std::thread> threads(candi_length);
-        for (int i = 0; i < candi_length; i++) {
-            threads[i] = std::thread(&TrajectoryGenerator::simulateSingleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences[i], i);
-        }
-        for (int i = 0; i < candi_length; i++) {
-            threads[i].join();
-        }
+        // // Calculate with multi threads
+        // std::vector<std::thread> threads(candi_length);
+        // for (int i = 0; i < candi_length; i++) {
+        //     threads[i] = std::thread(&TrajectoryGenerator::simulateSingleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences[i], i);
+        // }
+        // for (int i = 0; i < candi_length; i++) {
+        //     threads[i].join();
+        // }
 
         // // DEBUG
         // for (int i = 0; i < candi_length; i++) {
         //     simulateSingleCandiIntentionSequence(ego_vehicle, surround_vehicles, candi_sequences[i], i);
         // }
         // // END DEBUG
+
+        // Limit the number of threads to reduce time consumption
+        int thread_num = 4;
+        int single_thread_executed_num = std::ceil(static_cast<double>(candi_length) / static_cast<double>(thread_num));
+        std::vector<std::thread> thread_set(thread_num);
+        for (int i = 0; i < thread_num; i++) {
+            thread_set[i] = std::thread(&TrajectoryGenerator::simulateMultipleCandiIntentionSequence, this, ego_vehicle, surround_vehicles, candi_sequences, i * single_thread_executed_num, single_thread_executed_num, candi_length);
+        }
+        for (int i = 0; i < thread_num; i++) {
+            thread_set[i].join();
+        }
+
+        
 
         // Select the best sequence
         int win_idx = -1;
@@ -632,6 +645,17 @@ namespace HpdmPlanner {
         candi_safes_[index] = safe;
         candi_costs_[index] = cost;
         candi_reference_lanes_[index] = target_reference_lane;
+    }
+
+    /**
+     * @brief simulate multiple intention sequence
+     * @param {*}
+     * @return {*}
+     */    
+    void TrajectoryGenerator::simulateMultipleCandiIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, const int& behavior_sequence_start_index, const int& behavior_sequence_executed_num, const int& sequence_num) {
+        for (int i = behavior_sequence_start_index; i < std::min(behavior_sequence_start_index + behavior_sequence_executed_num, sequence_num); i++) {
+            simulateSingleCandiIntentionSequence(ego_vehicle, surround_vehicles, candi_sequences[i], i);
+        }
     }
 
     /**
@@ -710,30 +734,30 @@ namespace HpdmPlanner {
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
-        // // Superimpose the backup behaviors
-        // // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        // if (lon_candidate_num == 3) {
-        //     // TODO: add backup behaviors here 
-        // } else if (lon_candidate_num == 11) {
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(147);
-        //     }
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(148);
-        //     }
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(167);
-        //     }
-        // } else {
-        //     assert(false);
-        // }
-        if (ego_vehicle_.state_.velocity_ < 8.0) {
-            if (lon_candidate_num == 11) {
-                if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-                    candi_action_idxs.emplace_back(167);
-                }
+        // Superimpose the backup behaviors
+        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
+        if (lon_candidate_num == 3) {
+            // TODO: add backup behaviors here 
+        } else if (lon_candidate_num == 11) {
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(147);
             }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(148);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(167);
+            }
+        } else {
+            assert(false);
         }
+        // if (ego_vehicle_.state_.velocity_ < 10.0) {
+        //     if (lon_candidate_num == 11) {
+        //         if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+        //             candi_action_idxs.emplace_back(167);
+        //         }
+        //     }
+        // }
 
         // ~Stage III: generate behavior / intention sequence from action index, and do pre-process
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec_raw;
