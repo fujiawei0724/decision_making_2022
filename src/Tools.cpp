@@ -759,11 +759,13 @@ std::vector<double> Tools::kMeans(const std::vector<double> &data, size_t k, std
 }
 
 std::string Tools::returnCurrentTimeAndDate() {
-    std::time_t t = std::time(0);
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
     std::stringstream ss;
-    ss << t;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d%X");
     return ss.str();
-};
+}
 
 
 // 给出几何朝向, 几何中心的曲率, 几何中心到后轴中心的距离, 计算后轴中心朝向
