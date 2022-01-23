@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-01-21 15:17:03
+ * @LastEditTime: 2022-01-23 15:19:49
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -759,6 +759,11 @@ namespace BehaviorPlanner {
         // Judge whether excess the lane speed limit
         Vehicle ego_vehicle_last_state = ego_trajectory.back();
         if (ego_vehicle_last_state.state_.velocity_ > speed_limit) {
+
+            // // DEBUG
+            // printf("Surplus the speed limit, generated vehicle velocity: %lf, speed limit: %lf.\n", ego_vehicle_last_state.state_.velocity_, speed_limit);
+            // // END DEBUG
+
             return false;
         }
 
@@ -862,16 +867,23 @@ namespace BehaviorPlanner {
         double winner_cost = MAX_VALUE;
         evaluatePolicies(winner_index, winner_cost);
         if (winner_index == -1) {
-            // TODO: add logic to handle the situation where there is no safe policy
+            // // DEBUG
+            // for (int i = 0; i < static_cast<int>(behavior_sequence_cost_.size()); i++) {
+            //     VisualizationMethods::visualizeTrajectory(ego_traj_[i], vis_pub_, i);
+            // }
+            // // END DEBUG
+
+            // // DEBUG
+            // // Print behavior cost information
+            // for (int i = 0; i < static_cast<int>(behavior_sequence_cost_.size()); i++) {
+            //     std::cout << "Behavior sequence: " << i << ", cost: " << behavior_sequence_cost_[i] << ", safe: " << behavior_safety_[i] << std::endl; 
+            // }
+            // // END DEBUG
+
             return false;
         }
         
-        // // DEBUG
-        // // Print behavior cost information
-        // for (int i = 0; i < static_cast<int>(behavior_sequence_cost_.size()); i++) {
-        //     std::cout << "Behavior sequence: " << i << ", cost: " << behavior_sequence_cost_[i] << ", safe: " << behavior_safety_[i] << std::endl; 
-        // }
-        // // END DEBUG
+
 
         // Visualization best traj and print
         VisualizationMethods::visualizeTrajectory(ego_traj_[winner_index], vis_pub_, 0);
@@ -999,7 +1011,7 @@ namespace BehaviorPlanner {
         } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Normal) {
             ego_vehicle_desired_speed = ego_vehicle.state_.velocity_;
         } else if (behavior_sequence[0].lon_beh_ == LongitudinalBehavior::Undefined) {
-            ego_vehicle_desired_speed = mtf_->calculateSpeedLimit(ego_vehicle);
+            ego_vehicle_desired_speed = std::max(mtf_->calculateSpeedLimit(ego_vehicle) - 1.0, 0.0);
         } else {
             assert(false);
         }
