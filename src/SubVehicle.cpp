@@ -603,23 +603,23 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             }
         }
 
-        // Run behavior planner
-        bool is_behavior_planning_success = false;
-        double time_cons = 0.0;
-        behaviorPlanning(&is_behavior_planning_success, &time_cons);
-        if (!is_behavior_planning_success) {
-            printf("[MainPineline] behavior planning failed.\n");
-            continue;
-        }
-
-        // // Run HPDM
-        // bool is_hpdm_planning_success = false;
+        // // Run behavior planner
+        // bool is_behavior_planning_success = false;
         // double time_cons = 0.0;
-        // hpdmPlanning(&is_hpdm_planning_success, &time_cons);
-        // if (!is_hpdm_planning_success) {
-        //     printf("[MainPineline] hpdm planning failed.\n");
+        // behaviorPlanning(&is_behavior_planning_success, &time_cons);
+        // if (!is_behavior_planning_success) {
+        //     printf("[MainPineline] behavior planning failed.\n");
         //     continue;
         // }
+
+        // Run HPDM
+        bool is_hpdm_planning_success = false;
+        double time_cons = 0.0;
+        hpdmPlanning(&is_hpdm_planning_success, &time_cons);
+        if (!is_hpdm_planning_success) {
+            printf("[MainPineline] hpdm planning failed.\n");
+            continue;
+        }
 
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
