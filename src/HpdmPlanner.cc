@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-21 14:39:51
+ * @LastEditTime: 2022-02-06 18:14:22
  * @Description: Hpdm planner.
  */
 
@@ -242,6 +242,11 @@ namespace HpdmPlanner {
 
     TrajectoryGenerator::TrajectoryGenerator(BehaviorPlanner::MapInterface* map_itf, double dt) {
         map_itf_ = map_itf;
+        dt_ = dt;
+    }
+    TrajectoryGenerator::TrajectoryGenerator(BehaviorPlanner::MapInterface* map_itf, const ros::Publisher& vis_pub, double dt) {
+        map_itf_ = map_itf;
+        vis_pub_ = vis_pub;
         dt_ = dt;
     }
     TrajectoryGenerator::~TrajectoryGenerator() = default;
@@ -613,6 +618,13 @@ namespace HpdmPlanner {
             return;
         }
 
+        // Visualize all candidates behaviors
+        int candi_traj_vis_start_index = 500;
+        for (auto& single_candi_traj : candi_ego_trajs_) {
+            VisualizationMethods::visualizeTrajectory(single_candi_traj, vis_pub_, candi_traj_vis_start_index);
+            candi_traj_vis_start_index += 1;
+        }
+
         // Cache
         *ego_traj = candi_ego_trajs_[win_idx];
         *sur_trajs = candi_sur_trajs_[win_idx];
@@ -692,7 +704,7 @@ namespace HpdmPlanner {
     }
     HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub) {
         map_itf_ = map_itf;
-        traj_generator_ = new TrajectoryGenerator(map_itf);
+        traj_generator_ = new TrajectoryGenerator(map_itf, vis_pub);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
         vis_pub_ = vis_pub;
@@ -734,23 +746,23 @@ namespace HpdmPlanner {
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
-        // Superimpose the backup behaviors
-        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        if (lon_candidate_num == 3) {
-            // TODO: add backup behaviors here 
-        } else if (lon_candidate_num == 11) {
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(147);
-            }
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(148);
-            }
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(167);
-            }
-        } else {
-            assert(false);
-        }
+        // // Superimpose the backup behaviors
+        // // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
+        // if (lon_candidate_num == 3) {
+        //     // TODO: add backup behaviors here 
+        // } else if (lon_candidate_num == 11) {
+        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
+        //         candi_action_idxs.emplace_back(147);
+        //     }
+        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
+        //         candi_action_idxs.emplace_back(148);
+        //     }
+        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+        //         candi_action_idxs.emplace_back(167);
+        //     }
+        // } else {
+        //     assert(false);
+        // }
         // if (ego_vehicle_.state_.velocity_ < 10.0) {
         //     if (lon_candidate_num == 11) {
         //         if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-21 14:29:53
+ * @LastEditTime: 2022-02-06 18:00:42
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -114,6 +114,7 @@ class TrajectoryGenerator {
     using BehaviorSequence = std::vector<VehicleBehavior>;
     using IntentionSequence = std::vector<VehicleIntention>;
     TrajectoryGenerator(BehaviorPlanner::MapInterface* map_itf, double dt = 0.4);
+    TrajectoryGenerator(BehaviorPlanner::MapInterface* map_itf, const ros::Publisher& vis_pub, double dt = 0.4);
     ~TrajectoryGenerator();
 
     /**
@@ -195,6 +196,8 @@ class TrajectoryGenerator {
     std::vector<double> candi_costs_{};
     std::vector<Lane> candi_reference_lanes_{};
     std::vector<bool> candi_is_lane_changed_{};
+    // DEBUG visualization
+    ros::Publisher vis_pub_;
 
     BehaviorPlanner::MapInterface* map_itf_{nullptr};
     double dt_{0.0};
