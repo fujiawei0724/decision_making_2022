@@ -174,17 +174,49 @@
     # z: 0.0
     # yaw: 0.15
 
-    # # Highwayqidian main road net
-    x: -12274.2373047
-    y: -2071.43334961
-    z: 0.0
-    yaw: -1.3634057955693895
-
-    # # Ring start point
-    # x: -10885.8994141
-    # y: -2942.10644531
+    # # Highway qidian main road net
+    # x: -12274.2373047
+    # y: -2071.43334961
     # z: 0.0
-    # yaw: 0.0
+    # yaw: -1.3634057955693895
+
+    # # # Highway test position
+    # x: -12266.8828125
+    # y: -2098.78515625
+    # z: 0.0
+    # yaw: -1.2
+
+    # # Highway test position
+    # x: -12253.1074219
+    # y: -2150.18798828
+    # z: 0.0
+    # yaw: -1.3534057955693895
+
+    # # Highway test position
+    # x: -11397.4882812
+    # y: -4047.92016602
+    # z: 0.0
+    # yaw: -1.08
+
+    # # Highway test position
+    # x: -11384.0263672
+    # y: -4070.7980957
+    # z: 0.0
+    # yaw: -1.08
+
+    # # Highway test position
+    # x: -11375.1005859
+    # y: -4092.09277344
+    # z: 0.0
+    # yaw: -1.18
+
+    # Highway test position
+    x: -10883.390625
+    y: -5021.60839844
+    z: 0.0
+    yaw: -1.18
+
+
 
 
     pub_tf: true

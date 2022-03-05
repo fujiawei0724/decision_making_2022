@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(motion_planning)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 add_compile_options(-std=c++14 -Wall -O3)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

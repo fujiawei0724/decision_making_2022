@@ -52,7 +52,7 @@ visualization_msgs::Marker VisualizationMethods::visualizeCurvesToMarker(const P
 }
 
 // 将矩形框转为marker
-visualization_msgs::Marker VisualizationMethods::visualizeRectToMarker(double position_x, double position_y, double theta, double width, double length, double center_scale, const std_msgs::ColorRGBA &color, int id) {
+visualization_msgs::Marker VisualizationMethods::visualizeRectToMarker(double position_x, double position_y, double theta, double width, double length, double center_scale, const std_msgs::ColorRGBA &color, int id, double height) {
     visualization_msgs::Marker rect_marker;
     rect_marker.header.frame_id = "world";
     rect_marker.header.stamp = ros::Time::now();
@@ -65,15 +65,19 @@ visualization_msgs::Marker VisualizationMethods::visualizeRectToMarker(double po
     geometry_msgs::Point point_1, point_2, point_3, point_4;
     point_1.x = position_x + length*center_scale*cos(theta) - width/2.0*sin(theta);
     point_1.y = position_y + length*center_scale*sin(theta) + width/2.0*cos(theta);
+    point_1.z = height;
     rect_marker.points.push_back(point_1);
     point_2.x = position_x + length*center_scale*cos(theta) + width/2.0*sin(theta);
     point_2.y = position_y + length*center_scale*sin(theta) - width/2.0*cos(theta);
+    point_2.z = height;
     rect_marker.points.push_back(point_2);
     point_3.x = position_x - length*(1.0 - center_scale)*cos(theta) + width/2.0*sin(theta);
     point_3.y = position_y - length*(1.0 - center_scale)*sin(theta) - width/2.0*cos(theta);
+    point_3.z = height;
     rect_marker.points.push_back(point_3);
     point_4.x = position_x - length*(1.0 - center_scale)*cos(theta) - width/2.0*sin(theta);
     point_4.y = position_y - length*(1.0 - center_scale)*sin(theta) + width/2.0*cos(theta);
+    point_4.z = height;
     rect_marker.points.push_back(point_4);
     rect_marker.points.push_back(point_1);
     return rect_marker;
@@ -590,9 +594,9 @@ visualization_msgs::Marker VisualizationMethods::visualizePosition(double positi
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
-    marker.scale.x = 1.0;
-    marker.scale.y = 1.0;
-    marker.scale.z = 1.0;
+    marker.scale.x = 0.3;
+    marker.scale.y = 0.3;
+    marker.scale.z = 0.3;
     return marker;
 }
 
@@ -627,22 +631,41 @@ void VisualizationMethods::visualizeInfluenceObstacles(const std::vector<Influen
 }
 
 // Visualization for behavior policy
-void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index) {
+void VisualizationMethods::visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index, std_msgs::ColorRGBA color) {
     visualization_msgs::MarkerArray ego_veh_predict_states_marker_arr;
-    std_msgs::ColorRGBA color;
-    color.r = 0;
-    color.g = 0;
-    color.b = 1;
-    color.a = 1;
     // Note that this index gap 50 is set on the assumption of each trajectory mostly has 50 separated vehicle states
     int ego_veh_state_visualization_start_id = 500000 + index * 50;
     for (int i = 0; i < static_cast<int>(traj.size()); i++) {
         BehaviorPlanner::Vehicle cur_ego_vehicle_state = traj[i];
-        ego_veh_predict_states_marker_arr.markers.push_back(visualizeRectToMarker(cur_ego_vehicle_state.state_.position_(0), cur_ego_vehicle_state.state_.position_(1), cur_ego_vehicle_state.state_.theta_, cur_ego_vehicle_state.width_, cur_ego_vehicle_state.length_, 0.5, color, i + ego_veh_state_visualization_start_id));
+        ego_veh_predict_states_marker_arr.markers.push_back(visualizeRectToMarker(cur_ego_vehicle_state.state_.position_(0), cur_ego_vehicle_state.state_.position_(1), cur_ego_vehicle_state.state_.theta_, cur_ego_vehicle_state.width_, cur_ego_vehicle_state.length_, 0.5, color, i + ego_veh_state_visualization_start_id, static_cast<double>(i)));
     }
 
     publisher.publish(ego_veh_predict_states_marker_arr);
 } 
+
+// Visualization for behavior policy in 2D space
+void VisualizationMethods::visualizeTrajectoryTo2D(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index, std_msgs::ColorRGBA color) {
+    visualization_msgs::MarkerArray ego_veh_predict_states_2D_marker_arr;
+    visualization_msgs::Marker curve_marker;
+    curve_marker.header.frame_id = "world";
+    curve_marker.header.stamp = ros::Time::now();
+    curve_marker.type = visualization_msgs::Marker().LINE_STRIP;
+    curve_marker.color = color;
+    curve_marker.id = index;
+    geometry_msgs::Vector3 v3c;
+    v3c.x = 0.15;
+    curve_marker.scale = v3c;
+    for (size_t i = 0; i < traj.size(); i++) {
+        BehaviorPlanner::Vehicle cur_state = traj[i];
+        geometry_msgs::Point point;
+        point.x = cur_state.state_.position_(0);
+        point.y = cur_state.state_.position_(1);
+        curve_marker.points.push_back(point);
+        ego_veh_predict_states_2D_marker_arr.markers.push_back(visualizePosition(point.x, point.y, color, index + 1000000));
+    }
+    ego_veh_predict_states_2D_marker_arr.markers.push_back(curve_marker);
+    publisher.publish(ego_veh_predict_states_2D_marker_arr);
+}
 
 // Visualization for the result of trajectory planner and ssc planner
 void VisualizationMethods::visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher, bool is_executed) {

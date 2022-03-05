@@ -4,12 +4,14 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Map1
         - /Map1/Main1
         - /LocalPath1/Recommended1
         - /Route1/MissionPoint1
         - /Route1/GoalPoint1
         - /Control1/QSCPath1
+        - /Vehicle1
         - /Vehicle1/Grid1/Offset1
         - /Grid1
         - /Grid1/Offset1
@@ -203,10 +205,7 @@ Visualization Manager:
           Marker Topic: /map/vis
           Name: Main
           Namespaces:
-            auxiliary: true
-            label: true
             line: true
-            region: true
           Queue Size: 100
           Value: true
         - Alpha: 1
@@ -640,13 +639,135 @@ Visualization Manager:
           Frame Timeout: 15
           Frames:
             All Enabled: true
+            base_footprint:
+              Value: true
+            base_link:
+              Value: true
+            datum:
+              Value: true
+            front_camera:
+              Value: true
+            front_camera_optical:
+              Value: true
+            map:
+              Value: true
+            odom:
+              Value: true
+            perfect_gps:
+              Value: true
+            steer_fl:
+              Value: true
+            steer_fr:
+              Value: true
+            vehicle/base_footprint:
+              Value: true
+            vehicle/base_link:
+              Value: true
+            vehicle/geometry_center:
+              Value: true
+            vehicle/wheel_fl:
+              Value: true
+            vehicle/wheel_fr:
+              Value: true
+            vehicle/wheel_rl:
+              Value: true
+            vehicle/wheel_rr:
+              Value: true
+            velodyne:
+              Value: true
+            velodyne_base_link:
+              Value: true
+            views/frontdoor:
+              Value: true
+            views/garage:
+              Value: true
+            views/highway01:
+              Value: true
+            views/highway02:
+              Value: true
+            views/highway03:
+              Value: true
+            views/highway04:
+              Value: true
+            views/highway05:
+              Value: true
+            views/nine_squares_center:
+              Value: true
+            views/test_junction:
+              Value: true
+            views/uturn01:
+              Value: true
+            views/uturn02:
+              Value: true
+            wheel_fl:
+              Value: true
+            wheel_fr:
+              Value: true
+            wheel_rl:
+              Value: true
+            wheel_rr:
+              Value: true
+            world:
+              Value: true
           Marker Scale: 1
           Name: TF
           Show Arrows: true
           Show Axes: true
           Show Names: true
           Tree:
-            {}
+            world:
+              base_footprint:
+                base_link:
+                  steer_fl:
+                    wheel_fl:
+                      vehicle/wheel_fl:
+                        {}
+                  steer_fr:
+                    wheel_fr:
+                      vehicle/wheel_fr:
+                        {}
+                  vehicle/base_link:
+                    {}
+                  wheel_rl:
+                    vehicle/wheel_rl:
+                      {}
+                  wheel_rr:
+                    vehicle/wheel_rr:
+                      {}
+                front_camera_optical:
+                  front_camera:
+                    {}
+                perfect_gps:
+                  {}
+                vehicle/base_footprint:
+                  vehicle/geometry_center:
+                    {}
+                velodyne_base_link:
+                  velodyne:
+                    {}
+              views/frontdoor:
+                {}
+              views/garage:
+                {}
+              views/highway01:
+                {}
+              views/highway02:
+                {}
+              views/highway03:
+                {}
+              views/highway04:
+                {}
+              views/highway05:
+                {}
+              views/nine_squares_center:
+                {}
+              views/test_junction:
+                map:
+                  {}
+              views/uturn01:
+                {}
+              views/uturn02:
+                {}
           Update Interval: 0
           Value: true
         - Alpha: 0.5
@@ -670,20 +791,81 @@ Visualization Manager:
         - Alpha: 1
           Class: rviz/RobotModel
           Collision Enabled: false
-          Enabled: false
+          Enabled: true
           Links:
             All Links Enabled: true
             Expand Joint Details: false
             Expand Link Details: false
             Expand Tree: false
             Link Tree Style: Links in Alphabetic Order
+            base_footprint:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            base_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            front_camera:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            front_camera_optical:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            perfect_gps:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            steer_fl:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            steer_fr:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            velodyne:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            velodyne_base_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            wheel_fl:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            wheel_fr:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            wheel_rl:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            wheel_rr:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
           Name: RobotModel
           Robot Description: vehicle/robot_description
           TF Prefix: vehicle
           Update Interval: 0
-          Value: false
+          Value: true
           Visual Enabled: true
-      Enabled: false
+      Enabled: true
       Name: Vehicle
     - Alpha: 1
       Buffer Length: 1
@@ -722,7 +904,7 @@ Visualization Manager:
       Cell Size: 0.5
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.0299999993
         Value: Lines
@@ -735,7 +917,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 30
       Reference Frame: base_footprint
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /astar_waypoints
@@ -773,7 +955,7 @@ Visualization Manager:
       Marker Topic: /motion_planning/visualization
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.100000001
@@ -823,7 +1005,7 @@ Visualization Manager:
       Marker Topic: /motion_planning/vis_obstacle_topic
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 0.5
@@ -861,13 +1043,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /observe_planning_output/visualization
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
@@ -895,7 +1077,17 @@ Visualization Manager:
           Value: true
         vehicle/base_footprint:
           Value: true
+        vehicle/base_link:
+          Value: true
         vehicle/geometry_center:
+          Value: true
+        vehicle/wheel_fl:
+          Value: true
+        vehicle/wheel_fr:
+          Value: true
+        vehicle/wheel_rl:
+          Value: true
+        vehicle/wheel_rr:
           Value: true
         velodyne:
           Value: true
@@ -944,14 +1136,20 @@ Visualization Manager:
             base_link:
               steer_fl:
                 wheel_fl:
-                  {}
+                  vehicle/wheel_fl:
+                    {}
               steer_fr:
                 wheel_fr:
-                  {}
+                  vehicle/wheel_fr:
+                    {}
+              vehicle/base_link:
+                {}
               wheel_rl:
-                {}
+                vehicle/wheel_rl:
+                  {}
               wheel_rr:
-                {}
+                vehicle/wheel_rr:
+                  {}
             front_camera_optical:
               front_camera:
                 {}
@@ -1031,8 +1229,16 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /behavior_planning/vis_ego_states_topic
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /trajectory_planning/vis_trajectory_topic
       Name: MarkerArray
       Namespaces:
         "": true
@@ -1040,15 +1246,15 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /trajectory_planning/vis_trajectory_topic
+      Marker Topic: /behavior_planning/vis_candidates_states_topic
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 255; 255
     Default Light: true
     Fixed Frame: world
     Frame Rate: 30
@@ -1074,7 +1280,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.519999921
+      Angle: -1.47499883
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
@@ -1084,19 +1290,19 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 5.05260563
+      Scale: 16.0672417
       Target Frame: base_footprint
       Value: TopDownOrtho (rviz)
-      X: 38.9928703
-      Y: 17.536499
+      X: 8.32340717
+      Y: -9.07786942
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
+    collapsed: true
   Height: 1018
-  Hide Left Dock: false
+  Hide Left Dock: true
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001d800000370fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002800000370000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000370fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000370000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000056f0000003efc0100000002fb0000000800540069006d006501000000000000056f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000003910000037000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001d800000370fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000002800000370000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000370fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000370000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000056f0000003efc0100000002fb0000000800540069006d006501000000000000056f0000030000fffffffb0000000800540069006d006501000000000000045000000000000000000000056f0000037000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
