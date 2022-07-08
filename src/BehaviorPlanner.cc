@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-17 16:34:33
+ * @LastEditTime: 2022-02-08 20:22:25
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -157,7 +157,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     // Load information
     std::string model_path = "/home/fjw/PioneerTest/catkin_ws/src/planning/motion_planning/model/model0.pt";
     clock_t hpdm_planning_start_time = clock();
-    HpdmPlanner::HpdmPlannerCore* hpdm_planner = new HpdmPlanner::HpdmPlannerCore(&map_interface, nearest_lane, model_path, vis_behavior_planner_ego_states_pub_);
+    HpdmPlanner::HpdmPlannerCore* hpdm_planner = new HpdmPlanner::HpdmPlannerCore(&map_interface, nearest_lane, model_path, vis_behavior_planner_ego_states_pub_, vis_behavior_planner_candidates_states_pub_);
     if (ego_trajectory_.size() != 0 && is_previous_behavior_lane_changed_) {
         hpdm_planner->load(ego_vehicle, surround_vehicles, lane_info, reference_lane_, ego_trajectory_.back());
     } else {

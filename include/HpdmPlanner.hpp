@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-02-06 18:00:42
+ * @LastEditTime: 2022-02-09 10:16:30
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -167,7 +167,7 @@ class TrajectoryGenerator {
      * @param {*}
      * @return {*}
      */
-    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed);
+    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, const std::vector<int>& selected_idxs, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed);
 
     /**
      * @brief multi thread interface 
@@ -209,7 +209,7 @@ class TrajectoryGenerator {
 class HpdmPlannerCore {
  public:
     HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path);
-    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub);
+    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
     ~HpdmPlannerCore();
 
     // Load data with consistence, which means in an replanning circle

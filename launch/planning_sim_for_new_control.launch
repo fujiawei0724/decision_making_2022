@@ -47,6 +47,39 @@
     /vehicle/base_footprint /vehicle/geometry_center
   "/>
 
+
+  <!-- The static transformer below is used for visualziation vehicle model in rviz -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="vehicle_namespace_2" args="
+    0 0 0
+    0 0 0 1
+    /base_link /vehicle/base_link
+  "/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="vehicle_namespace_3" args="
+    0 0 0
+    0 0 0 1
+    /wheel_fl /vehicle/wheel_fl
+  "/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="vehicle_namespace_4" args="
+    0 0 0
+    0 0 0 1
+    /wheel_rl /vehicle/wheel_rl
+  "/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="vehicle_namespace_5" args="
+    0 0 0
+    0 0 0 1
+    /wheel_fr /vehicle/wheel_fr
+  "/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="vehicle_namespace_6" args="
+    0 0 0
+    0 0 0 1
+    /wheel_rr /vehicle/wheel_rr
+  "/>
+  <!-- End visualization vehicle model -->
+
   <!-- Transform the GPS location -->
   <node pkg="vehicle_center_location" type="vehicle_center_location_node" name="vehicle_center_location">
     <param name="distance_from_rear_to_center" value="1.4249"/>
@@ -99,6 +132,7 @@
     <param name="vis_occupation_topic" value="/motion_planning/vis_occupation_topic"/>
     <param name="vis_influence_obstacle_topic" value="/motion_planning/vis_influence_obstacle_topic"/>
     <param name="vis_behavior_planner_ego_states_topic" value="/behavior_planning/vis_ego_states_topic"/>
+    <param name="vis_behavior_planner_candidates_states_topic" value="/behavior_planning/vis_candidates_states_topic"/>
     <param name="vis_trajectory_planner_topic" value="/trajectory_planning/vis_trajectory_topic"/>
     <!-- 变量，是否需要考虑当前曲率 -->
     <param name="current_pose_ignore_orientation" value="false"/>

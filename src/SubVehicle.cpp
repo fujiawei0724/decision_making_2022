@@ -103,6 +103,11 @@ void DecisionMaking::SubVehicle::rosInit() {
     std::string vis_behavior_planner_ego_states_topic;
     nh_.getParam("vis_behavior_planner_ego_states_topic", vis_behavior_planner_ego_states_topic);
     vis_behavior_planner_ego_states_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(vis_behavior_planner_ego_states_topic, 10);
+
+    std::string vis_behavior_planner_candidates_states_topic;
+    nh_.getParam("vis_behavior_planner_candidates_states_topic", vis_behavior_planner_candidates_states_topic);
+    vis_behavior_planner_candidates_states_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(vis_behavior_planner_candidates_states_topic, 10);
+    
     std::string vis_trajectory_planner_topic;
     nh_.getParam("vis_trajectory_planner_topic", vis_trajectory_planner_topic);
     vis_trajectory_planner_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(vis_trajectory_planner_topic, 10);
@@ -293,6 +298,20 @@ void DecisionMaking::SubVehicle::updateVehiclePosition(const nav_msgs::Odometry:
     color.b = 0;
     color.a = 1;
     marker_array.markers.push_back(VisualizationMethods::visualizeRectToMarker(this->current_vehicle_world_position_.position_.x_, this->current_vehicle_world_position_.position_.y_, Tools::centerYawToRearYaw(this->current_vehicle_world_position_.theta_, this->current_vehicle_world_position_.kappa_, DISTANCE_FROM_REAR_TO_CENTER), this->vehicle_width_, this->vehicle_length_, this->vehicle_rear_axis_center_scale_, color, VisualizationMethods::VisualizationID::VEHICLE_ODOM));
+    
+    // Get velocity information and print
+    std_msgs::ColorRGBA str_color;
+    str_color.r = 0;
+    str_color.g = 0;
+    str_color.b = 0;
+    str_color.a = 1;
+    PathPlanningUtilities::VehicleMovementState start_point_movement;
+    this->current_vehicle_movement_mutex_.lock();
+    start_point_movement = this->current_vehicle_movement_;
+    this->current_vehicle_movement_mutex_.unlock();
+    std::string velocity_str = "velocity: " + std::to_string(start_point_movement.velocity_);
+    marker_array.markers.push_back(VisualizationMethods::visualizeStringToMarker(velocity_str, current_vehicle_world_position_.position_.x_ + 3.0, current_vehicle_world_position_.position_.y_ + 3.0, str_color, 9000000));
+    
     this->vis_vehicle_pub_.publish(marker_array);
     this->current_vehicle_world_position_mutex_.unlock();
 }
@@ -301,6 +320,7 @@ void DecisionMaking::SubVehicle::updateVehiclePosition(const nav_msgs::Odometry:
 void DecisionMaking::SubVehicle::updateVehicleMovement(const std_msgs::Float64::ConstPtr velocity_msg) {
     // 更新车辆速度信息
     this->current_vehicle_movement_mutex_.lock();
+    // Add compensation to simulate specific situation
     this->current_vehicle_movement_.velocity_ = velocity_msg->data;
     this->current_vehicle_movement_mutex_.unlock();
     // 确定车辆运动信息加载成功
@@ -644,7 +664,7 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         if (need_replanning_) {
             trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
             // Visualization executed trajectory
-            VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
+            // VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
             printf("[MainPineline] execute replanning.\n");
 
             // Calculate the minimum distance to obstacles

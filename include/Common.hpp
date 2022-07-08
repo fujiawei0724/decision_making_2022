@@ -1012,6 +1012,7 @@ class SubVehicle{
 
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;
+    ros::Publisher vis_behavior_planner_candidates_states_pub_;
     ros::Publisher vis_trajectory_planner_pub_;
 
     std::vector<Common::Point3f> generated_trajectory_{};
@@ -1182,7 +1183,7 @@ visualization_msgs::Marker visualizeLaneToMarker(const Lane &lane, const std_msg
 visualization_msgs::Marker visualizeCurvesToMarker(const PathPlanningUtilities::Curve &curve, const std_msgs::ColorRGBA &color, int id);
 
 // 将矩形框转为marker
-visualization_msgs::Marker visualizeRectToMarker(double position_x, double position_y, double theta, double width, double length, double center_scale, const std_msgs::ColorRGBA &color, int id);
+visualization_msgs::Marker visualizeRectToMarker(double position_x, double position_y, double theta, double width, double length, double center_scale, const std_msgs::ColorRGBA &color, int id, double height = 0.0);
 
 // 将文本转为为marker
 visualization_msgs::Marker visualizeStringToMarker(const std::string &text, double position_x, double position_y, const std_msgs::ColorRGBA &color, int id);
@@ -1236,7 +1237,10 @@ visualization_msgs::Marker visualizePosition(double position_x, double position_
 void visualizeInfluenceObstacles(const std::vector<InfluenceObstacle> &influence_obstacles, const ros::Publisher &publisher);
 
 // Visualization for behavior policy
-void visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index);
+void visualizeTrajectory(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index, std_msgs::ColorRGBA color);
+
+// Visualization for behavior policy in 2D space
+void visualizeTrajectoryTo2D(const std::vector<BehaviorPlanner::Vehicle>& traj, const ros::Publisher& publisher, int index, std_msgs::ColorRGBA color);
 
 // Visualization for the result of trajectory planner and ssc planner
 void visualizeTrajectory(const std::vector<Common::Point3f>& traj, const ros::Publisher& publisher, bool is_executed = false);

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-02-06 18:14:22
+ * @LastEditTime: 2022-03-06 11:30:09
  * @Description: Hpdm planner.
  */
 
@@ -563,7 +563,7 @@ namespace HpdmPlanner {
      * @param {*}
      * @return {*}
      */
-    void TrajectoryGenerator::simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed) {
+    void TrajectoryGenerator::simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, const std::vector<int>& selected_idxs, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed) {
         // Initialize containers
         int candi_length = static_cast<int>(candi_sequences.size());
         candi_ego_trajs_.resize(candi_length);
@@ -619,11 +619,30 @@ namespace HpdmPlanner {
         }
 
         // Visualize all candidates behaviors
+        visualization_msgs::MarkerArray delete_array;
+        delete_array.markers.push_back(VisualizationMethods::visualizedeleteAllMarker(0));
+        vis_pub_.publish(delete_array);
+
         int candi_traj_vis_start_index = 500;
-        for (auto& single_candi_traj : candi_ego_trajs_) {
-            VisualizationMethods::visualizeTrajectory(single_candi_traj, vis_pub_, candi_traj_vis_start_index);
+        for (int i = 0; i < static_cast<int>(candi_ego_trajs_.size()); i++) {
+            auto single_candi_traj = candi_ego_trajs_[i];
+            std_msgs::ColorRGBA color;
+            if (i == win_idx) {
+                color.a = 1.0;
+                color.r = 1.0;
+                color.g = 0.0;
+                color.b = 0.0;
+            } else {
+                color.a = 0.2;
+                color.r = 0.0;
+                color.g = 0.0;
+                color.b = 1.0;
+            }
+            VisualizationMethods::visualizeTrajectoryTo2D(single_candi_traj, vis_pub_, candi_traj_vis_start_index, color);
             candi_traj_vis_start_index += 1;
         }
+
+
 
         // Cache
         *ego_traj = candi_ego_trajs_[win_idx];
@@ -702,9 +721,9 @@ namespace HpdmPlanner {
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
     }
-    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub) {
+    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
         map_itf_ = map_itf;
-        traj_generator_ = new TrajectoryGenerator(map_itf, vis_pub);
+        traj_generator_ = new TrajectoryGenerator(map_itf, vis_pub_2);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
         vis_pub_ = vis_pub;
@@ -746,23 +765,23 @@ namespace HpdmPlanner {
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
-        // // Superimpose the backup behaviors
-        // // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        // if (lon_candidate_num == 3) {
-        //     // TODO: add backup behaviors here 
-        // } else if (lon_candidate_num == 11) {
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(147);
-        //     }
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(148);
-        //     }
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(167);
-        //     }
-        // } else {
-        //     assert(false);
-        // }
+        // Superimpose the backup behaviors
+        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
+        if (lon_candidate_num == 3) {
+            // TODO: add backup behaviors here 
+        } else if (lon_candidate_num == 11) {
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(147);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(148);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(167);
+            }
+        } else {
+            assert(false);
+        }
         // if (ego_vehicle_.state_.velocity_ < 10.0) {
         //     if (lon_candidate_num == 11) {
         //         if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
@@ -776,6 +795,15 @@ namespace HpdmPlanner {
         std::vector<std::vector<VehicleIntention>> intention_sequence_vec_raw;
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec;
         std::vector<std::vector<VehicleIntention>> intention_sequence_vec;
+        
+        // DEBUG
+        // // Visualization all intentions/behaviors
+        // std::vector<int> all_action_idxs;
+        // for (int i = 0; i < 231; i++) {
+        //     all_action_idxs.emplace_back(i);
+        // }
+        // END DEBUG
+        
         if (lon_candidate_num == 3) {
             behavior_sequence_vec_raw = ActionInterface::indexVecToBehSeqVec(candi_action_idxs);
             for (const auto& beh_seq : behavior_sequence_vec_raw) {
@@ -819,16 +847,24 @@ namespace HpdmPlanner {
         bool is_final_lane_changed = false;
 
         if (lon_candidate_num == 3) {
+            // DEBUG
+            // Test the situation where there are only 3 longitudinal target velocities  
             traj_generator_->simulateCandidatesBehaviorSequences(ego_vehicle_, surround_vehicles_, behavior_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
+            // END DEBUG
         } else if (lon_candidate_num == 11) {
-            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
+            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, candi_action_idxs, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
         } else {
             assert(false);
         }
 
         // Visualization and print
         if (is_safe) {
-            VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 0);
+            std_msgs::ColorRGBA color;
+            color.a = 1.0;
+            color.r = 1.0;
+            color.g = 0.0;
+            color.b = 0.0;
+            VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 1000, color);
         }
         printf("[HpdmPLanner] selected action index: %d, is safe: %d, cost: %lf.\n", candi_action_idxs[final_win_index], is_safe, policy_cost);
 
