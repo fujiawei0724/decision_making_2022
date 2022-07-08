@@ -39,6 +39,7 @@ find_package(OpenCV REQUIRED)
 find_package(CGAL)
 find_package(Torch REQUIRED)
 find_package(Boost REQUIRED)
+find_package(PCL REQUIRED)
 
 
 
@@ -161,7 +162,7 @@ include_directories(
   ${GLOG_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
-
+  ${PCL_INCLUDE_DIRS}
 )
 
 
@@ -203,6 +204,7 @@ target_link_libraries(${PROJECT_NAME}_lib
   pthread
   ${TORCH_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${PCL_LIBRARIES}
   # obstacle_utilities
 )
 
@@ -222,6 +224,7 @@ target_link_libraries(${PROJECT_NAME}_node
   ma27 
   gfortran
   ${Boost_LIBRARIES}
+  ${PCL_LIBRARIES}
   # obstacle_utilities
 )
 

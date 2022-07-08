@@ -174,11 +174,11 @@
     # z: 0.0
     # yaw: 0.15
 
-    # # Highway qidian main road net
-    # x: -12274.2373047
-    # y: -2071.43334961
-    # z: 0.0
-    # yaw: -1.3634057955693895
+    # Highway qidian main road net
+    x: -12274.2373047
+    y: -2071.43334961
+    z: 0.0
+    yaw: -1.3634057955693895
 
     # # # Highway test position
     # x: -12266.8828125
@@ -210,11 +210,11 @@
     # z: 0.0
     # yaw: -1.18
 
-    # Highway test position
-    x: -10883.390625
-    y: -5021.60839844
-    z: 0.0
-    yaw: -1.18
+    # # Highway test position
+    # x: -10883.390625
+    # y: -5021.60839844
+    # z: 0.0
+    # yaw: -1.18
 
 
 

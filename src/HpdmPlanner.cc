@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-02-20 15:29:38
+ * @LastEditTime: 2022-03-06 11:30:09
  * @Description: Hpdm planner.
  */
 
@@ -619,6 +619,10 @@ namespace HpdmPlanner {
         }
 
         // Visualize all candidates behaviors
+        visualization_msgs::MarkerArray delete_array;
+        delete_array.markers.push_back(VisualizationMethods::visualizedeleteAllMarker(0));
+        vis_pub_.publish(delete_array);
+
         int candi_traj_vis_start_index = 500;
         for (int i = 0; i < static_cast<int>(candi_ego_trajs_.size()); i++) {
             auto single_candi_traj = candi_ego_trajs_[i];
@@ -628,20 +632,16 @@ namespace HpdmPlanner {
                 color.r = 1.0;
                 color.g = 0.0;
                 color.b = 0.0;
-            } else if (std::count(selected_idxs.begin(), selected_idxs.end(), i)) {
-                color.a = 0.5;
+            } else {
+                color.a = 0.2;
                 color.r = 0.0;
                 color.g = 0.0;
                 color.b = 1.0;
-            } else {
-                color.a = 0.2;
-                color.r = 192.0 / 255.0;
-                color.g = 192.0 / 255.0;
-                color.b = 192.0 / 255.0;
             }
             VisualizationMethods::visualizeTrajectoryTo2D(single_candi_traj, vis_pub_, candi_traj_vis_start_index, color);
             candi_traj_vis_start_index += 1;
         }
+
 
 
         // Cache
@@ -765,23 +765,23 @@ namespace HpdmPlanner {
         std::vector<int> candi_action_idxs;
         torch_itf_->runOnce(state_array, &candi_action_idxs);
 
-        // // Superimpose the backup behaviors
-        // // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        // if (lon_candidate_num == 3) {
-        //     // TODO: add backup behaviors here 
-        // } else if (lon_candidate_num == 11) {
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(147);
-        //     }
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(148);
-        //     }
-        //     if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-        //         candi_action_idxs.emplace_back(167);
-        //     }
-        // } else {
-        //     assert(false);
-        // }
+        // Superimpose the backup behaviors
+        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
+        if (lon_candidate_num == 3) {
+            // TODO: add backup behaviors here 
+        } else if (lon_candidate_num == 11) {
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(147);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(148);
+            }
+            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
+                candi_action_idxs.emplace_back(167);
+            }
+        } else {
+            assert(false);
+        }
         // if (ego_vehicle_.state_.velocity_ < 10.0) {
         //     if (lon_candidate_num == 11) {
         //         if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {

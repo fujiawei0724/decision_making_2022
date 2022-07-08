@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-21 14:19:41
+ * @LastEditTime: 2022-07-08 21:40:00
  * @Description: Lane components
  */
 
@@ -63,6 +63,7 @@ void Lane::generateLaneCenter(path_planning_msgs::BoundedCurve geometry) {
         this->lane_center_path_in_world_.push_back(point_in_world);
         this->lane_center_path_in_frenet_.push_back(point_in_frenet);
     }
+    // kb_tree_ = KDTree(lane_center_path_in_world_);
 }
 
 // 获取道路中线信息(包括坐标系、中线在world系、中线在frenet系)
@@ -249,6 +250,16 @@ Eigen::Matrix<double, 2, 1> Lane::calculateTargetLanePosition(const Eigen::Matri
 // Find nearest lane point index from a position
 // Calculation of distances to find the local minimum
 int Lane::findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) const {
+    // int index = -1;
+    // bool res = kb_tree_.findNearestIndex(position, &index);
+    // if (res) {
+    //     return index;
+    // } else {
+    //     std:cout << "Find nearest point failed." << std::endl;
+    //     return 0;
+    // }
+
+     
     // Using simple distance to calculate the nearest point
     double pre_distance = MAX_VALUE;
     double cur_distance = 0.0;

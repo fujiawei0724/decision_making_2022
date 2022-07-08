@@ -321,7 +321,7 @@ void DecisionMaking::SubVehicle::updateVehicleMovement(const std_msgs::Float64::
     // 更新车辆速度信息
     this->current_vehicle_movement_mutex_.lock();
     // Add compensation to simulate specific situation
-    this->current_vehicle_movement_.velocity_ = velocity_msg->data + 11.236985;
+    this->current_vehicle_movement_.velocity_ = velocity_msg->data;
     this->current_vehicle_movement_mutex_.unlock();
     // 确定车辆运动信息加载成功
     this->vehicle_movement_ready_flag_mutex_.lock();
@@ -664,7 +664,7 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         if (need_replanning_) {
             trajectoryPublish(thetas, curvatures, velocities, accelerations, motion_planning_curve_pub_);
             // Visualization executed trajectory
-            VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
+            // VisualizationMethods::visualizeTrajectory(executed_trajectory_, vis_trajectory_planner_pub_, true);
             printf("[MainPineline] execute replanning.\n");
 
             // Calculate the minimum distance to obstacles
