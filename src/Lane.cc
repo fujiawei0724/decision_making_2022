@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-08 21:40:00
+ * @LastEditTime: 2022-07-09 11:18:16
  * @Description: Lane components
  */
 
@@ -250,6 +250,7 @@ Eigen::Matrix<double, 2, 1> Lane::calculateTargetLanePosition(const Eigen::Matri
 // Find nearest lane point index from a position
 // Calculation of distances to find the local minimum
 int Lane::findCurrenPositionIndexInLane(const Eigen::Matrix<double, 2, 1>& position) const {
+
     // int index = -1;
     // bool res = kb_tree_.findNearestIndex(position, &index);
     // if (res) {

@@ -12,96 +12,96 @@
 #include "Compare.hpp"
 #include "Obstacle.hpp"
 #include "Tools.hpp"
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/kdtree/kdtree_flann.h>
+// #include <pcl/point_cloud.h>
+// #include <pcl/point_types.h>
+// #include <pcl/kdtree/kdtree_flann.h>
 
 //===================================================== 道路类 ======================================================
 
-class KDTree {
- public:
+// class KDTree {
+//  public:
 
-    // 构造函数
-    KDTree(const std::vector<PathPlanningUtilities::Point2f> &points) {
-        pcl::PointCloud<pcl::PointXY>::Ptr obstacles (new pcl::PointCloud<pcl::PointXY>());
-        for (int i = 0; i < static_cast<int>(points.size()); i++) {
-            pcl::PointXY obstacle = {static_cast<float>(points[i].x_), static_cast<float>(points[i].y_)};
-            obstacles->points.push_back(obstacle);
-            pointToIndex_[std::make_pair(static_cast<float>(points[i].x_), static_cast<float>(points[i].y_))] = i;
-        }
-        obstacles->width = obstacles->points.size();
-        obstacles->height = 1;
-        obstacles_ = obstacles;
-        // 构造kdtree
-        kdtree_.setInputCloud(this->obstacles_);
-    }
+//     // 构造函数
+//     KDTree(const std::vector<PathPlanningUtilities::Point2f> &points) {
+//         pcl::PointCloud<pcl::PointXY>::Ptr obstacles (new pcl::PointCloud<pcl::PointXY>());
+//         for (int i = 0; i < static_cast<int>(points.size()); i++) {
+//             pcl::PointXY obstacle = {static_cast<float>(points[i].x_), static_cast<float>(points[i].y_)};
+//             obstacles->points.push_back(obstacle);
+//             pointToIndex_[std::make_pair(static_cast<float>(points[i].x_), static_cast<float>(points[i].y_))] = i;
+//         }
+//         obstacles->width = obstacles->points.size();
+//         obstacles->height = 1;
+//         obstacles_ = obstacles;
+//         // 构造kdtree
+//         kdtree_.setInputCloud(this->obstacles_);
+//     }
 
-    // 构造函数
-    KDTree() {}
+//     // 构造函数
+//     KDTree() {}
 
-    // 析构函数
-    ~KDTree() {};
+//     // 析构函数
+//     ~KDTree() {};
 
-    // 搜索k最近邻
-    int findKNeighbor(float x, float y, std::vector<std::pair<float, float>> *results, std::vector<float> *sq_distances, int k = 1) const {
-        std::vector<std::pair<float, float>> points;
-        // 构造搜索点
-        pcl::PointXY search_point = {x, y};
-        // 进行搜索
-        std::vector<int> pointIdxNKNSearch(k);
-        std::vector<float> pointNKNSquaredDistance(k);
-        if (this->kdtree_.nearestKSearch (search_point, k, pointIdxNKNSearch, pointNKNSquaredDistance) > 0) {
-            for (size_t i = 0; i < pointIdxNKNSearch.size (); i++) {
-                points.push_back(std::make_pair(this->obstacles_->points[pointIdxNKNSearch[i]].x, this->obstacles_->points[pointIdxNKNSearch[i]].y));
-            }
-            *results = points;
-            *sq_distances = pointNKNSquaredDistance;
-            return 0;
-        } else {
-            return -1;
-        }
-    }
+//     // 搜索k最近邻
+//     int findKNeighbor(float x, float y, std::vector<std::pair<float, float>> *results, std::vector<float> *sq_distances, int k = 1) const {
+//         std::vector<std::pair<float, float>> points;
+//         // 构造搜索点
+//         pcl::PointXY search_point = {x, y};
+//         // 进行搜索
+//         std::vector<int> pointIdxNKNSearch(k);
+//         std::vector<float> pointNKNSquaredDistance(k);
+//         if (this->kdtree_.nearestKSearch (search_point, k, pointIdxNKNSearch, pointNKNSquaredDistance) > 0) {
+//             for (size_t i = 0; i < pointIdxNKNSearch.size (); i++) {
+//                 points.push_back(std::make_pair(this->obstacles_->points[pointIdxNKNSearch[i]].x, this->obstacles_->points[pointIdxNKNSearch[i]].y));
+//             }
+//             *results = points;
+//             *sq_distances = pointNKNSquaredDistance;
+//             return 0;
+//         } else {
+//             return -1;
+//         }
+//     }
 
-    bool findNearestIndex(const Eigen::Matrix<double, 2, 1>& position, int* index) const {
-        std::vector<std::pair<float, float>> nearest_points;
-        std::vector<float> nearest_dis;
-        int res = findKNeighbor(static_cast<float>(position(0, 0)), static_cast<float>(position(1, 0)), &nearest_points, &nearest_dis);
-        if (res == 0) {
-            *index = pointToIndex_.at(nearest_points[0]);
-            return true;
-        } else {
-            *index = 0;
-            return false;
-        }
+//     bool findNearestIndex(const Eigen::Matrix<double, 2, 1>& position, int* index) const {
+//         std::vector<std::pair<float, float>> nearest_points;
+//         std::vector<float> nearest_dis;
+//         int res = findKNeighbor(static_cast<float>(position(0, 0)), static_cast<float>(position(1, 0)), &nearest_points, &nearest_dis);
+//         if (res == 0) {
+//             *index = pointToIndex_.at(nearest_points[0]);
+//             return true;
+//         } else {
+//             *index = 0;
+//             return false;
+//         }
 
-    }
+//     }
 
-    // // 搜索范围近邻
-    // int findRangeNeighbor(float x, float y, std::vector<std::pair<float, float>> *results, std::vector<float> *sq_distances, double range) const {
-    //     std::vector<std::pair<float, float>> points;
-    //     // 构造搜索点
-    //     pcl::PointXY search_point = {x, y};
-    //     // 进行搜索
-    //     std::vector<int> pointIdxRadiusSearch;
-    //     std::vector<float> pointRadiusSquaredDistance;
-    //     if (this->kdtree_.radiusSearch (search_point, range, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0) {
-    //         for (size_t i = 0; i < pointIdxRadiusSearch.size (); i++) {
-    //             points.push_back(std::make_pair(this->obstacles_->points[pointIdxRadiusSearch[i]].x, this->obstacles_->points[pointIdxRadiusSearch[i]].y));
-    //         }
-    //         *results = points;
-    //         *sq_distances = pointRadiusSquaredDistance;
-    //         return 0;
-    //     } else {
-    //         return -1;
-    //     }
-    // }
+//     // // 搜索范围近邻
+//     // int findRangeNeighbor(float x, float y, std::vector<std::pair<float, float>> *results, std::vector<float> *sq_distances, double range) const {
+//     //     std::vector<std::pair<float, float>> points;
+//     //     // 构造搜索点
+//     //     pcl::PointXY search_point = {x, y};
+//     //     // 进行搜索
+//     //     std::vector<int> pointIdxRadiusSearch;
+//     //     std::vector<float> pointRadiusSquaredDistance;
+//     //     if (this->kdtree_.radiusSearch (search_point, range, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0) {
+//     //         for (size_t i = 0; i < pointIdxRadiusSearch.size (); i++) {
+//     //             points.push_back(std::make_pair(this->obstacles_->points[pointIdxRadiusSearch[i]].x, this->obstacles_->points[pointIdxRadiusSearch[i]].y));
+//     //         }
+//     //         *results = points;
+//     //         *sq_distances = pointRadiusSquaredDistance;
+//     //         return 0;
+//     //     } else {
+//     //         return -1;
+//     //     }
+//     // }
 
  
- private:
-    pcl::PointCloud<pcl::PointXY>::Ptr obstacles_;  // 障碍物信息
-    pcl::KdTreeFLANN<pcl::PointXY> kdtree_;  // kdtree
-    std::map<std::pair<float, float>, int> pointToIndex_;
-};
+//  private:
+//     pcl::PointCloud<pcl::PointXY>::Ptr obstacles_;  // 障碍物信息
+//     pcl::KdTreeFLANN<pcl::PointXY> kdtree_;  // kdtree
+//     std::map<std::pair<float, float>, int> pointToIndex_;
+// };
 
 class Lane{
  public:
@@ -238,7 +238,7 @@ class Lane{
     std::vector<double> lane_lowest_velocity_;  // 道路上每一点的速度下限
     int turn_;  // 转向情况
     double priority_;  // 道路的优先级
-    KDTree kb_tree_;
+    // KDTree kb_tree_;
     // size_t lane_type_; // 道路的类型
     // bool stop_line_existance_ = false; // 道路中是否存在停止线
     // double lane_type_changing_distance_; // 道路类型变换位置，也是停止线位置

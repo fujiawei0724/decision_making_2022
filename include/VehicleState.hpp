@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-18 13:25:25
+ * @LastEditTime: 2022-07-11 11:33:54
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -212,6 +212,28 @@ class FsVehicle {
 
     FrenetState fs_;
     std::vector<Eigen::Matrix<double, 2, 1>> vertex_;
+};
+
+// Vehicle in frenet frame for the generation of image, only contains the position and theta description
+class FsImageVehicle {
+ public:
+    // Constructor
+    FsImageVehicle() = default;
+    FsImageVehicle(const Eigen::Matrix<double, 2, 1>& position, double theta, double length, double width) {
+        position_ = position;
+        theta_ = theta;
+        length_ = length;
+        width_ = width;
+    }
+
+    // Destructor
+    ~FsImageVehicle() = default;
+
+    Eigen::Matrix<double, 2, 1> position_{0.0, 0.0};
+    double theta_{0.0};
+    double length_{0.0};
+    double width_{0.0};
+
 };
 
 class Vehicle {
@@ -450,6 +472,24 @@ class StateTransformer {
         state.time_stamp_ = frenet_state.time_stamp_;
 
         return state;
+    }
+
+    // Transform vehicle to frenet image vehicle
+    // TODO: using coefficients based lane to speed up
+    FsImageVehicle getFsImageVehicleFromVehicle(const Vehicle& vehicle) {
+        // Get lane information
+        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        // Find the nearest point
+        int start_index_of_lane = lane_.findCurrenPositionIndexInLane(vehicle.state_.position_);
+        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        Eigen::Vector2d start_point_in_world_v2d = vehicle.state_.position_;
+        Eigen::Vector2d start_point_position_in_frenet;
+        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        double start_point_theta_in_frenet;
+        Tools::transferThetaCoordinateSystem(trans_matrix, vehicle.state_.theta_, &start_point_theta_in_frenet);
+
+        return FsImageVehicle(start_point_position_in_frenet, start_point_theta_in_frenet, vehicle.length_, vehicle.width_);
     }
 
     // Transform vehicle to frenet vehicle

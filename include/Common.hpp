@@ -76,6 +76,7 @@
 #include "SscPlanning.hpp"
 #include "HpdmPlanner.hpp"
 #include "Utils.hpp"
+#include "ImageGenerator.hpp"
 
 // extern bool GLOBAL_IS_IN_GROUND_;
 // extern std::mutex GLOBAL_IN_GROUND_MUTEX_;

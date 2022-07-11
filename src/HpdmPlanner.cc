@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-03-06 11:30:09
+ * @LastEditTime: 2022-07-11 14:40:38
  * @Description: Hpdm planner.
  */
 
@@ -159,6 +159,20 @@ namespace HpdmPlanner {
         state_array.insert(state_array.end(), surround_vehicles_states_array.begin(), surround_vehicles_states_array.end());
 
         *state = state_array;
+
+        // // DEBUG
+        // // TODO: only for testing, this part of code must be removed from the final version
+        // // Test image generator
+        // std::unordered_map<int, FsImageVehicle> sur_fs_image_vehicles;
+        // for (auto& sur_veh_info : sur_vehicles) {
+        //     sur_fs_image_vehicles[sur_veh_info.first] = stf_->getFsImageVehicleFromVehicle(sur_veh_info.second);
+        // }
+        // cv::Mat img = Utils::ImageGenerator::generateSingleImage(lane_info, sur_fs_image_vehicles);
+        // const std::string name = "image";
+        // cv::namedWindow(name, cv::WINDOW_AUTOSIZE);
+        // cv::imshow(name, img);
+        // cv::waitKey();
+        // // END DEBUG
     }
 
     /**
@@ -224,7 +238,7 @@ namespace HpdmPlanner {
         
         // Forward 
         torch::Tensor pred_res = module.forward(inputs).toTensor();
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(16, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
         auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
