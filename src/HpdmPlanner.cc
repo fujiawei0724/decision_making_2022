@@ -35,7 +35,7 @@ namespace HpdmPlanner {
             change_begin_index = lat_beh_val / 2;
         }
         
-        // Supple data 
+        // supply data 
         std::vector<VehicleBehavior> behavior_sequence;
         if (lat_beh == LateralBehavior::LaneKeeping) {
             for (int i = 0; i < 10; i++) {
@@ -94,7 +94,7 @@ namespace HpdmPlanner {
             change_begin_index = lat_beh_val / 2;
         }
         
-        // Supple data 
+        // supply data 
         std::vector<VehicleIntention> intention_sequence;
         if (lat_beh == LateralBehavior::LaneKeeping) {
             for (int i = 0; i < 10; i++) {
@@ -144,16 +144,16 @@ namespace HpdmPlanner {
     void StateInterface::runOnce(const std::vector<double>& lane_info, const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& sur_vehicles, std::vector<double>* state) {
         std::vector<double> state_array;
         
-        // ~Stage I: supple lane information
+        // ~Stage I: supply lane information
         assert(static_cast<int>(lane_info.size()) == 5);
         state_array.insert(state_array.end(), lane_info.begin(), lane_info.end());
 
-        // ~Stage II: supple ego vehicle information
+        // ~Stage II: supply ego vehicle information
         std::vector<double> ego_vehicle_state_array = transformEgoVehicleState(ego_vehicle);
         assert(static_cast<int>(ego_vehicle_state_array.size()) == 9);
         state_array.insert(state_array.end(), ego_vehicle_state_array.begin(), ego_vehicle_state_array.end());
 
-        // ~Stage III: supple surround vehicles information
+        // ~Stage III: supply surround vehicles information
         std::vector<double> surround_vehicles_states_array = transformSurroundVehicleState(sur_vehicles);
         assert(static_cast<int>(surround_vehicles_states_array.size()) == 80);
         state_array.insert(state_array.end(), surround_vehicles_states_array.begin(), surround_vehicles_states_array.end());
@@ -205,7 +205,7 @@ namespace HpdmPlanner {
             if (sur_vehicles.count(i)) {
                 cur_sur_veh_frenet_state_array = stf_->getFrenetSurroundVehicleStateArray(sur_vehicles.at(i));
             } else {
-                // Supple empty surround vehicles
+                // supply empty surround vehicles
                 cur_sur_veh_frenet_state_array = std::vector<double>(8, 0.0);
             }
             sur_vehicles_states.insert(sur_vehicles_states.end(), cur_sur_veh_frenet_state_array.begin(), cur_sur_veh_frenet_state_array.end());

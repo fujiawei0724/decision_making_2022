@@ -860,23 +860,23 @@ namespace SscPlanner {
         Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
         Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, 1);
 
-        // Supple start point and end point position constraints 
+        // supply start point and end point position constraints 
         A_matrix(0, 0) = 1.0, A_matrix(1, variables_num - 1) = 1.0;
         b_matrix(0, 0) = single_start_constraints[0], b_matrix(1, 0) = single_end_constraints[0];
 
-        // Supple start point and end point velocity constraints
+        // supply start point and end point velocity constraints
         A_matrix(2, 0) = -5.0, A_matrix(2, 1) = 5.0;
         b_matrix(2, 0) = single_start_constraints[1] * start_cube_time_span;
         A_matrix(3, variables_num - 2) = -5.0, A_matrix(3, variables_num - 1) = 5.0;
         b_matrix(3, 0) = single_end_constraints[1] * end_cube_time_span;
 
-        // Supple start point and end point acceleration constraints
+        // supply start point and end point acceleration constraints
         A_matrix(4, 0) = 20.0, A_matrix(4, 1) = -40.0, A_matrix(4, 2) = 20.0;
         b_matrix(4, 0) = single_start_constraints[2] * start_cube_time_span;
         A_matrix(5, variables_num - 3) = 20.0, A_matrix(5, variables_num - 2) = -40.0, A_matrix(5, variables_num - 1) = 20.0;
         b_matrix(5, 0) = single_end_constraints[2] * end_cube_time_span;
 
-        // Supple continuity ensurance constraints
+        // supply continuity ensurance constraints
         for (int i = 0; i < static_cast<int>(equal_constraints.size()); i++) {
             int constraint_index = i + 6;
             for (int j = 0; j < variables_num; j++) {
@@ -1146,23 +1146,23 @@ namespace SscPlanner {
         Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
         Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, 1);
 
-        // Supple start point and end point position constraints 
+        // supply start point and end point position constraints 
         A_matrix(0, 0) = 1.0, A_matrix(1, variables_num - 1) = 1.0;
         b_matrix(0, 0) = single_start_constraints[0], b_matrix(1, 0) = single_end_constraints[0];
 
-        // Supple start point and end point velocity constraints
+        // supply start point and end point velocity constraints
         A_matrix(2, 0) = -5.0, A_matrix(2, 1) = 5.0;
         b_matrix(2, 0) = single_start_constraints[1] * start_cube_time_span;
         A_matrix(3, variables_num - 2) = -5.0, A_matrix(3, variables_num - 1) = 5.0;
         b_matrix(3, 0) = single_end_constraints[1] * end_cube_time_span;
 
-        // Supple start point and end point acceleration constraints
+        // supply start point and end point acceleration constraints
         A_matrix(4, 0) = 20.0, A_matrix(4, 1) = -40.0, A_matrix(4, 2) = 20.0;
         b_matrix(4, 0) = single_start_constraints[2] * start_cube_time_span;
         A_matrix(5, variables_num - 3) = 20.0, A_matrix(5, variables_num - 2) = -40.0, A_matrix(5, variables_num - 1) = 20.0;
         b_matrix(5, 0) = single_end_constraints[2] * end_cube_time_span;
 
-        // Supple continuity ensurance constraints
+        // supply continuity ensurance constraints
         for (int i = 0; i < static_cast<int>(equal_constraints.size()); i++) {
             int constraint_index = i + 6;
             for (int j = 0; j < variables_num; j++) {
@@ -1469,17 +1469,17 @@ namespace SscPlanner {
             std::vector<double> current_velocity_equal_constraints(variables_num, 0.0);
             std::vector<double> current_acceleration_equal_constraints(variables_num, 0.0);
 
-            // Supple position constraints
+            // supply position constraints
             current_position_equal_constraints[current_cube_start_index + 5] = 1.0;
             current_position_equal_constraints[next_cube_start_index] = -1.0;
 
-            // Supple velocity constraints 
+            // supply velocity constraints 
             current_velocity_equal_constraints[current_cube_start_index + 4] = -5.0 / current_cube_time_span;
             current_velocity_equal_constraints[current_cube_start_index + 5] = 5.0 / current_cube_time_span;
             current_velocity_equal_constraints[next_cube_start_index] = -1.0 * -5.0 / next_cube_time_span;
             current_velocity_equal_constraints[next_cube_start_index + 1] = -1.0 * 5.0 / next_cube_time_span;
 
-            // Supple acceleration constraints 
+            // supply acceleration constraints 
             current_acceleration_equal_constraints[current_cube_start_index + 3] = 20.0 / current_cube_time_span;
             current_acceleration_equal_constraints[current_cube_start_index + 4] = -40.0 / current_cube_time_span;
             current_acceleration_equal_constraints[current_cube_start_index + 5] = 20.0 / current_cube_time_span;
@@ -1514,7 +1514,7 @@ namespace SscPlanner {
             s_coefficients_[i].resize(6);
             d_coefficients_[i].resize(6);
             
-            // Supple coefficients
+            // supply coefficients
             int start_influenced_index = i * 6;
             s_coefficients_[i][0] = s[start_influenced_index];
             s_coefficients_[i][1] = s[start_influenced_index + 1];

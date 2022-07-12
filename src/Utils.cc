@@ -18,7 +18,7 @@ void DecisionMaking::SubVehicle::trajectoryPublish(const std::vector<double>& th
     double max_velocity = *std::max_element(velocities.begin(), velocities.end()) + 1.0;
     double min_velocity = std::max(*std::min_element(velocities.begin(), velocities.end()) - 1.0, 0.0);
 
-    // Supple trajectory
+    // supply trajectory
     final_curve.points.resize(generated_trajectory_.size());
     for (int i = 0; i < static_cast<int>(generated_trajectory_.size()); i++) {
         path_planning_msgs::CurvePoint point;
@@ -93,7 +93,7 @@ bool Utils::Trigger::runOnce(PathPlanningUtilities::VehicleState* corres_ego_veh
     if (sqrt((current_vehicle_state_.position_.x_ - traj_[nearest_index].x_) * (current_vehicle_state_.position_.x_ - traj_[nearest_index].x_) + (current_vehicle_state_.position_.x_ - traj_[nearest_index].x_) * (current_vehicle_state_.position_.x_ - traj_[nearest_index].x_)) > 2.0 || fabs(current_vehicle_movement_state_.velocity_ - traj_velocities_[nearest_index]) > 1.0 || fabs(current_vehicle_movement_state_.acceleration_ - traj_accelerations_[nearest_index]) > 1.0) {
         return false;
     } else {
-        // Supple data
+        // supply data
         tmp_corres_ego_veh_state.position_.x_ = traj_[nearest_index].x_;
         tmp_corres_ego_veh_state.position_.y_ = traj_[nearest_index].y_;
         tmp_corres_ego_veh_state.theta_ = traj_thetas_[nearest_index];

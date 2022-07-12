@@ -16,7 +16,7 @@ cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info
     // Initialize canvas 
     cv::Mat img = cv::Mat(ImageGenerator::height_, ImageGenerator::width_, CV_8UC1, cv::Scalar(0));
 
-    // Supple lanes
+    // supply lanes
     cv::line(img, cv::Point(std::round(ImageGenerator::width_ / 2), 0), cv::Point(std::round(ImageGenerator::width_ / 2), ImageGenerator::height_), cv::Scalar(255), std::round(ImageGenerator::lane_width_ * ImageGenerator::scale_));
     if (lane_info[0] == 1) {
         cv::line(img, cv::Point(std::round(ImageGenerator::width_ / 2 + lane_info[2] * ImageGenerator::scale_ / 2), 0), cv::Point(std::round(ImageGenerator::width_ / 2 + lane_info[2] * ImageGenerator::scale_ / 2), ImageGenerator::height_), cv::Scalar(255), std::round(ImageGenerator::lane_width_ * ImageGenerator::scale_));
@@ -25,7 +25,7 @@ cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info
         cv::line(img, cv::Point(std::round(ImageGenerator::width_ / 2 - lane_info[3] * ImageGenerator::scale_ / 2), 0), cv::Point(std::round(ImageGenerator::width_ / 2 - lane_info[3] * ImageGenerator::scale_ / 2), ImageGenerator::height_), cv::Scalar(255), std::round(ImageGenerator::lane_width_ * ImageGenerator::scale_));
     }
 
-    // Supple surrounding vehicles
+    // supply surrounding vehicles
     std::vector<std::vector<cv::Point>> contours;
     for (auto& sur_image_veh_info : surrounding_vehicles) {
         FsImageVehicle cur_sur_image_veh = sur_image_veh_info.second;

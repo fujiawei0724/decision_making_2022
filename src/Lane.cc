@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-09 11:18:16
+ * @LastEditTime: 2022-07-11 15:06:22
  * @Description: Lane components
  */
 
@@ -63,7 +63,6 @@ void Lane::generateLaneCenter(path_planning_msgs::BoundedCurve geometry) {
         this->lane_center_path_in_world_.push_back(point_in_world);
         this->lane_center_path_in_frenet_.push_back(point_in_frenet);
     }
-    // kb_tree_ = KDTree(lane_center_path_in_world_);
 }
 
 // 获取道路中线信息(包括坐标系、中线在world系、中线在frenet系)

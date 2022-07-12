@@ -873,7 +873,7 @@ class TrajectoryOptimizer {
     // Run optimizer
     void runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t, bool* res) {
         
-        // ~Stage I: check, prepare, and supple data 
+        // ~Stage I: check, prepare, and supply data 
         assert(ref_stamps_.size() - 1 == driving_corridor_.size() && static_cast<int>(ref_stamps_.size()) >= 3);
         // Add addtional time stamps to approximate start point and end point 
         std::vector<double> all_ref_stamps = calculateAllRefStamps();

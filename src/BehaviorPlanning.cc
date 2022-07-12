@@ -687,7 +687,7 @@ namespace BehaviorPlanner {
         return veh_beh_set;
     }
 
-    // Add lane change behavior to supple behavior sequence
+    // Add lane change behavior to supply behavior sequence
     std::vector<VehicleBehavior> BehaviorGenerator::completeBehaviorSequence(const std::vector<VehicleBehavior>& cur_beh_seq, LateralBehavior lat_beh, LongitudinalBehavior lon_beh, int num) {
         // Initialize
         std::vector<VehicleBehavior> completed_beh_seq = cur_beh_seq;

@@ -538,7 +538,7 @@ class StateTransformer {
         double start_point_kappa_in_frenet;
         start_point_kappa_in_frenet = ego_vehicle.state_.curvature_ - cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*1.0/(1.0/lane_coordination[start_index_of_lane].worldpos_.kappa_ - start_point_position_in_frenet(1));
 
-        // Supple data
+        // supply data
         // Note that ego vehicle's size is identical with training model, length: 5.0, width: 1.95
         ego_veh_state_array = std::vector<double>{start_point_position_in_frenet(0), start_point_position_in_frenet(1), start_point_theta_in_frenet, 5.0, 1.95, ego_vehicle.state_.velocity_, ego_vehicle.state_.acceleration_, start_point_kappa_in_frenet, ego_vehicle.state_.steer_};
 
@@ -563,7 +563,7 @@ class StateTransformer {
         double start_point_theta_in_frenet;
         Tools::transferThetaCoordinateSystem(trans_matrix, surround_vehicle.state_.theta_, &start_point_theta_in_frenet);
 
-        // Supple data 
+        // supply data 
         surround_veh_state_array = std::vector<double>{1.0, start_point_position_in_frenet(0), start_point_position_in_frenet(1), start_point_theta_in_frenet, surround_vehicle.length_, surround_vehicle.width_, surround_vehicle.state_.velocity_, surround_vehicle.state_.acceleration_};
 
         return surround_veh_state_array;
@@ -1239,7 +1239,7 @@ class BpTpBridge {
                 std::vector<Vehicle> unlaned_obs_traj;
                 unlaned_obs_traj.emplace_back(Vehicle(unlaned_obstacle_index, cur_state, obs.getObstacleLength(), obs.getObstacleWidth()));
 
-                // Supple predicted information 
+                // supply predicted information 
                 for (int i = 1; i < static_cast<int>(pred_traj.size()); i++) {
                     Eigen::Matrix<double, 2, 1> this_position{pred_traj[i].position_.x_, pred_traj[i].position_.y_};
                     State this_state = State(i * 0.4, this_position, pred_traj[i].theta_, pred_traj[i].kappa_, obs.getObstacleVelocity(), 0.0, 0.0);

@@ -60,7 +60,7 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
 
     // Judge replanning start point
     if (replanning_from_previous_trajectory_state_) {
-        // Supple data from previous trajectory
+        // supply data from previous trajectory
         start_point_in_world = prev_traj_corres_veh_state_;
         start_point_movement = prev_traj_corres_veh_movement_state_;
         start_point_kappa = start_point_in_world.kappa_;
@@ -72,7 +72,7 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
         // // END DEBUG
 
     } else {
-        // Supple data from world information
+        // supply data from world information
         this->current_vehicle_world_position_mutex_.lock();
         start_point_in_world = this->current_vehicle_world_position_;
         this->current_vehicle_world_position_mutex_.unlock();

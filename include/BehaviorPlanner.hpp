@@ -208,7 +208,7 @@ public:
     // Generate MPDM vehicle behavior sequence
     std::vector<std::vector<VehicleBehavior>> generateMPDMBehavior();
 
-    // Add lane change behavior to supple behavior sequence
+    // Add lane change behavior to supply behavior sequence
     static std::vector<VehicleBehavior> completeBehaviorSequence(const std::vector<VehicleBehavior>& cur_beh_seq, LateralBehavior lat_beh, LongitudinalBehavior lon_beh, int num);
     
     bool is_lane_keeping_available_{false};
