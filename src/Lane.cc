@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-11 15:06:22
+ * @LastEditTime: 2022-07-13 11:21:16
  * @Description: Lane components
  */
 
@@ -359,6 +359,10 @@ bool Lane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position
 
 }
 
+
+
+
+
 /**
  * @brief speed up calculation
  * @param {double&} remain_station
@@ -432,4 +436,245 @@ void QuinticSpline::calculatePointInfo(const PathPlanningUtilities::CurvePoint& 
     double acc_x = ax * coefficients[2] * 20 + bx * coefficients[1] * 12 + cx * coefficients[0] * 6 + dx * 2;
     double acc_y = ay * coefficients[2] * 20 + by * coefficients[1] * 12 + cy * coefficients[0] * 6 + dy * 2;
     *curvature = (acc_y*vx-acc_x*vy)/pow((vx*vx+vy*vy), 1.5);
+}
+
+/**
+ * @brief calculate the point information given a s
+ * @return the corresponding s
+ */
+PathPlanningUtilities::CurvePoint QuinticSpline::calculateCurvePoint(const Eigen::Matrix<double, 1, 12>& current_coefficients, const double& l, const double& s) {
+    
+    // DEBUG
+    if (s < 0.0 || s > l) {
+        std::cout << "[StateTransformer] s is out of range." << std::endl;
+    }
+    // END DEBUG
+    
+    // Parse parameters
+    double a0, a1, a2, a3, a4, a5, b0, b1, b2, b3, b4, b5;
+    a0 = current_coefficients(0);
+    a1 = current_coefficients(1);
+    a2 = current_coefficients(2);
+    a3 = current_coefficients(3);
+    a4 = current_coefficients(4);
+    a5 = current_coefficients(5);
+    b0 = current_coefficients(6);
+    b1 = current_coefficients(7);
+    b2 = current_coefficients(8);
+    b3 = current_coefficients(9);
+    b4 = current_coefficients(10);
+    b5 = current_coefficients(11);
+
+    std::array<double, 5> s_pows{s, pow(s,2), pow(s,3), pow(s,4), pow(s,5)};
+    PathPlanningUtilities::CurvePoint target_point;
+    target_point.position_.x_ = a0 + a1 * s + a2 * s_pows[1] + a3 * s_pows[2] + a4 * s_pows[3] + a5 * s_pows[4];
+    target_point.position_.y_ = b0 + b1 * s + b2 * s_pows[1] + b3 * s_pows[2] + b4 * s_pows[3] + b5 * s_pows[4];
+    double dx = a1 + 2 * a2 * s + 3 * a3 * s_pows[1] + 4 * a4 * s_pows[2] + 5 * a5 * s_pows[3];
+    double dy = b1 + 2 * b2 * s + 3 * b3 * s_pows[1] + 4 * b4 * s_pows[2] + 5 * b5 * s_pows[3];
+    double ddx = 2 * a2 + 6 * a3 * s + 12 * a4 * s_pows[1] + 20 * a5 * s_pows[2];
+    double ddy = 2 * b2 + 6 * b3 * s + 12 * b4 * s_pows[1] + 20 * b5 * s_pows[2];
+    target_point.theta_ = atan2(dy, dx);
+    target_point.kappa_ = (ddy*dx-ddx*dy)/pow((dx*dx+dy*dy), 1.5);
+    
+    return target_point;
+}
+
+/**
+ * @brief calculate the corresponding arc length given a position
+ * @param {double&} l: whole length
+ * @param {Vector2d&} pos: query position
+ * @return projected arc length
+ */    
+double QuinticSpline::calculateArcLength(const Eigen::Matrix<double, 1, 12>& current_coefficients, const double& l, const Eigen::Vector2d& pos) {
+    // Parse parameters
+    double a0, a1, a2, a3, a4, a5, b0, b1, b2, b3, b4, b5;
+    a0 = current_coefficients(0);
+    a1 = current_coefficients(1);
+    a2 = current_coefficients(2);
+    a3 = current_coefficients(3);
+    a4 = current_coefficients(4);
+    a5 = current_coefficients(5);
+    b0 = current_coefficients(6);
+    b1 = current_coefficients(7);
+    b2 = current_coefficients(8);
+    b3 = current_coefficients(9);
+    b4 = current_coefficients(10);
+    b5 = current_coefficients(11);
+
+    double x0 = pos(0);
+    double y0 = pos(1);
+
+    double s = l;
+    double f_s, f_d_s;
+    static constexpr int max_iter_num = 5;
+    for (int i = 0; i < max_iter_num; i++) {
+        f_s = -a0*a1 - b0*b1 + (-3*pow(a3,2) - 6*a2*a4 - 6*a1*a5 - 3*pow(b2,2) - 6*b2*b3 - 3*pow(b3,2) - 6*b1*b5)*pow(s,5) + (-7*a3*a4 - 7*a2*a5 - 7*b2*b4 - 7*b3*b4)*pow(s,6) + (-4*pow(a4,2) - 8*a3*a5 - 4*pow(b4,2) - 8*b2*b5 - 8*b3*b5)*pow(s,7) + (-9*a4*a5 - 9*b4*b5)*pow(s,8) + (-5*pow(a5,2) - 5*pow(b5,2))*pow(s,9) + a1*x0 + s*(-pow(a1,2) - 2*a0*a2 - b1*2 + 2*a2*x0) + b1*y0 + pow(s,2)*(-3*a1*a2 - 3*a0*a3 - 3*b0*b2 - 3*b0*b3 + 3*a3*x0 + 3*b2*y0 + 3*b3*y0) + pow(s,3)*(-2*pow(a2,2) - 4*a1*a3 - 4*a0*a4 - 4*b1*b2 - 4*b1*b3 - 4*b0*b4 + 4*a4*x0 + 4*b4*y0) + pow(s,4)*(-5*a2*a3 - 5*a1*a4 - 5*a0*a5 - 5*b1*b4 - 5*b0*b5 + 5*a5*x0 + 5*b5*y0);
+        f_d_s = -pow(a1,2) - 2*a0*a2 - pow(b1,2) + (-15*pow(a3,2) - 30*a2*a4 - 30*a1*a5 - 15*pow(b2,2) - 30*b2*b3 - 15*pow(b3,2) - 30*b1*b5)*pow(s,4) + (-42*a3*a4 - 42*a2*a5 - 42*b2*b4 - 42*b3*b4)*pow(s,5) + (-28*pow(a4,2) - 56*a3*a5 - 28*pow(b4,2) - 56*b2*b5 - 56*b3*b5)*pow(s,6) + (-72*a4*a5 - 72*b4*b5)*pow(s,7) + (-45*pow(a5,2) - 45*pow(b5,2))*pow(s,8) + 2*a2*x0 + s*(-6*a1*a2 - 6*a0*a3 - 6*b0*b2 - 6*b0*b3 + 6*a3*x0 + 6*b2*y0 + 6*b3*y0) + pow(s,2)*(-6*pow(a2,2) - 12*a1*a3 - 12*a0*a4 - 12*b1*b2 - 12*b1*b3 - 12*b0*b4 + 12*a4*x0 + 12*b4*y0) + pow(s,3)*(-20*a2*a3 - 20*a1*a4 - 20*a0*a5 - 20*b1*b4 - 20*b0*b5 + 20*a5*x0 + 20*b5*y0);
+        s = s - f_s / f_d_s;
+        if (s > l) s = l;
+        if (s < 0.0) s = l;
+    }
+
+    return s;
+}
+
+// Constructor
+ParametricLane::ParametricLane() = default;
+// Destructor
+ParametricLane::~ParametricLane() = default;
+
+/**
+ * @description: generate the whole information oif the lane
+ * @param {BoundedCurve} geometry: key points of the lane
+ * @param {vector<double>} stations: distances in the continuous points, TODO: replace this with a message from map 
+ * @param {vector<std::array<double, 12>>} coefficients: coefficients for each segment of the whole piecewise quintic spline, TODO: replace this with a message from map
+ */
+void ParametricLane::generateLaneCenter(path_planning_msgs::BoundedCurve geometry, std::vector<double> gaps, std::vector<std::array<double, 12>> coefficients) {
+    // Supply data for gaps and stations 
+    n_ = gaps.size() + 1;
+    gaps_ = gaps;
+    stations_.resize(n_, 0.0);
+    for (int i = 1; i < n_; i++) {
+        stations_[i] = stations_[i - 1] + gaps[i - 1];
+    }
+
+    // Supply data for coefficients
+    coefficients_.resize(n_ - 1, 12);
+    for (int i = 0; i < n_ - 1; i++) {
+        for (int j = 0; j < 12; j++) {
+            coefficients_(i, j) = coefficients[i][j];
+        }
+    }
+
+    // Supply sparse center line point information
+    // TODO: check the necessity of this operation
+    lane_coorination_.resize(n_);
+    points_.resize(n_);
+    for (int i = 0; i < n_; i++) {
+        PathPlanningUtilities::CoordinationPoint coordinate_point;
+        coordinate_point.worldpos_.position_.x_ = geometry.points[i].center_point.x;
+        coordinate_point.worldpos_.position_.y_ = geometry.points[i].center_point.y;
+        coordinate_point.worldpos_.theta_ = geometry.points[i].center_point.theta;
+        coordinate_point.worldpos_.kappa_ = geometry.points[i].center_point.kappa;
+        coordinate_point.station_ = stations_[i];
+        coordinate_point.min_height_ = std::min(-0.1, -geometry.points[i].right_distance);
+        coordinate_point.max_height_ = std::max(0.1, geometry.points[i].left_distance);
+        lane_coorination_[i] = coordinate_point;
+        points_[i] = {geometry.points[i].center_point.x, geometry.points[i].center_point.y};
+    }
+}
+
+/**
+ * @description: transform a point from world to frenet (only containing abscissa and ordinate)
+ * @return point position in frenet frame
+ */    
+Eigen::Vector2d ParametricLane::calculateFrenetPoint(const Eigen::Vector2d& pos) {
+    // Calculate the nearest key point roughly
+    int target_index = calculateNearestScatterPointIndex(pos);
+    // Transform position
+    PathPlanningUtilities::Point2f pos_point;
+    pos_point.x_ = pos(0);
+    pos_point.y_ = pos(1);
+    // Modify the index to find the previous point
+    if (target_index > 0) {
+        PathPlanningUtilities::Point2f transformed_point = Tools::calcNewCoordinationPosition(lane_coorination_[target_index].worldpos_, pos_point);
+        if (transformed_point.x_ < 0.0) {
+            target_index -= 1;
+        }
+    }
+
+    // Get origin arc length 
+    double arc_length = stations_[target_index];
+    // Get extra arc length
+    double extra_arc_length = QuinticSpline::calculateArcLength(coefficients_.row(target_index), gaps_[target_index], pos);
+    arc_length += extra_arc_length;
+
+    // Get the corresponding curve point
+    PathPlanningUtilities::CurvePoint corresponding_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_index), gaps_[target_index], extra_arc_length);
+
+    // Calculate ordinate in frenet frame
+    PathPlanningUtilities::Point2f transformed_cur_pos = Tools::calcNewCoordinationPosition(corresponding_point, pos_point);
+    double lateral_offset = transformed_cur_pos.y_;
+
+    Eigen::Vector2d frenet_pos{arc_length, lateral_offset};
+
+    return frenet_pos;
+}
+
+/**
+ * @description: transform a point from frenet to world (only containing abscissa and ordinate)
+ * @return point position in world frame
+ */ 
+Eigen::Vector2d ParametricLane::calculateWorldPoint(const Eigen::Vector2d& frenet_pos) {
+    // Get the target segment
+    int target_segment_index = std::lower_bound(stations_.begin(), stations_.end(), frenet_pos(0)) - stations_.begin();
+    if (target_segment_index == static_cast<int>(stations_.size()) - 1) {
+        printf("[Lane] frenet position is out of the lane.\n");
+        target_segment_index -= 1;
+    }
+
+    // Calculate the corresponding point in lane
+    double remain_station = frenet_pos(0) - stations_[target_segment_index];
+    PathPlanningUtilities::CurvePoint lane_curve_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_segment_index), gaps_[target_segment_index], remain_station);
+
+    Eigen::Vector2d lane_pos{lane_curve_point.position_.x_, lane_curve_point.position_.y_};
+
+    // Get tangent vector and normal vector, the norm is set with 1.0
+    double lane_orientation = lane_curve_point.theta_;
+    double y = tan(lane_orientation);
+    double x = 1.0;
+    Eigen::Vector2d lane_tangent_vec{x, y};
+    lane_tangent_vec /= lane_tangent_vec.norm();
+    Eigen::Vector2d vec_normal{-lane_tangent_vec(1), lane_tangent_vec(0)};
+    Eigen::Vector2d point = vec_normal * frenet_pos(1) + lane_pos;
+    return point;
+}
+
+/**
+ * @description: calculate the nearest in the lane given a position
+ * @return {*}
+ */    
+PathPlanningUtilities::CurvePoint ParametricLane::findNearestPoint(const Eigen::Vector2d& pos) {
+    // Calculate the nerest key point roughly
+    int target_index = calculateNearestScatterPointIndex(pos);
+
+    PathPlanningUtilities::CurvePoint nearest_point;
+    // Get the nearest point for different situations
+    if (target_index == 0) {
+        double s = QuinticSpline::calculateArcLength(coefficients_.row(0), gaps_[0], pos);
+        nearest_point = QuinticSpline::calculateCurvePoint(coefficients_.row(0), gaps_[0], s);
+        return nearest_point;
+    } else if (target_index == n_ - 1) {
+        double s = QuinticSpline::calculateArcLength(coefficients_.row(n_ - 2), gaps_[n_ - 2], pos);
+        nearest_point = QuinticSpline::calculateCurvePoint(coefficients_.row(n_ - 2), gaps_[n_ - 2], s);
+        return nearest_point;
+    } else {
+        double pre_s = QuinticSpline::calculateArcLength(coefficients_.row(target_index - 1), gaps_[target_index - 1], pos);
+        PathPlanningUtilities::CurvePoint pre_nearest_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_index - 1), gaps_[target_index - 1], pre_s);
+        double next_s = QuinticSpline::calculateArcLength(coefficients_.row(target_index), gaps_[target_index], pos);
+        PathPlanningUtilities::CurvePoint next_nearest_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_index), gaps_[target_index], next_s);
+        if (sqrt(pow(pre_nearest_point.position_.x_ - pos(0), 2) + pow(pre_nearest_point.position_.y_ - pos(1), 2)) <= sqrt(pow(next_nearest_point.position_.x_ - pos(0), 2) + pow(next_nearest_point.position_.y_ - pos(1), 2))) {
+            return pre_nearest_point;
+        } else {
+            return next_nearest_point;
+        }
+    }
+
+}
+
+/**
+ * @description: calculate nearest key points index with binary search
+ * @return the corresponding index
+ */    
+int ParametricLane::calculateNearestScatterPointIndex(const Eigen::Vector2d& pos) {
+    int left = 0, right = n_ - 1;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if ((points_[mid] - pos).norm() >= (points_[mid - 1] - pos).norm()) {
+            right = mid - 1;
+        } else {
+            left = mid + 1;
+        }
+    }
+    return right;
 }
