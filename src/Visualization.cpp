@@ -388,7 +388,7 @@ void VisualizationMethods::visualizeTrafficRules(const std::vector<vec_map_cpp_m
 // }
 
 // 将障碍物形状转化为maker，障碍物类型为obstacle
-visualization_msgs::Marker VisualizationMethods::visualizeObstacleShape(const DecisionMaking::Obstacle &obstacle, int id) {
+visualization_msgs::Marker VisualizationMethods::visualizeObstacleShape(const Obstacle &obstacle, int id) {
     visualization_msgs::Marker obstacle_marker;
     obstacle_marker.header.frame_id = "world";
     obstacle_marker.header.stamp = ros::Time::now();
@@ -425,7 +425,7 @@ visualization_msgs::Marker VisualizationMethods::visualizeObstacleShape(const De
 }
 
 // 将障碍物预测轨迹转化为marker组
-std::vector<visualization_msgs::Marker> VisualizationMethods::visualizeObstacleTrajectory(const DecisionMaking::Obstacle &obstacle, int start_id) {
+std::vector<visualization_msgs::Marker> VisualizationMethods::visualizeObstacleTrajectory(const Obstacle &obstacle, int start_id) {
     std_msgs::ColorRGBA color;
     color.r = 0.4;
     color.g = 0.7;
@@ -459,7 +459,7 @@ std::vector<visualization_msgs::Marker> VisualizationMethods::visualizeObstacleT
 }
 
 // 将障碍物速度转化为marker
-visualization_msgs::Marker VisualizationMethods::visualizeObstacleVelocity(const DecisionMaking::Obstacle &obstacle, int id) {
+visualization_msgs::Marker VisualizationMethods::visualizeObstacleVelocity(const Obstacle &obstacle, int id) {
     std_msgs::ColorRGBA color;
     color.r = 0;
     color.g = 0;
@@ -471,7 +471,7 @@ visualization_msgs::Marker VisualizationMethods::visualizeObstacleVelocity(const
 }
 
 // 将障碍物速度方向转化为marker
-visualization_msgs::Marker VisualizationMethods::visualizeObstacleVelocityDirection(const DecisionMaking::Obstacle &obstacle) {
+visualization_msgs::Marker VisualizationMethods::visualizeObstacleVelocityDirection(const Obstacle &obstacle) {
     visualization_msgs::Marker velocity_direction_marker;
     std_msgs::ColorRGBA color;
     color.r = 1;
@@ -494,7 +494,7 @@ visualization_msgs::Marker VisualizationMethods::visualizeObstacleVelocityDirect
 }
 
 // 将障碍物可视化
-void VisualizationMethods::visualizeObstacles(const std::vector<DecisionMaking::Obstacle> &obstacles, const ros::Publisher &publisher) {
+void VisualizationMethods::visualizeObstacles(const std::vector<Obstacle> &obstacles, const ros::Publisher &publisher) {
     // 首先清空之前的可视化
     visualization_msgs::MarkerArray delete_marker_array, obstacle_marker_array;
     delete_marker_array.markers.push_back(visualizedeleteAllMarker(0));

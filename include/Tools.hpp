@@ -231,7 +231,7 @@ std::vector<double> linspace(T start_in, T end_in, int num_in, bool include_rear
 void calculateParam(const Eigen::SparseMatrix<double, Eigen::RowMajor>& M, std::vector<int>* irowM, std::vector<int>* jcolM);
 
 // For simulation brief
-std::vector<DecisionMaking::Obstacle> filtUnlanedObstaclesForSimulation(const std::vector<DecisionMaking::Obstacle>& raw_unlaned_obs, const Eigen::Matrix<double, 2, 1>& ego_cur_pos);
+std::vector<Obstacle> filtUnlanedObstaclesForSimulation(const std::vector<Obstacle>& raw_unlaned_obs, const Eigen::Matrix<double, 2, 1>& ego_cur_pos);
 
 };  // namespace Tools
 

@@ -794,7 +794,7 @@ namespace BehaviorPlanner {
      * @param unlaned_obstacles means the obstacles ar detached from the lane network, they are employed to generate occupied semantic cubes in trajectory planner. 
      * @return The vehicles could be handle in behavior planner.
      */    
-    std::unordered_map<int, Vehicle> VehicleInterface::getSurroundVehicles(MapInterface* mtf, const std::vector<DecisionMaking::Obstacle>& obstacles, std::vector<DecisionMaking::Obstacle>& unlane_obstacles) {
+    std::unordered_map<int, Vehicle> VehicleInterface::getSurroundVehicles(MapInterface* mtf, const std::vector<Obstacle>& obstacles, std::vector<Obstacle>& unlane_obstacles) {
         int sur_veh_index = 1;
         std::unordered_map<int, Vehicle> surround_vehicles;
         for (const auto& obs: obstacles) {
@@ -810,7 +810,7 @@ namespace BehaviorPlanner {
     }
 
     // Calculate single surround vehicle
-    bool VehicleInterface::getSingleSurroundVehicle(MapInterface* mtf, const DecisionMaking::Obstacle& obstacle, int index, std::pair<int, Vehicle>& sur_veh_info) {
+    bool VehicleInterface::getSingleSurroundVehicle(MapInterface* mtf, const Obstacle& obstacle, int index, std::pair<int, Vehicle>& sur_veh_info) {
         // Judge whether the position is out of the lane network
         if (!mtf->isInLane(obstacle.getObstaclePosition())) {
             return false;

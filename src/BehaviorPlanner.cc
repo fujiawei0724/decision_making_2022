@@ -72,7 +72,7 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
     surround_trajectories_.clear();
 
     // Unlaned obstacles are considered in trajectory planner to generate occupied semantic cubes
-    std::vector<DecisionMaking::Obstacle> unlaned_obstacles;
+    std::vector<Obstacle> unlaned_obstacles;
     std::unordered_map<int, Common::Vehicle> surround_vehicles = BehaviorPlanner::VehicleInterface::getSurroundVehicles(&map_interface, obstacles_, unlaned_obstacles);
     unlaned_obstacles_ = unlaned_obstacles;
 
@@ -149,7 +149,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     unlaned_obstacles_.clear();
 
     // Unlaned obstacles are considered in trajectory planner to generate occupied semantic cubes
-    std::vector<DecisionMaking::Obstacle> unlaned_obstacles;
+    std::vector<Obstacle> unlaned_obstacles;
     std::unordered_map<int, Common::Vehicle> surround_vehicles = BehaviorPlanner::VehicleInterface::getSurroundVehicles(&map_interface, obstacles_, unlaned_obstacles);
     unlaned_obstacles_ = unlaned_obstacles;
 

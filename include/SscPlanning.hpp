@@ -465,7 +465,7 @@ class SscTrajectoryPlanningCore {
     ~SscTrajectoryPlanningCore();
 
     // Load data
-    void load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<DecisionMaking::Obstacle>& sur_unlaned_obs);
+    void load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs);
 
     // Generate trajectory
     void runOnce(bool* result, std::vector<Point3f>* trajectory);
@@ -480,7 +480,7 @@ class SscTrajectoryPlanningCore {
     Lane reference_lane_;
     std::vector<Vehicle> ego_traj_;
     std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
-    std::vector<DecisionMaking::Obstacle> sur_unlaned_obs_;
+    std::vector<Obstacle> sur_unlaned_obs_;
 };
 
 } // End of namespace ssc planner

@@ -140,7 +140,7 @@ class Lane{
     bool isInLane(const PathPlanningUtilities::Point2f& position);
 
     // Pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
-    bool isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<DecisionMaking::Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs);
+    bool isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs);
 
     bool lane_existance_ = false;   // 道路是否可用
     std::vector<PathPlanningUtilities::CoordinationPoint> lane_coorination_;  // 道路完整信息
@@ -202,7 +202,52 @@ class ParametricLane {
      */    
     int calculateNearestScatterPointIndex(const Eigen::Vector2d& pos);
 
+    /**
+     * @description: find the distance given a position
+     * @return nearest distance
+     */    
+    double calculateDistanceFromPosition(const Eigen::Vector2d& cur_pos);
 
+    /**
+     * @description: calculate the extend point in the lane given a position and a distance
+     * @param {double} distance
+     * @return {*}
+     */    
+    Eigen::Vector2d calculateTargetLanePosition(const Eigen::Vector2d& position, double distance);
+
+    /**
+     * @description: judge whether the given point is in the lane
+     * @param {Point2f&} query point
+     */    
+    bool isInLane(const PathPlanningUtilities::Point2f& position);
+
+    /**
+     * @description: pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
+     * @param {position} vehicle position
+     * @param {all_obs} obstacles provided by perception
+     * @param {traffic_vistual_obs} obstacles provided by map
+     * @return whether the lane is occupied 
+     */    
+    bool isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs);
+
+    /**
+     * @description: calculate the corresponding arc length given a position
+     * @param {pos} query position
+     * @return {*}
+     */
+    double calculateArcLength(const Eigen::Vector2d& pos);
+
+
+    /**
+     * @description: get the corresponding curve point from arc length
+     * @param {arc_length} query arc length
+     * @return {*}
+     */
+    PathPlanningUtilities::CurvePoint calculateCurvePointFromArcLength(const double& arc_length);
+
+    
+
+    bool is_existence_{false}; // Existence
     int n_{0}; // Scatter points' number
     std::vector<double> stations_; // Specify the accumulated distance from the first point of lane
     std::vector<double> gaps_; // Specify the distance between each two continuous points
@@ -232,6 +277,12 @@ class QuinticSpline {
      * @return the corresponding s
      */
     static PathPlanningUtilities::CurvePoint calculateCurvePoint(const Eigen::Matrix<double, 1, 12>& current_coefficients, const double& l, const double& s);
+
+    /**
+     * @brief calculate the point information given a s
+     * @return the corresponding s
+     */
+    static Eigen::Vector2d calculatePoint(const Eigen::Matrix<double, 1, 12>& current_coefficients, const double& l, const double& s);
 
     /**
      * @brief calculate the corresponding arc length given a position

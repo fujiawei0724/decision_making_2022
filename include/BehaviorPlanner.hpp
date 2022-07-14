@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-22 10:52:30
+ * @LastEditTime: 2022-07-14 15:10:05
  * @Descripttion: Behavior planner core.
  */
 
@@ -253,10 +253,10 @@ public:
      * @param unlaned_obstacles means the obstacles ar detached from the lane network, they are employed to generate occupied semantic cubes in trajectory planner. 
      * @return The vehicles could be handle in behavior planner.
      */    
-    static std::unordered_map<int, Vehicle> getSurroundVehicles(MapInterface* mtf, const std::vector<DecisionMaking::Obstacle>& obstacles, std::vector<DecisionMaking::Obstacle>& unlane_obstacles);
+    static std::unordered_map<int, Vehicle> getSurroundVehicles(MapInterface* mtf, const std::vector<Obstacle>& obstacles, std::vector<Obstacle>& unlane_obstacles);
 
     // Calculate single surround vehicle
-    static bool getSingleSurroundVehicle(MapInterface* mtf, const DecisionMaking::Obstacle& obstacle, int index, std::pair<int, Vehicle>& sur_veh_info);
+    static bool getSingleSurroundVehicle(MapInterface* mtf, const Obstacle& obstacle, int index, std::pair<int, Vehicle>& sur_veh_info);
 
 
 };

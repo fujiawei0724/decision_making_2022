@@ -1211,19 +1211,19 @@ void visualizeTrafficRules(const std::vector<vec_map_cpp_msgs::VirtualObstacle> 
 // void visualizeSubvehicleOccupationArea(const DecisionMaking::StandardState &choosed_state, double center_scale, const ros::Publisher &publisher, size_t gap = 20);
 
 // 将障碍物形状转化为marker
-visualization_msgs::Marker visualizeObstacleShape(const DecisionMaking::Obstacle &obstacle, int id);
+visualization_msgs::Marker visualizeObstacleShape(const Obstacle &obstacle, int id);
 
 // 将障碍物预测轨迹转化为marker组
-std::vector<visualization_msgs::Marker> visualizeObstacleTrajectory(const DecisionMaking::Obstacle &obstacle, int start_id);
+std::vector<visualization_msgs::Marker> visualizeObstacleTrajectory(const Obstacle &obstacle, int start_id);
 
 // 将障碍物速度转化为marker
-visualization_msgs::Marker visualizeObstacleVelocity(const DecisionMaking::Obstacle &obstacle, int id);
+visualization_msgs::Marker visualizeObstacleVelocity(const Obstacle &obstacle, int id);
 
 // 将障碍物速度方向转化为marker
-visualization_msgs::Marker visualizeObstacleVelocityDirection(const DecisionMaking::Obstacle &obstacle);
+visualization_msgs::Marker visualizeObstacleVelocityDirection(const Obstacle &obstacle);
 
 // 可视化障碍物
-void visualizeObstacles(const std::vector<DecisionMaking::Obstacle> &obstacles, const ros::Publisher &publisher);
+void visualizeObstacles(const std::vector<Obstacle> &obstacles, const ros::Publisher &publisher);
 
 // 本车碰撞点可视化
 void visualizeInteractionPosition(std::vector<Rectangle> *rectangles, const ros::Publisher &publisher);

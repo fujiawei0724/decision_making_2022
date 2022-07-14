@@ -1219,7 +1219,7 @@ class BpTpBridge {
 
     // Transform trajectories of unlaned obstacles from simple prediction
     // TODO: distinguish the unlaned obstacles from laned vehicles
-    std::unordered_map<int, std::vector<FsVehicle>> getUnlanedSurFrenetTrajectories(const std::vector<DecisionMaking::Obstacle>& unlaned_obstacles) {
+    std::unordered_map<int, std::vector<FsVehicle>> getUnlanedSurFrenetTrajectories(const std::vector<Obstacle>& unlaned_obstacles) {
         int unlaned_obstacle_index = 10001;
         std::unordered_map<int, std::vector<Vehicle>> sur_unlaned_trajs;
         for (const auto& obs : unlaned_obstacles) {

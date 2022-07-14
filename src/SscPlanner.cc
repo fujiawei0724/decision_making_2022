@@ -1583,7 +1583,7 @@ namespace SscPlanner {
     SscTrajectoryPlanningCore::~SscTrajectoryPlanningCore() = default;
 
     // Load data
-    void SscTrajectoryPlanningCore::load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<DecisionMaking::Obstacle>& sur_unlaned_obs) {
+    void SscTrajectoryPlanningCore::load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
         current_vehicle_state_ = cur_vehicle_state;
         reference_lane_ = reference_lane;
         ego_traj_ = ego_traj;

@@ -10,7 +10,6 @@
 
 // 障碍物类，用于保存障碍物的信息，主要包含障碍物的位置、大小、速度、属性、预测轨迹等
 // 根据障碍物的信息，可以进行决策和安全性判断。
-namespace DecisionMaking {
 
 class Obstacle {
  public:
@@ -161,5 +160,5 @@ class Obstacle {
     std::vector<PathPlanningUtilities::Point2f> history_position_set_;  // 障碍物的历史位置（未定）
 };
 
-};
+
 #endif

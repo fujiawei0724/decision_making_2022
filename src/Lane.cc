@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-13 21:07:15
+ * @LastEditTime: 2022-07-14 15:47:01
  * @Description: Lane components
  */
 
@@ -319,7 +319,7 @@ bool Lane::isInLane(const PathPlanningUtilities::Point2f& position) {
 }
 
 // Pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
-bool Lane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<DecisionMaking::Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) {
+bool Lane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) {
     // Get valid lane info
     int vehicle_index = findCurrenPositionIndexInLane(position);
     std::vector<PathPlanningUtilities::CurvePoint> valid_lane_curve(lane_curve_.begin() + vehicle_index, lane_curve_.end());
@@ -438,17 +438,17 @@ void QuinticSpline::calculatePointInfo(const PathPlanningUtilities::CurvePoint& 
     *curvature = (acc_y*vx-acc_x*vy)/pow((vx*vx+vy*vy), 1.5);
 }
 
+
+
 /**
  * @brief calculate the point information given a s
  * @return the corresponding s
  */
 PathPlanningUtilities::CurvePoint QuinticSpline::calculateCurvePoint(const Eigen::Matrix<double, 1, 12>& current_coefficients, const double& l, const double& s) {
     
-    // DEBUG
     if (s < 0.0 || s > l) {
-        std::cout << "[StateTransformer] s is out of range." << std::endl;
+        printf("[QuinticSpline] s is out of range.\n");
     }
-    // END DEBUG
     
     // Parse parameters
     double a0, a1, a2, a3, a4, a5, b0, b1, b2, b3, b4, b5;
@@ -475,6 +475,38 @@ PathPlanningUtilities::CurvePoint QuinticSpline::calculateCurvePoint(const Eigen
     double ddy = 2 * b2 + 6 * b3 * s + 12 * b4 * s_pows[1] + 20 * b5 * s_pows[2];
     target_point.theta_ = atan2(dy, dx);
     target_point.kappa_ = (ddy*dx-ddx*dy)/pow((dx*dx+dy*dy), 1.5);
+    
+    return target_point;
+}
+
+/**
+ * @brief calculate the point information given a s
+ * @return the corresponding s
+ */
+Eigen::Vector2d QuinticSpline::calculatePoint(const Eigen::Matrix<double, 1, 12>& current_coefficients, const double& l, const double& s) {
+    if (s < 0.0 || s > l) {
+        printf("[QuinticSpline] s is out of range.\n");
+    }
+    
+    // Parse parameters
+    double a0, a1, a2, a3, a4, a5, b0, b1, b2, b3, b4, b5;
+    a0 = current_coefficients(0);
+    a1 = current_coefficients(1);
+    a2 = current_coefficients(2);
+    a3 = current_coefficients(3);
+    a4 = current_coefficients(4);
+    a5 = current_coefficients(5);
+    b0 = current_coefficients(6);
+    b1 = current_coefficients(7);
+    b2 = current_coefficients(8);
+    b3 = current_coefficients(9);
+    b4 = current_coefficients(10);
+    b5 = current_coefficients(11);
+
+    std::array<double, 5> s_pows{s, pow(s,2), pow(s,3), pow(s,4), pow(s,5)};
+    Eigen::Vector2d target_point;
+    target_point(0) = a0 + a1 * s + a2 * s_pows[1] + a3 * s_pows[2] + a4 * s_pows[3] + a5 * s_pows[4];
+    target_point(1) = b0 + b1 * s + b2 * s_pows[1] + b3 * s_pows[2] + b4 * s_pows[3] + b5 * s_pows[4];
     
     return target_point;
 }
@@ -606,21 +638,22 @@ Eigen::Vector2d ParametricLane::calculateFrenetPoint(const Eigen::Vector2d& pos)
  * @return point position in world frame
  */ 
 Eigen::Vector2d ParametricLane::calculateWorldPoint(const Eigen::Vector2d& frenet_pos) {
-    // Get the target segment
-    int target_segment_index = std::lower_bound(stations_.begin(), stations_.end(), frenet_pos(0)) - stations_.begin();
-    if (target_segment_index == static_cast<int>(stations_.size()) - 1) {
-        printf("[Lane] frenet position is out of the lane.\n");
-        target_segment_index -= 1;
-    }
+    // // Get the target segment
+    // int target_segment_index = std::lower_bound(stations_.begin(), stations_.end(), frenet_pos(0)) - stations_.begin();
+    // if (target_segment_index == static_cast<int>(stations_.size()) - 1) {
+    //     printf("[Lane] frenet position is out of the lane.\n");
+    //     target_segment_index -= 1;
+    // }
 
-    // Calculate the corresponding point in lane
-    double remain_station = frenet_pos(0) - stations_[target_segment_index];
-    PathPlanningUtilities::CurvePoint lane_curve_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_segment_index), gaps_[target_segment_index], remain_station);
+    // // Calculate the corresponding point in lane
+    // double remain_station = frenet_pos(0) - stations_[target_segment_index];
+    // PathPlanningUtilities::CurvePoint lane_curve_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_segment_index), gaps_[target_segment_index], remain_station);
+    PathPlanningUtilities::CurvePoint tangent_point = calculateCurvePointFromArcLength(frenet_pos(0));
 
-    Eigen::Vector2d lane_pos{lane_curve_point.position_.x_, lane_curve_point.position_.y_};
+    Eigen::Vector2d lane_pos{tangent_point.position_.x_, tangent_point.position_.y_};
 
     // Get tangent vector and normal vector, the norm is set with 1.0
-    double lane_orientation = lane_curve_point.theta_;
+    double lane_orientation = tangent_point.theta_;
     double y = tan(lane_orientation);
     double x = 1.0;
     Eigen::Vector2d lane_tangent_vec{x, y};
@@ -677,4 +710,174 @@ int ParametricLane::calculateNearestScatterPointIndex(const Eigen::Vector2d& pos
         }
     }
     return right;
+}
+
+/**
+ * @description: find the distance given a position
+ * @return nearest distance
+ */ 
+double ParametricLane::calculateDistanceFromPosition(const Eigen::Vector2d& cur_pos) {
+    PathPlanningUtilities::CurvePoint nearest_point = findNearestPoint(cur_pos);
+    double distance = sqrt(pow(nearest_point.position_.x_ - cur_pos(0), 2) + pow(nearest_point.position_.y_ - cur_pos(1), 2));
+
+    return distance;
+}
+
+/**
+ * @description: calculate the extend point in the lane given a position and a distance
+ * @param {double} distance
+ * @return {*}
+ */    
+Eigen::Vector2d ParametricLane::calculateTargetLanePosition(const Eigen::Vector2d& pos, double distance) {
+    // Calculate the nearest key point roughly
+    int target_index = calculateNearestScatterPointIndex(pos);
+    // Transform position
+    PathPlanningUtilities::Point2f pos_point;
+    pos_point.x_ = pos(0);
+    pos_point.y_ = pos(1);
+    // Modify the index to find the previous point
+    if (target_index > 0) {
+        PathPlanningUtilities::Point2f transformed_point = Tools::calcNewCoordinationPosition(lane_coorination_[target_index].worldpos_, pos_point);
+        if (transformed_point.x_ < 0.0) {
+            target_index -= 1;
+        }
+    }
+
+    // Get origin arc length 
+    double arc_length = stations_[target_index];
+    // Get extra arc length
+    double extra_arc_length = QuinticSpline::calculateArcLength(coefficients_.row(target_index), gaps_[target_index], pos);
+    arc_length += extra_arc_length;
+
+    // Get arc length of target point
+    double target_arc_length = arc_length + distance;
+    // Get segment of target point
+    int target_point_segment = std::lower_bound(stations_.begin(), stations_.end(), target_arc_length) - stations_.begin();
+    if (target_point_segment >= n_ - 1) {
+        printf("[Lane] target point is out of range.\n");
+        return points_[n_ - 1];
+    } 
+    // Get truncate arc length
+    double truncate_arc_length = target_arc_length - stations_[target_point_segment];
+    // Get the final point
+    Eigen::Vector2d target_point = QuinticSpline::calculatePoint(coefficients_.row(target_point_segment), gaps_[target_point_segment], truncate_arc_length);
+
+    return target_point;
+}
+
+/**
+ * @description: judge whether the given point is in the lane
+ * @param {Point2f&} query point
+ */    
+bool ParametricLane::isInLane(const PathPlanningUtilities::Point2f& position) {
+    // Parse input
+    Eigen::Vector2d pos{position.x_, position.y_};
+    // Get lane width from the nearest key point
+    int nearest_key_point_index = calculateNearestScatterPointIndex(pos);
+    PathPlanningUtilities::CoordinationPoint nearest_path_point = lane_coorination_[nearest_key_point_index];
+    double threshold_dis = std::max(fabs(nearest_path_point.max_height_), fabs(nearest_path_point.min_height_));
+
+    // Calculate distance 
+    double distance = calculateDistanceFromPosition(pos);
+
+    return distance > threshold_dis ? false : true;
+
+}
+
+/**
+ * @description: pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
+ * @param {position} vehicle position
+ * @param {all_obs} obstacles provided by perception
+ * @param {traffic_vistual_obs} obstacles provided by map
+ * @return whether the lane is occupied 
+ */    
+bool ParametricLane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) {
+    // Get the start arc length from the current position of the vehicle
+    double start_arc_length = calculateArcLength(position);
+    // Get the sampled curve points with a gap 5.0m
+    std::vector<PathPlanningUtilities::CurvePoint> sampled_points;
+    for (double cur_arc_length = start_arc_length; cur_arc_length <= stations_[n_ - 1]; cur_arc_length += 5.0) {
+        sampled_points.emplace_back(calculateCurvePointFromArcLength(cur_arc_length));
+    }
+    // Construct occupation area of lane
+    DecisionMaking::RSS::OccupationArea lane_occupation_area = DecisionMaking::RSS::OccupationArea(sampled_points, 3.0, 5.0, 1);
+    // Construct occupation area for static obs
+    for (const auto& obs : all_obs) {
+        // Only static obs
+        if (Tools::isEqual(obs.velocity_, 0.0)) {
+            DecisionMaking::RSS::OccupationArea obs_occupation_area = DecisionMaking::RSS::OccupationArea(obs, 0, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE);
+            size_t subvehicle_interact_index, obstacle_interact_index;
+            if (DecisionMaking::RSS::occupationInteractionJudgement(lane_occupation_area, obs_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+                return true;
+            }
+        }
+    }
+
+    // Construct occupation area for traffic ruel virtual obs
+    for (const auto& traffic_obs : traffic_virtual_obs) {
+        DecisionMaking::RSS::OccupationArea traffic_rule_obstacle_occupation_area = DecisionMaking::RSS::OccupationArea(traffic_obs);
+        size_t subvehicle_interact_index, obstacle_interact_index;
+        // 判断两占用区域是否相交
+        if (occupationInteractionJudgement(lane_occupation_area, traffic_rule_obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+
+            // // DEBUG
+            // printf("Collision with traffic virtual obstacles.\n");
+            // std::cout << "subvehicle_interact_index: " << subvehicle_interact_index << std::endl;
+            // std::cout << "obstacle_interact_index: " << obstacle_interact_index << std::endl;
+            // // END DEBUG
+
+            return true;
+        }
+    }
+
+    return false;
+
+}
+
+/**
+ * @description: calculate the corresponding arc length given a position
+ * @param {pos} query position
+ * @return {*}
+ */
+double ParametricLane::calculateArcLength(const Eigen::Vector2d& pos) {
+    // Calculate the nearest key point roughly
+    int target_index = calculateNearestScatterPointIndex(pos);
+    // Transform position
+    PathPlanningUtilities::Point2f pos_point;
+    pos_point.x_ = pos(0);
+    pos_point.y_ = pos(1);
+    // Modify the index to find the previous point
+    if (target_index > 0) {
+        PathPlanningUtilities::Point2f transformed_point = Tools::calcNewCoordinationPosition(lane_coorination_[target_index].worldpos_, pos_point);
+        if (transformed_point.x_ < 0.0) {
+            target_index -= 1;
+        }
+    }
+
+    // Get origin arc length 
+    double arc_length = stations_[target_index];
+    // Get extra arc length
+    double extra_arc_length = QuinticSpline::calculateArcLength(coefficients_.row(target_index), gaps_[target_index], pos);
+    arc_length += extra_arc_length;
+
+    return arc_length;
+}
+
+/**
+ * @description: get the corresponding curve point from arc length
+ * @param {arc_length} query arc length
+ * @return {*}
+ */
+PathPlanningUtilities::CurvePoint ParametricLane::calculateCurvePointFromArcLength(const double& arc_length) {
+    // Get the target segment
+    int target_segment_index = std::lower_bound(stations_.begin(), stations_.end(), arc_length) - stations_.begin();
+    if (target_segment_index == static_cast<int>(stations_.size()) - 1) {
+        printf("[Lane] frenet position is out of the lane.\n");
+        target_segment_index -= 1;
+    }
+
+    // Calculate the corresponding point in lane
+    double remain_station = arc_length - stations_[target_segment_index];
+    PathPlanningUtilities::CurvePoint lane_curve_point = QuinticSpline::calculateCurvePoint(coefficients_.row(target_segment_index), gaps_[target_segment_index], remain_station);
+    return lane_curve_point;
 }
