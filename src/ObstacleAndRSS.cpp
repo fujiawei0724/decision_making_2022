@@ -308,24 +308,24 @@ void DecisionMaking::SubVehicle::updateValidateTrafficRuleInformation() {
             if (this->NOT_PERMANENT_TRAFFIC_RULE_USAGE_FLAG_) {
                 // 当满足条件1. 当前状态是停车状态，且速度为0。2. 当前位置离空气墙中心很近。此空气墙无效化
                 bool is_validate = true;
-                if (this->current_state_.getStateName() == StateNames::STOP && Tools::isZero(this->current_state_.getVehicleCurrentMovement().velocity_)) {
-                    // 满足第一个条件后，开始判断第二个条件
-                    // 计算空气墙中心点
-                    PathPlanningUtilities::Point2f traffic_rule_obstacle_center;
-                    traffic_rule_obstacle_center.x_ = 0.0;
-                    traffic_rule_obstacle_center.y_ = 0.0;
-                    for (size_t j = 0; j < this->traffic_rule_obstacles_raw_[i].points.size(); j++) {
-                        traffic_rule_obstacle_center.x_ += this->traffic_rule_obstacles_raw_[i].points[j].x;
-                        traffic_rule_obstacle_center.y_ += this->traffic_rule_obstacles_raw_[i].points[j].y;
-                    }
-                    traffic_rule_obstacle_center.x_ = traffic_rule_obstacle_center.x_ / this->traffic_rule_obstacles_raw_[i].points.size();
-                    traffic_rule_obstacle_center.y_ = traffic_rule_obstacle_center.y_ / this->traffic_rule_obstacles_raw_[i].points.size();
-                    // 计算距离
-                    double distance = PathPlanningUtilities::calcDistance(current_position_in_world.position_, traffic_rule_obstacle_center);
-                    if (Tools::isSmall(distance, MAX_DISTANCE_TO_NOT_PERMANENT_TRAFFIC_RULE_TO_MAKE_INVALID)) {
-                        is_validate = false;
-                    }
-                }
+                // if (this->current_state_.getStateName() == StateNames::STOP && Tools::isZero(this->current_state_.getVehicleCurrentMovement().velocity_)) {
+                //     // 满足第一个条件后，开始判断第二个条件
+                //     // 计算空气墙中心点
+                //     PathPlanningUtilities::Point2f traffic_rule_obstacle_center;
+                //     traffic_rule_obstacle_center.x_ = 0.0;
+                //     traffic_rule_obstacle_center.y_ = 0.0;
+                //     for (size_t j = 0; j < this->traffic_rule_obstacles_raw_[i].points.size(); j++) {
+                //         traffic_rule_obstacle_center.x_ += this->traffic_rule_obstacles_raw_[i].points[j].x;
+                //         traffic_rule_obstacle_center.y_ += this->traffic_rule_obstacles_raw_[i].points[j].y;
+                //     }
+                //     traffic_rule_obstacle_center.x_ = traffic_rule_obstacle_center.x_ / this->traffic_rule_obstacles_raw_[i].points.size();
+                //     traffic_rule_obstacle_center.y_ = traffic_rule_obstacle_center.y_ / this->traffic_rule_obstacles_raw_[i].points.size();
+                //     // 计算距离
+                //     double distance = PathPlanningUtilities::calcDistance(current_position_in_world.position_, traffic_rule_obstacle_center);
+                //     if (Tools::isSmall(distance, MAX_DISTANCE_TO_NOT_PERMANENT_TRAFFIC_RULE_TO_MAKE_INVALID)) {
+                //         is_validate = false;
+                //     }
+                // }
                 if (is_validate) {
                     this->traffic_rule_obstacles_.push_back(this->traffic_rule_obstacles_raw_[i]);
                 } else {
@@ -480,28 +480,28 @@ void DecisionMaking::SubVehicle::updateValidateTrafficRuleInformation() {
                 if (this->NOT_PERMANENT_TRAFFIC_RULE_USAGE_FLAG_) {
                     // 当满足条件1. 当前状态是停车状态，且速度为0。2. 当前位置离空气墙中心很近。此空气墙无效化
                     bool is_validate = true;
-                    if (this->current_state_.getStateName() == StateNames::STOP && Tools::isZero(this->current_state_.getVehicleCurrentMovement().velocity_)) {
-                        // 满足第一个条件后，开始判断第二个条件
-                        // 计算空气墙中心点
-                        PathPlanningUtilities::Point2f traffic_rule_obstacle_center;
-                        traffic_rule_obstacle_center.x_ = 0.0;
-                        traffic_rule_obstacle_center.y_ = 0.0;
-                        for (size_t j = 0; j < this->traffic_rule_obstacles_raw_[i].points.size(); j++) {
-                            traffic_rule_obstacle_center.x_ += this->traffic_rule_obstacles_raw_[i].points[j].x;
-                            traffic_rule_obstacle_center.y_ += this->traffic_rule_obstacles_raw_[i].points[j].y;
-                        }
-                        traffic_rule_obstacle_center.x_ = traffic_rule_obstacle_center.x_ / this->traffic_rule_obstacles_raw_[i].points.size();
-                        traffic_rule_obstacle_center.y_ = traffic_rule_obstacle_center.y_ / this->traffic_rule_obstacles_raw_[i].points.size();
-                        // 计算距离
-                        double distance = PathPlanningUtilities::calcDistance(current_position_in_world.position_, traffic_rule_obstacle_center);
-                        // std::cout << "miaomiaomiao" << distance << std::endl;
-                        // std::cout << "center_position is " << traffic_rule_obstacle_center.x_ << "||" << traffic_rule_obstacle_center.y_ << std::endl; 
-                        // LOG(INFO) << "miaomiaomiao" << distance;
-                        // LOG(INFO) << "center_position is " << traffic_rule_obstacle_center.x_ << "||" << traffic_rule_obstacle_center.y_;
-                        if (Tools::isSmall(distance, MAX_DISTANCE_TO_NOT_PERMANENT_TRAFFIC_RULE_TO_MAKE_INVALID)) {
-                            is_validate = false;
-                        }
-                    }
+                    // if (this->current_state_.getStateName() == StateNames::STOP && Tools::isZero(this->current_state_.getVehicleCurrentMovement().velocity_)) {
+                    //     // 满足第一个条件后，开始判断第二个条件
+                    //     // 计算空气墙中心点
+                    //     PathPlanningUtilities::Point2f traffic_rule_obstacle_center;
+                    //     traffic_rule_obstacle_center.x_ = 0.0;
+                    //     traffic_rule_obstacle_center.y_ = 0.0;
+                    //     for (size_t j = 0; j < this->traffic_rule_obstacles_raw_[i].points.size(); j++) {
+                    //         traffic_rule_obstacle_center.x_ += this->traffic_rule_obstacles_raw_[i].points[j].x;
+                    //         traffic_rule_obstacle_center.y_ += this->traffic_rule_obstacles_raw_[i].points[j].y;
+                    //     }
+                    //     traffic_rule_obstacle_center.x_ = traffic_rule_obstacle_center.x_ / this->traffic_rule_obstacles_raw_[i].points.size();
+                    //     traffic_rule_obstacle_center.y_ = traffic_rule_obstacle_center.y_ / this->traffic_rule_obstacles_raw_[i].points.size();
+                    //     // 计算距离
+                    //     double distance = PathPlanningUtilities::calcDistance(current_position_in_world.position_, traffic_rule_obstacle_center);
+                    //     // std::cout << "miaomiaomiao" << distance << std::endl;
+                    //     // std::cout << "center_position is " << traffic_rule_obstacle_center.x_ << "||" << traffic_rule_obstacle_center.y_ << std::endl; 
+                    //     // LOG(INFO) << "miaomiaomiao" << distance;
+                    //     // LOG(INFO) << "center_position is " << traffic_rule_obstacle_center.x_ << "||" << traffic_rule_obstacle_center.y_;
+                    //     if (Tools::isSmall(distance, MAX_DISTANCE_TO_NOT_PERMANENT_TRAFFIC_RULE_TO_MAKE_INVALID)) {
+                    //         is_validate = false;
+                    //     }
+                    // }
                     if (is_validate) {
                         this->traffic_rule_obstacles_.push_back(this->traffic_rule_obstacles_raw_[i]);
                     } else {
@@ -626,36 +626,36 @@ DecisionMaking::RSS::OccupationArea::OccupationArea(const Obstacle &obstacle, si
     this->setPriority(false);
 }
 
-// 构造车道类型的占用区
-DecisionMaking::RSS::OccupationArea::OccupationArea(const StandardState &judge_state, int sample_gap, double width_expanded_factor, double length_expanded_factor) {
-    // 根据车辆当前位置得到起始下标点
-    size_t start_index = judge_state.getVehicleCurrentPositionIndexInTrajectory();
-    // 计算结束下标点
-    double occupation_distance = Tools::normalSubvehicleOccupationDistance(judge_state.getExpectedVelocityCurrent(), MAX_DECCELERATION, CONSTANT_DISTANCE);
-    size_t end_index = std::min(start_index + static_cast<size_t>(occupation_distance/LANE_GAP_DISTANCE), judge_state.getTrajectoryLength() + judge_state.getExtendedTrajectoryLength());
+// // 构造车道类型的占用区
+// DecisionMaking::RSS::OccupationArea::OccupationArea(const StandardState &judge_state, int sample_gap, double width_expanded_factor, double length_expanded_factor) {
+//     // 根据车辆当前位置得到起始下标点
+//     size_t start_index = judge_state.getVehicleCurrentPositionIndexInTrajectory();
+//     // 计算结束下标点
+//     double occupation_distance = Tools::normalSubvehicleOccupationDistance(judge_state.getExpectedVelocityCurrent(), MAX_DECCELERATION, CONSTANT_DISTANCE);
+//     size_t end_index = std::min(start_index + static_cast<size_t>(occupation_distance/LANE_GAP_DISTANCE), judge_state.getTrajectoryLength() + judge_state.getExtendedTrajectoryLength());
 
-    // 初始化占用区域
-    this->occupation_area_.resize(end_index - start_index);
-    for (size_t i = start_index; i < end_index; i++) {
-        Rectangle rectangle;
-        if (i < judge_state.getTrajectoryLength()) {
-            rectangle.center_x_ = judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].position_.x_;
-            rectangle.center_y_ = judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].position_.y_;
-            rectangle.rotation_ = Tools::centerYawToRearYaw(judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].theta_, judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].kappa_, DISTANCE_FROM_REAR_TO_CENTER) ;
-        } else {
-            rectangle.center_x_ = judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].position_.x_;
-            rectangle.center_y_ = judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].position_.y_;
-            rectangle.rotation_ = Tools::centerYawToRearYaw(judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].theta_, judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].kappa_, DISTANCE_FROM_REAR_TO_CENTER);
-        }
-        rectangle.width_ = judge_state.getVehicleWidth() * width_expanded_factor;
-        rectangle.length_ = judge_state.getVehicleLength() * length_expanded_factor;
-        this->occupation_area_[i - start_index] = rectangle;
-    }
-    // 初始化采样占用区域
-    this->samplingOccupationArea(sample_gap);
-    // 设置默认优先级
-    this->setPriority(false);
-}
+//     // 初始化占用区域
+//     this->occupation_area_.resize(end_index - start_index);
+//     for (size_t i = start_index; i < end_index; i++) {
+//         Rectangle rectangle;
+//         if (i < judge_state.getTrajectoryLength()) {
+//             rectangle.center_x_ = judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].position_.x_;
+//             rectangle.center_y_ = judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].position_.y_;
+//             rectangle.rotation_ = Tools::centerYawToRearYaw(judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].theta_, judge_state.getTrajectory()[judge_state.getChoosedTrajectoryIndex()][i].kappa_, DISTANCE_FROM_REAR_TO_CENTER) ;
+//         } else {
+//             rectangle.center_x_ = judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].position_.x_;
+//             rectangle.center_y_ = judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].position_.y_;
+//             rectangle.rotation_ = Tools::centerYawToRearYaw(judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].theta_, judge_state.getExtendedTrajectory()[judge_state.getChoosedTrajectoryIndex()][i - judge_state.getTrajectoryLength()].kappa_, DISTANCE_FROM_REAR_TO_CENTER);
+//         }
+//         rectangle.width_ = judge_state.getVehicleWidth() * width_expanded_factor;
+//         rectangle.length_ = judge_state.getVehicleLength() * length_expanded_factor;
+//         this->occupation_area_[i - start_index] = rectangle;
+//     }
+//     // 初始化采样占用区域
+//     this->samplingOccupationArea(sample_gap);
+//     // 设置默认优先级
+//     this->setPriority(false);
+// }
 
 // 构造空气墙类型的占用区
 DecisionMaking::RSS::OccupationArea::OccupationArea(const vec_map_cpp_msgs::VirtualObstacle &obstacle, int sample_gap) {
@@ -747,782 +747,782 @@ bool DecisionMaking::RSS::occupationInteractionJudgement(const OccupationArea &s
     return false;
 }
 
-// 判断状态是否安全（已获得expected acceleration的状态）
-bool DecisionMaking::RSS::stateSafetyJudgement(const StandardState &judge_state, const std::vector<Obstacle> &obstacles) {
-    double test_acceleration = judge_state.getVehicleDynamicPlanningExpectedAcceleration();
-    // 首先判断是否满足速度限制的需求
-    {
-        double current_velocity = judge_state.getVehicleCurrentMovement().velocity_;
-        double velocity_limitation_max = judge_state.getVelocityLimitationMax();
+// // 判断状态是否安全（已获得expected acceleration的状态）
+// bool DecisionMaking::RSS::stateSafetyJudgement(const StandardState &judge_state, const std::vector<Obstacle> &obstacles) {
+//     double test_acceleration = judge_state.getVehicleDynamicPlanningExpectedAcceleration();
+//     // 首先判断是否满足速度限制的需求
+//     {
+//         double current_velocity = judge_state.getVehicleCurrentMovement().velocity_;
+//         double velocity_limitation_max = judge_state.getVelocityLimitationMax();
 
-        if (Tools::isLarge(current_velocity, velocity_limitation_max)) {
-            // 如果当前速度大于限制速度，必须是处于减速状态，否则状态不安全
-            if (Tools::isLarge(test_acceleration, 0.0)) {
-                LOG(INFO) << "当前状态超速且加速，不安全";
-                return false;
-            }
-        }
-    }
+//         if (Tools::isLarge(current_velocity, velocity_limitation_max)) {
+//             // 如果当前速度大于限制速度，必须是处于减速状态，否则状态不安全
+//             if (Tools::isLarge(test_acceleration, 0.0)) {
+//                 LOG(INFO) << "当前状态超速且加速，不安全";
+//                 return false;
+//             }
+//         }
+//     }
 
-    // 获取本车行驶的最高速度和最低速度
-    double subvehicle_min_velocity = judge_state.getVelocityLimitationMin();
-    // 最高速度由道路期望速度与状态速度限制共同决定
-    double subvehicle_max_velocity = judge_state.getVelocityLimitationMax();
-    LOG(INFO) << "本车当前速度" << judge_state.getVehicleCurrentMovement().velocity_ << "，最大速度可到" << subvehicle_max_velocity << "，最小速度可到" << subvehicle_min_velocity;
+//     // 获取本车行驶的最高速度和最低速度
+//     double subvehicle_min_velocity = judge_state.getVelocityLimitationMin();
+//     // 最高速度由道路期望速度与状态速度限制共同决定
+//     double subvehicle_max_velocity = judge_state.getVelocityLimitationMax();
+//     LOG(INFO) << "本车当前速度" << judge_state.getVehicleCurrentMovement().velocity_ << "，最大速度可到" << subvehicle_max_velocity << "，最小速度可到" << subvehicle_min_velocity;
 
-    // 最后判断与障碍物的相交情况
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
-            if (!Tools::isZero(obstacle.getObstacleVelocity())) {
-                // 如果障碍物速度不为0
-                OccupationArea subvehicle_occupation_area = OccupationArea(judge_state);
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index);
-                size_t subvehicle_interact_index, obstacle_interact_index;
-                if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                    // 如果相交
-                    // 保存为碰撞点
-                    collision_rectangles.push_back(subvehicle_occupation_area.getOccupationArea()[subvehicle_interact_index]);
-                    // 判断是否为逆向行驶
-                    double yaw_gap = std::abs(obstacle_occupation_area.getOccupationArea()[obstacle_interact_index].rotation_ - subvehicle_occupation_area.getOccupationArea()[subvehicle_interact_index].rotation_);
-                    if (Tools::isLarge(yaw_gap, 4.0 / 5.0 * PI)) {
-                        LOG(INFO) << "逆向来车";
-                        return false;
-                    }
-                    // 第一种情况当障碍物到达交点时，本车离交点还有安全距离
-                    // 加速度为0单独考虑
-                    if (Tools::isZero(test_acceleration)) {
-                        if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity) || Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
-                            // 当前车速大于最大车速或小于最小车速时，加速度不能为0
-                            LOG(INFO) << "选中状态不满足当前车速大于最大车速或小于最小车速时，加速度不能为0";
-                            return false;
-                        } else {
-                            double obstacle_reach_interaction_time_consume = obstacle_interact_index * OBSTACLE_MARGIN / obstacle.getObstacleVelocity();
-                            double safe_distance = Tools::getWaitSafeDistance(judge_state.getVehicleCurrentMovement().velocity_, obstacle.getObstacleVelocity());
-                            LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车经过此时间走过的距离为" << obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ << "米，离交点的距离还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ << "米，而安全距离为" << safe_distance << "米";
-                            if (Tools::isSmall(obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件0";
-                                continue;
-                            } else {
-                                LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件0";
-                            }
-                        }
-                    } else {
-                        // 如果加速度不为0
-                        // 计算障碍物到达交点所花时间
-                        double obstacle_reach_interaction_time_consume = obstacle_interact_index * OBSTACLE_MARGIN / obstacle.getObstacleVelocity();
-                        // 在此时间内，本车进行匀加速/减速运动
-                        // 判断本车速度与最高/最低速度的关系
-                        if (Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
-                            // 如果当前车速大于最高车速，那没法进行加速，只能减速，减到最大速度
-                            if (!Tools::isSmall(test_acceleration, 0.0)) {
-                                // 当前车速大于最大车速，加速度必须小于0
-                                LOG(INFO) << "当前车速大于最大车速，而选中状态加速度不小于0";
-                                return false;
-                            } else {
-                                // 这段时间内经过加速度，速度变为了如下值
-                                double subvehicle_interaction_velocity = std::max(judge_state.getVehicleCurrentMovement().velocity_ + obstacle_reach_interaction_time_consume * test_acceleration, subvehicle_min_velocity);
-                                if (Tools::isLarge(subvehicle_interaction_velocity, subvehicle_min_velocity)) {
-                                    // 经过加速度后，速度大于最小速度
-                                    // 计算本车走过的距离vt+0.5at^2
-                                    double subvehicle_traveled_distance = judge_state.getVehicleCurrentMovement().velocity_ * obstacle_reach_interaction_time_consume + 0.5 * test_acceleration * obstacle_reach_interaction_time_consume * obstacle_reach_interaction_time_consume;
-                                    // 根据当前车速计算安全距离
-                                    double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
-                                    // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                    if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                        // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                        LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件1";
-                                        continue;
-                                    } else {
-                                        // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                        LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件1";
-                                    }
-                                } else {
-                                    // 经过加速度后，速度可以减到最小速度
-                                    // 计算走过的距离
-                                    double subvehicle_traveled_distance = subvehicle_min_velocity * obstacle_reach_interaction_time_consume - (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_min_velocity) * (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_min_velocity) / (2.0 * test_acceleration);
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
-                                    // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                    if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                        // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                        LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件2";
-                                        continue;
-                                    } else {
-                                        // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                        LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件2";
-                                    }
-                                }
-                            }
-                        } else if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity)) {
-                            // 如果当前车速小于最低车速，那没法进行减速，只能加速，加到最大速度
-                            if (!Tools::isLarge(test_acceleration, 0.0)) {
-                                // 当前车速小于最低车速，加速度必须大于0
-                                LOG(INFO) << "当前车速小于最低车速，而选中状态的加速度不满足大于0";
-                                return false;
-                            } else {
-                                // 计算经过此加速度后，本车的速度
-                                double subvehicle_interaction_velocity = std::min(judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * obstacle_reach_interaction_time_consume, subvehicle_max_velocity);
-                                if (Tools::isEqual(subvehicle_interaction_velocity, subvehicle_max_velocity)) {
-                                    // 经过此加速度，速度加到了最大速度
-                                    // 计算走过的距离
-                                    double subvehicle_traveled_distance = subvehicle_interaction_velocity * obstacle_reach_interaction_time_consume - (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) * (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration);
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
-                                    // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                    if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                        // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                        LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件3";
-                                        continue;
-                                    } else {
-                                        // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                        LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件3";
-                                    }
-                                } else {
-                                    // 经过此加速度，速度小于最大车速
-                                    // 计算走过的距离
-                                    double subvehicle_traveled_distance = judge_state.getVehicleCurrentMovement().velocity_ * obstacle_reach_interaction_time_consume + 0.5 * test_acceleration * obstacle_reach_interaction_time_consume * obstacle_reach_interaction_time_consume;
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
-                                    // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                    if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                        // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                        LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件4";
-                                        continue;
-                                    } else {
-                                        // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                        LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件4";
-                                    }
-                                }
-                            }
-                        } else {
-                            // 如果当前车速小于最高车速，大于最低车速
-                            // 计算经过加速度后，车辆的速度
-                            double subvehicle_interaction_velocity = std::min(std::max(judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * obstacle_reach_interaction_time_consume, subvehicle_min_velocity), subvehicle_max_velocity);
-                            if (Tools::isEqual(subvehicle_interaction_velocity, subvehicle_max_velocity)) {
-                                // 如果车辆加速到最大速度
-                                // 计算经过的距离
-                                double subvehicle_traveled_distance = subvehicle_interaction_velocity * obstacle_reach_interaction_time_consume - (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) * (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration);
-                                // 计算安全距离
-                                double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
-                                // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                    // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                    LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件5";
-                                    continue;
-                                } else {
-                                    // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                    LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件5";
-                                }
-                            } else if (Tools::isEqual(subvehicle_interaction_velocity, subvehicle_min_velocity)) {
-                                // 如果车辆减速到最小速度
-                                // 计算经过的距离
-                                double subvehicle_traveled_distance = subvehicle_interaction_velocity * obstacle_reach_interaction_time_consume - (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_interaction_velocity) * (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_interaction_velocity) / (2.0 * test_acceleration);
-                                // 计算安全距离
-                                double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
-                                // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                    // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                    LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件6";
-                                    continue;
-                                } else {
-                                    // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                    LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件6";
-                                }
-                            } else {
-                                // 最终车速在最大最小之间
-                                // 计算经过的距离
-                                double subvehicle_traveled_distance = judge_state.getVehicleCurrentMovement().velocity_ * obstacle_reach_interaction_time_consume + 0.5 * test_acceleration * obstacle_reach_interaction_time_consume * obstacle_reach_interaction_time_consume;
-                                // 计算安全距离
-                                double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                // 判断障碍物到达交点时，本车是否离交点还有安全距离
-                                if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                    // 如果本车离交点还有安全距离，说明此加速度可以保障安全
-                                    LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件7";
-                                    continue;
-                                } else {
-                                    // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
-                                    LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件7";
-                                }
-                            }
-                        }
-                    }
+//     // 最后判断与障碍物的相交情况
+//     for (size_t i = 0; i < obstacles.size(); i++) {
+//         Obstacle obstacle = obstacles[i];
+//         for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
+//             if (!Tools::isZero(obstacle.getObstacleVelocity())) {
+//                 // 如果障碍物速度不为0
+//                 OccupationArea subvehicle_occupation_area = OccupationArea(judge_state);
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index);
+//                 size_t subvehicle_interact_index, obstacle_interact_index;
+//                 if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                     // 如果相交
+//                     // 保存为碰撞点
+//                     collision_rectangles.push_back(subvehicle_occupation_area.getOccupationArea()[subvehicle_interact_index]);
+//                     // 判断是否为逆向行驶
+//                     double yaw_gap = std::abs(obstacle_occupation_area.getOccupationArea()[obstacle_interact_index].rotation_ - subvehicle_occupation_area.getOccupationArea()[subvehicle_interact_index].rotation_);
+//                     if (Tools::isLarge(yaw_gap, 4.0 / 5.0 * PI)) {
+//                         LOG(INFO) << "逆向来车";
+//                         return false;
+//                     }
+//                     // 第一种情况当障碍物到达交点时，本车离交点还有安全距离
+//                     // 加速度为0单独考虑
+//                     if (Tools::isZero(test_acceleration)) {
+//                         if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity) || Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
+//                             // 当前车速大于最大车速或小于最小车速时，加速度不能为0
+//                             LOG(INFO) << "选中状态不满足当前车速大于最大车速或小于最小车速时，加速度不能为0";
+//                             return false;
+//                         } else {
+//                             double obstacle_reach_interaction_time_consume = obstacle_interact_index * OBSTACLE_MARGIN / obstacle.getObstacleVelocity();
+//                             double safe_distance = Tools::getWaitSafeDistance(judge_state.getVehicleCurrentMovement().velocity_, obstacle.getObstacleVelocity());
+//                             LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车经过此时间走过的距离为" << obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ << "米，离交点的距离还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ << "米，而安全距离为" << safe_distance << "米";
+//                             if (Tools::isSmall(obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(obstacle_reach_interaction_time_consume * judge_state.getVehicleCurrentMovement().velocity_ + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                 LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件0";
+//                                 continue;
+//                             } else {
+//                                 LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件0";
+//                             }
+//                         }
+//                     } else {
+//                         // 如果加速度不为0
+//                         // 计算障碍物到达交点所花时间
+//                         double obstacle_reach_interaction_time_consume = obstacle_interact_index * OBSTACLE_MARGIN / obstacle.getObstacleVelocity();
+//                         // 在此时间内，本车进行匀加速/减速运动
+//                         // 判断本车速度与最高/最低速度的关系
+//                         if (Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
+//                             // 如果当前车速大于最高车速，那没法进行加速，只能减速，减到最大速度
+//                             if (!Tools::isSmall(test_acceleration, 0.0)) {
+//                                 // 当前车速大于最大车速，加速度必须小于0
+//                                 LOG(INFO) << "当前车速大于最大车速，而选中状态加速度不小于0";
+//                                 return false;
+//                             } else {
+//                                 // 这段时间内经过加速度，速度变为了如下值
+//                                 double subvehicle_interaction_velocity = std::max(judge_state.getVehicleCurrentMovement().velocity_ + obstacle_reach_interaction_time_consume * test_acceleration, subvehicle_min_velocity);
+//                                 if (Tools::isLarge(subvehicle_interaction_velocity, subvehicle_min_velocity)) {
+//                                     // 经过加速度后，速度大于最小速度
+//                                     // 计算本车走过的距离vt+0.5at^2
+//                                     double subvehicle_traveled_distance = judge_state.getVehicleCurrentMovement().velocity_ * obstacle_reach_interaction_time_consume + 0.5 * test_acceleration * obstacle_reach_interaction_time_consume * obstacle_reach_interaction_time_consume;
+//                                     // 根据当前车速计算安全距离
+//                                     double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
+//                                     // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                     if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                         // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                         LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件1";
+//                                         continue;
+//                                     } else {
+//                                         // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                         LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件1";
+//                                     }
+//                                 } else {
+//                                     // 经过加速度后，速度可以减到最小速度
+//                                     // 计算走过的距离
+//                                     double subvehicle_traveled_distance = subvehicle_min_velocity * obstacle_reach_interaction_time_consume - (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_min_velocity) * (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_min_velocity) / (2.0 * test_acceleration);
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
+//                                     // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                     if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                         // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                         LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件2";
+//                                         continue;
+//                                     } else {
+//                                         // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                         LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件2";
+//                                     }
+//                                 }
+//                             }
+//                         } else if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity)) {
+//                             // 如果当前车速小于最低车速，那没法进行减速，只能加速，加到最大速度
+//                             if (!Tools::isLarge(test_acceleration, 0.0)) {
+//                                 // 当前车速小于最低车速，加速度必须大于0
+//                                 LOG(INFO) << "当前车速小于最低车速，而选中状态的加速度不满足大于0";
+//                                 return false;
+//                             } else {
+//                                 // 计算经过此加速度后，本车的速度
+//                                 double subvehicle_interaction_velocity = std::min(judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * obstacle_reach_interaction_time_consume, subvehicle_max_velocity);
+//                                 if (Tools::isEqual(subvehicle_interaction_velocity, subvehicle_max_velocity)) {
+//                                     // 经过此加速度，速度加到了最大速度
+//                                     // 计算走过的距离
+//                                     double subvehicle_traveled_distance = subvehicle_interaction_velocity * obstacle_reach_interaction_time_consume - (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) * (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration);
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
+//                                     // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                     if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                         // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                         LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件3";
+//                                         continue;
+//                                     } else {
+//                                         // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                         LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件3";
+//                                     }
+//                                 } else {
+//                                     // 经过此加速度，速度小于最大车速
+//                                     // 计算走过的距离
+//                                     double subvehicle_traveled_distance = judge_state.getVehicleCurrentMovement().velocity_ * obstacle_reach_interaction_time_consume + 0.5 * test_acceleration * obstacle_reach_interaction_time_consume * obstacle_reach_interaction_time_consume;
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
+//                                     // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                     if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                         // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                         LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件4";
+//                                         continue;
+//                                     } else {
+//                                         // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                         LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件4";
+//                                     }
+//                                 }
+//                             }
+//                         } else {
+//                             // 如果当前车速小于最高车速，大于最低车速
+//                             // 计算经过加速度后，车辆的速度
+//                             double subvehicle_interaction_velocity = std::min(std::max(judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * obstacle_reach_interaction_time_consume, subvehicle_min_velocity), subvehicle_max_velocity);
+//                             if (Tools::isEqual(subvehicle_interaction_velocity, subvehicle_max_velocity)) {
+//                                 // 如果车辆加速到最大速度
+//                                 // 计算经过的距离
+//                                 double subvehicle_traveled_distance = subvehicle_interaction_velocity * obstacle_reach_interaction_time_consume - (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) * (subvehicle_interaction_velocity - judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration);
+//                                 // 计算安全距离
+//                                 double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                 LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
+//                                 // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                 if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                     // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                     LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件5";
+//                                     continue;
+//                                 } else {
+//                                     // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                     LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件5";
+//                                 }
+//                             } else if (Tools::isEqual(subvehicle_interaction_velocity, subvehicle_min_velocity)) {
+//                                 // 如果车辆减速到最小速度
+//                                 // 计算经过的距离
+//                                 double subvehicle_traveled_distance = subvehicle_interaction_velocity * obstacle_reach_interaction_time_consume - (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_interaction_velocity) * (judge_state.getVehicleCurrentMovement().velocity_ - subvehicle_interaction_velocity) / (2.0 * test_acceleration);
+//                                 // 计算安全距离
+//                                 double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                 LOG(INFO) << "障碍物到达交点所花时间为" << obstacle_reach_interaction_time_consume << "秒，本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒，走过了" << subvehicle_traveled_distance << "米，离交点还有" << subvehicle_interact_index * LANE_GAP_DISTANCE - subvehicle_traveled_distance << "米，而安全距离为" << safe_distance << "米";
+//                                 // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                 if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                     // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                     LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件6";
+//                                     continue;
+//                                 } else {
+//                                     // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                     LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件6";
+//                                 }
+//                             } else {
+//                                 // 最终车速在最大最小之间
+//                                 // 计算经过的距离
+//                                 double subvehicle_traveled_distance = judge_state.getVehicleCurrentMovement().velocity_ * obstacle_reach_interaction_time_consume + 0.5 * test_acceleration * obstacle_reach_interaction_time_consume * obstacle_reach_interaction_time_consume;
+//                                 // 计算安全距离
+//                                 double safe_distance = Tools::getWaitSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                 // 判断障碍物到达交点时，本车是否离交点还有安全距离
+//                                 if (Tools::isSmall(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE) || Tools::isEqual(subvehicle_traveled_distance + safe_distance, subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                     // 如果本车离交点还有安全距离，说明此加速度可以保障安全
+//                                     LOG(INFO) << "满足障碍物到达交点时，本车离交点还有安全距离的条件7";
+//                                     continue;
+//                                 } else {
+//                                     // 如果本车离交点没安全距离，说明此加速度不安全，退出此次循环
+//                                     LOG(INFO) << "不满足障碍物到达交点时，本车离交点还有安全距离的条件7";
+//                                 }
+//                             }
+//                         }
+//                     }
 
-                    // 第二种情况当本车到达交点时，障碍物离交点还有安全距离
-                    // 加速度为0单独考虑
-                    if (Tools::isZero(test_acceleration)) {
-                        if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity) || Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
-                            // 当前车速大于最大车速或小于最小车速时，加速度不能为0
-                            LOG(INFO) << "选中状态不满足当前车速大于最大车速或小于最小车速时，加速度不能为0";
-                            return false;
-                        } else {
-                            double subvehicle_reach_interaction_time_consume = subvehicle_interact_index * LANE_GAP_DISTANCE / judge_state.getVehicleCurrentMovement().velocity_;
-                            double safe_distance = Tools::getOvertakeSafeDistance(judge_state.getVehicleCurrentMovement().velocity_, obstacle.getObstacleVelocity());
-                            if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                LOG(INFO) << "本车以匀速" << judge_state.getVehicleCurrentMovement().velocity_ << "到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                continue;
-                            } else {
-                                LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                return false;
-                            }
-                        }
-                    } else {
-                        if (Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
-                            // 当本车速度大于最高速度
-                            if (!Tools::isSmall(test_acceleration, 0.0)) {
-                                // 当前车速大于最大车速，加速度必须小于0
-                                LOG(INFO) << "当前车速大于最大车速，而选中状态加速度不小于0";
-                                return false;
-                            } else {
-                                // 计算当前速度是否可能减速到最低速度
-                                if (Tools::isSmall((subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                    // 当前速度需要减速到最低速度
-                                    // 计算到达交点的时间开销
-                                    double subvehicle_reach_interaction_time_consume = (subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_min_velocity;
-                                    // 计算到达交点时，本车速度
-                                    double subvehicle_interaction_velocity = subvehicle_min_velocity;
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                    if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                        // 障碍物离交点大于安全距离，此时安全
-                                        LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                        continue;
-                                    } else {
-                                        // 障碍物离交点小于安全距离，退出判断
-                                        LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                        return false;
-                                    }
-                                } else {
-                                    // 当前速度不需要减速到最低速度
-                                    // 计算到达交点时的时间开销
-                                    double subvehicle_reach_interaction_time_consume = (sqrt(judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_ + 2.0 * test_acceleration * subvehicle_interact_index * LANE_GAP_DISTANCE) - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration;
-                                    // 计算到达交点时，本车速度
-                                    double subvehicle_interaction_velocity = judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * subvehicle_reach_interaction_time_consume;
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                    if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                        // 障碍物离交点大于安全距离，此时安全
-                                        LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                        continue;
-                                    } else {
-                                        // 障碍物离交点小于安全距离，退出判断
-                                        LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                        return false;
-                                    }
-                                }
-                            }
-                        } else if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity)) {
-                            // 当本车速度小于最低速度
-                            if (!Tools::isLarge(test_acceleration, 0.0)) {
-                                // 当前车速小于最低车速，加速度必须大于0
-                                LOG(INFO) << "当前车速小于最低车速，而选中状态的加速度不满足大于0";
-                                return false;
-                            } else {
-                                // 判断本车速度是否会加速到最大速度
-                                if (Tools::isSmall((subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                    // 本车会加速到最大速度
-                                    // 计算时间开销
-                                    double subvehicle_reach_interaction_time_consume = (subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_max_velocity;
-                                    // 计算到达交点时，本车速度
-                                    double subvehicle_interaction_velocity = subvehicle_max_velocity;
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                    if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                        // 障碍物离交点大于安全距离，此时安全
-                                        LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                        continue;
-                                    } else {
-                                        // 障碍物离交点小于安全距离，退出判断
-                                        LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                        return false;
-                                    }
-                                } else {
-                                    // 本车不会加速到最大速度
-                                    // 计算时间开销
-                                    double subvehicle_reach_interaction_time_consume = (sqrt(judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_ + 2.0 * test_acceleration * subvehicle_interact_index * LANE_GAP_DISTANCE) - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration;
-                                    // 计算到达交点时，本车速度
-                                    double subvehicle_interaction_velocity = judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * subvehicle_reach_interaction_time_consume;
-                                    // 计算安全距离
-                                    double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                    // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                    if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                        // 障碍物离交点大于安全距离，此时安全
-                                        LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                        continue;
-                                    } else {
-                                        // 障碍物离交点小于安全距离，退出判断
-                                        LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                        return false;
-                                    }
-                                }
-                            }
-                        } else {
-                            // 当本车速度处于正常区间
-                            // 判断本车是否会加速到最大速度，或减速到最小速度
-                            if (Tools::isLarge(test_acceleration, 0.0) && Tools::isSmall((subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                // 本车会加速到最大速度
-                                // 计算时间开销
-                                double subvehicle_reach_interaction_time_consume = (subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_max_velocity;
-                                // 计算到达交点时，本车速度
-                                double subvehicle_interaction_velocity = subvehicle_max_velocity;
-                                // 计算安全距离
-                                double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                    // 障碍物离交点大于安全距离，此时安全
-                                    LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                    continue;
-                                } else {
-                                    // 障碍物离交点小于安全距离，退出判断
-                                    LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                    return false;
-                                }
-                            } else if (Tools::isSmall(test_acceleration, 0.0) && Tools::isSmall((subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
-                                // 本车会减速到最小速度
-                                // 计算到达交点的时间开销
-                                double subvehicle_reach_interaction_time_consume = (subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_min_velocity;
-                                // 计算到达交点时，本车速度
-                                double subvehicle_interaction_velocity = subvehicle_min_velocity;
-                                // 计算安全距离
-                                double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                    // 障碍物离交点大于安全距离，此时安全
-                                    LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                    continue;
-                                } else {
-                                    // 障碍物离交点小于安全距离，退出判断
-                                    LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                    return false;
-                                }
-                            } else {
-                                // 本车既不会加速到最大速度，也不会减速到最小速度
-                                // 计算时间开销
-                                double subvehicle_reach_interaction_time_consume = (sqrt(judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_ + 2.0 * test_acceleration * subvehicle_interact_index * LANE_GAP_DISTANCE) - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration;
-                                // 计算到达交点时，本车速度
-                                double subvehicle_interaction_velocity = judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * subvehicle_reach_interaction_time_consume;
-                                // 计算安全距离
-                                double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
-                                // 判断本车达到交点时，障碍物离交点是否还存在安全距离
-                                if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
-                                    // 障碍物离交点大于安全距离，此时安全
-                                    LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
-                                    continue;
-                                } else {
-                                    // 障碍物离交点小于安全距离，退出判断
-                                    LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // 如果不相交，继续下一次判断
-                    continue;
-                }
-            } else {
-                // 如果障碍物速度为0
-                OccupationArea subvehicle_occupation_area = OccupationArea(judge_state);
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE);
-                size_t subvehicle_interact_index, obstacle_interact_index;
-                if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                    // 如果相交，返回false
-                    std::cout << "选中状态与静止障碍物相交" << std::endl;
-                    LOG(INFO) << "选中状态与静止障碍物相交";
-                    return false;
-                } else {
-                    // 如果不相交，继续下一次判断
-                    continue;
-                }
-            }
-        }
-    }
-    std::cout << "当前选中状态经过测试为安全" << std::endl;
-    LOG(INFO) << "当前选中状态经过测试为安全";
-    return true;
-}
+//                     // 第二种情况当本车到达交点时，障碍物离交点还有安全距离
+//                     // 加速度为0单独考虑
+//                     if (Tools::isZero(test_acceleration)) {
+//                         if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity) || Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
+//                             // 当前车速大于最大车速或小于最小车速时，加速度不能为0
+//                             LOG(INFO) << "选中状态不满足当前车速大于最大车速或小于最小车速时，加速度不能为0";
+//                             return false;
+//                         } else {
+//                             double subvehicle_reach_interaction_time_consume = subvehicle_interact_index * LANE_GAP_DISTANCE / judge_state.getVehicleCurrentMovement().velocity_;
+//                             double safe_distance = Tools::getOvertakeSafeDistance(judge_state.getVehicleCurrentMovement().velocity_, obstacle.getObstacleVelocity());
+//                             if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                 LOG(INFO) << "本车以匀速" << judge_state.getVehicleCurrentMovement().velocity_ << "到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                 continue;
+//                             } else {
+//                                 LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                 return false;
+//                             }
+//                         }
+//                     } else {
+//                         if (Tools::isLarge(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_max_velocity)) {
+//                             // 当本车速度大于最高速度
+//                             if (!Tools::isSmall(test_acceleration, 0.0)) {
+//                                 // 当前车速大于最大车速，加速度必须小于0
+//                                 LOG(INFO) << "当前车速大于最大车速，而选中状态加速度不小于0";
+//                                 return false;
+//                             } else {
+//                                 // 计算当前速度是否可能减速到最低速度
+//                                 if (Tools::isSmall((subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                     // 当前速度需要减速到最低速度
+//                                     // 计算到达交点的时间开销
+//                                     double subvehicle_reach_interaction_time_consume = (subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_min_velocity;
+//                                     // 计算到达交点时，本车速度
+//                                     double subvehicle_interaction_velocity = subvehicle_min_velocity;
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                     if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                         // 障碍物离交点大于安全距离，此时安全
+//                                         LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                         continue;
+//                                     } else {
+//                                         // 障碍物离交点小于安全距离，退出判断
+//                                         LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                         return false;
+//                                     }
+//                                 } else {
+//                                     // 当前速度不需要减速到最低速度
+//                                     // 计算到达交点时的时间开销
+//                                     double subvehicle_reach_interaction_time_consume = (sqrt(judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_ + 2.0 * test_acceleration * subvehicle_interact_index * LANE_GAP_DISTANCE) - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration;
+//                                     // 计算到达交点时，本车速度
+//                                     double subvehicle_interaction_velocity = judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * subvehicle_reach_interaction_time_consume;
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                     if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                         // 障碍物离交点大于安全距离，此时安全
+//                                         LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                         continue;
+//                                     } else {
+//                                         // 障碍物离交点小于安全距离，退出判断
+//                                         LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                         return false;
+//                                     }
+//                                 }
+//                             }
+//                         } else if (Tools::isSmall(judge_state.getVehicleCurrentMovement().velocity_, subvehicle_min_velocity)) {
+//                             // 当本车速度小于最低速度
+//                             if (!Tools::isLarge(test_acceleration, 0.0)) {
+//                                 // 当前车速小于最低车速，加速度必须大于0
+//                                 LOG(INFO) << "当前车速小于最低车速，而选中状态的加速度不满足大于0";
+//                                 return false;
+//                             } else {
+//                                 // 判断本车速度是否会加速到最大速度
+//                                 if (Tools::isSmall((subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                     // 本车会加速到最大速度
+//                                     // 计算时间开销
+//                                     double subvehicle_reach_interaction_time_consume = (subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_max_velocity;
+//                                     // 计算到达交点时，本车速度
+//                                     double subvehicle_interaction_velocity = subvehicle_max_velocity;
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                     if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                         // 障碍物离交点大于安全距离，此时安全
+//                                         LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                         continue;
+//                                     } else {
+//                                         // 障碍物离交点小于安全距离，退出判断
+//                                         LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                         return false;
+//                                     }
+//                                 } else {
+//                                     // 本车不会加速到最大速度
+//                                     // 计算时间开销
+//                                     double subvehicle_reach_interaction_time_consume = (sqrt(judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_ + 2.0 * test_acceleration * subvehicle_interact_index * LANE_GAP_DISTANCE) - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration;
+//                                     // 计算到达交点时，本车速度
+//                                     double subvehicle_interaction_velocity = judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * subvehicle_reach_interaction_time_consume;
+//                                     // 计算安全距离
+//                                     double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                     // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                     if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                         // 障碍物离交点大于安全距离，此时安全
+//                                         LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                         continue;
+//                                     } else {
+//                                         // 障碍物离交点小于安全距离，退出判断
+//                                         LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                         return false;
+//                                     }
+//                                 }
+//                             }
+//                         } else {
+//                             // 当本车速度处于正常区间
+//                             // 判断本车是否会加速到最大速度，或减速到最小速度
+//                             if (Tools::isLarge(test_acceleration, 0.0) && Tools::isSmall((subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                 // 本车会加速到最大速度
+//                                 // 计算时间开销
+//                                 double subvehicle_reach_interaction_time_consume = (subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_max_velocity * subvehicle_max_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_max_velocity;
+//                                 // 计算到达交点时，本车速度
+//                                 double subvehicle_interaction_velocity = subvehicle_max_velocity;
+//                                 // 计算安全距离
+//                                 double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                 // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                 if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                     // 障碍物离交点大于安全距离，此时安全
+//                                     LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                     continue;
+//                                 } else {
+//                                     // 障碍物离交点小于安全距离，退出判断
+//                                     LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                     return false;
+//                                 }
+//                             } else if (Tools::isSmall(test_acceleration, 0.0) && Tools::isSmall((subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration), subvehicle_interact_index * LANE_GAP_DISTANCE)) {
+//                                 // 本车会减速到最小速度
+//                                 // 计算到达交点的时间开销
+//                                 double subvehicle_reach_interaction_time_consume = (subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration + (subvehicle_interact_index * LANE_GAP_DISTANCE - (subvehicle_min_velocity * subvehicle_min_velocity - judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_) / (2.0 * test_acceleration)) / subvehicle_min_velocity;
+//                                 // 计算到达交点时，本车速度
+//                                 double subvehicle_interaction_velocity = subvehicle_min_velocity;
+//                                 // 计算安全距离
+//                                 double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                 // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                 if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                     // 障碍物离交点大于安全距离，此时安全
+//                                     LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                     continue;
+//                                 } else {
+//                                     // 障碍物离交点小于安全距离，退出判断
+//                                     LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                     return false;
+//                                 }
+//                             } else {
+//                                 // 本车既不会加速到最大速度，也不会减速到最小速度
+//                                 // 计算时间开销
+//                                 double subvehicle_reach_interaction_time_consume = (sqrt(judge_state.getVehicleCurrentMovement().velocity_ * judge_state.getVehicleCurrentMovement().velocity_ + 2.0 * test_acceleration * subvehicle_interact_index * LANE_GAP_DISTANCE) - judge_state.getVehicleCurrentMovement().velocity_) / test_acceleration;
+//                                 // 计算到达交点时，本车速度
+//                                 double subvehicle_interaction_velocity = judge_state.getVehicleCurrentMovement().velocity_ + test_acceleration * subvehicle_reach_interaction_time_consume;
+//                                 // 计算安全距离
+//                                 double safe_distance = Tools::getOvertakeSafeDistance(subvehicle_interaction_velocity, obstacle.getObstacleVelocity());
+//                                 // 判断本车达到交点时，障碍物离交点是否还存在安全距离
+//                                 if (Tools::isSmall(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN) || Tools::isEqual(subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() + safe_distance, obstacle_interact_index * OBSTACLE_MARGIN)) {
+//                                     // 障碍物离交点大于安全距离，此时安全
+//                                     LOG(INFO) << "本车以加速度" << test_acceleration << "加速到" << subvehicle_interaction_velocity << "米/秒并到达交点所花时间为" << subvehicle_reach_interaction_time_consume << "秒，此时障碍物离交点还有" << obstacle_interact_index * OBSTACLE_MARGIN - subvehicle_reach_interaction_time_consume * obstacle.getObstacleVelocity() << "米，而安全距离为" << safe_distance << "米";
+//                                     continue;
+//                                 } else {
+//                                     // 障碍物离交点小于安全距离，退出判断
+//                                     LOG(INFO) << "不满足当本车到达交点时，障碍物离交点还有安全距离的条件";
+//                                     return false;
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 } else {
+//                     // 如果不相交，继续下一次判断
+//                     continue;
+//                 }
+//             } else {
+//                 // 如果障碍物速度为0
+//                 OccupationArea subvehicle_occupation_area = OccupationArea(judge_state);
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE);
+//                 size_t subvehicle_interact_index, obstacle_interact_index;
+//                 if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                     // 如果相交，返回false
+//                     std::cout << "选中状态与静止障碍物相交" << std::endl;
+//                     LOG(INFO) << "选中状态与静止障碍物相交";
+//                     return false;
+//                 } else {
+//                     // 如果不相交，继续下一次判断
+//                     continue;
+//                 }
+//             }
+//         }
+//     }
+//     std::cout << "当前选中状态经过测试为安全" << std::endl;
+//     LOG(INFO) << "当前选中状态经过测试为安全";
+//     return true;
+// }
 
-// 判断状态的路径是否违反交通规则
-void DecisionMaking::RSS::trafficRuleCheck(StandardState *judge_state, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &obstacles) {
-    // 首先判断状态是否可行
-    if (judge_state->getCapability()) {
-        // 得到本状态的行驶路线的占用区域
-        OccupationArea subvehicle_occupation_area = OccupationArea(*judge_state, SUBVEHICLE_OCCUPANCY_SAMPLING_GAP_FOR_TRAFFIC_CHECK, SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_TRAFFIC_CHECK, SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_TRAFFIC_CHECK);
-        // 遍历交通规则生成的空气墙障碍物
-        for (size_t i = 0; i < obstacles.size(); i++) {
-            // 得到障碍物墙的线体的占用区域
-            OccupationArea traffic_rule_obstacle_occupation_area = OccupationArea(obstacles[i]);
-            size_t subvehicle_interact_index, obstacle_interact_index;
-            // 判断两占用区域是否相交
-            if (occupationInteractionJudgement(subvehicle_occupation_area, traffic_rule_obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                // 在状态中记录此空气墙为有效空气墙
-                if (subvehicle_interact_index > 0) {
-                    // 如果相交，状态不安全
-                    judge_state->setSafety(false);
-                    LOG(INFO) << "状态" << DIC_STATE_NAME[judge_state->getStateName()] << "与空气墙体相交，违法交通规则，不安全";
-                    return;
-                } else {
-                    // 如果已经碰撞判断是不是红绿灯，如果是还是要等
-                    if (obstacles[i].mode == vec_map_cpp_msgs::VirtualObstacle::CONDITION_DECISION) {
-                        judge_state->setSafety(false);
-                        LOG(INFO) << "处于红灯上";
-                        return;
-                    }
-                }
+// // 判断状态的路径是否违反交通规则
+// void DecisionMaking::RSS::trafficRuleCheck(StandardState *judge_state, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &obstacles) {
+//     // 首先判断状态是否可行
+//     if (judge_state->getCapability()) {
+//         // 得到本状态的行驶路线的占用区域
+//         OccupationArea subvehicle_occupation_area = OccupationArea(*judge_state, SUBVEHICLE_OCCUPANCY_SAMPLING_GAP_FOR_TRAFFIC_CHECK, SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_TRAFFIC_CHECK, SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_TRAFFIC_CHECK);
+//         // 遍历交通规则生成的空气墙障碍物
+//         for (size_t i = 0; i < obstacles.size(); i++) {
+//             // 得到障碍物墙的线体的占用区域
+//             OccupationArea traffic_rule_obstacle_occupation_area = OccupationArea(obstacles[i]);
+//             size_t subvehicle_interact_index, obstacle_interact_index;
+//             // 判断两占用区域是否相交
+//             if (occupationInteractionJudgement(subvehicle_occupation_area, traffic_rule_obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                 // 在状态中记录此空气墙为有效空气墙
+//                 if (subvehicle_interact_index > 0) {
+//                     // 如果相交，状态不安全
+//                     judge_state->setSafety(false);
+//                     LOG(INFO) << "状态" << DIC_STATE_NAME[judge_state->getStateName()] << "与空气墙体相交，违法交通规则，不安全";
+//                     return;
+//                 } else {
+//                     // 如果已经碰撞判断是不是红绿灯，如果是还是要等
+//                     if (obstacles[i].mode == vec_map_cpp_msgs::VirtualObstacle::CONDITION_DECISION) {
+//                         judge_state->setSafety(false);
+//                         LOG(INFO) << "处于红灯上";
+//                         return;
+//                     }
+//                 }
 
-            } else {
-                // nothing
-            }
-        }
-    }
-}
+//             } else {
+//                 // nothing
+//             }
+//         }
+//     }
+// }
 
-// 得到交通规则与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
-bool DecisionMaking::RSS::collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, size_t *cut_index) {
-    // 初始化返回值
-    *cut_index = judge_curve.size();
-    bool collision_result = false;
-    // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width, vehicle_length);
-    // 遍历交通障碍物，生成占用区
-    for (size_t i = 0; i < traffic_rule_obstacles.size(); i++) {
-        OccupationArea traffic_rule_obstacle_occupation_area = OccupationArea(traffic_rule_obstacles[i]);
-        size_t subvehicle_interact_index, obstacle_interact_index;
-        // 判断两占用区域是否相交
-        if (occupationInteractionJudgement(subvehicle_occupation_area, traffic_rule_obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-            if (subvehicle_interact_index > 0) {
-                // 如果这一次碰撞点比上一次更近，对碰撞点进行更新
-                // 由于交通规则中都是固定空气墙，不是未来轨迹，就算碰撞点在车辆当前所在位置，也是发生碰撞的
-                if (subvehicle_interact_index < *cut_index) {
-                    *cut_index = subvehicle_interact_index;
-                    collision_result = true;
-                }
-            } else {
-                // 如果已经碰撞判断是不是红绿灯，如果是还是要等
-                if (traffic_rule_obstacles[i].mode == vec_map_cpp_msgs::VirtualObstacle::CONDITION_DECISION) {
-                    LOG(INFO) << "current is in traffic condition obstacle";
-                    *cut_index = subvehicle_interact_index;
-                    collision_result = true;
-                }
-            }
-        }
-    }
-    return collision_result;
-}
+// // 得到交通规则与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
+// bool DecisionMaking::RSS::collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, size_t *cut_index) {
+//     // 初始化返回值
+//     *cut_index = judge_curve.size();
+//     bool collision_result = false;
+//     // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width, vehicle_length);
+//     // 遍历交通障碍物，生成占用区
+//     for (size_t i = 0; i < traffic_rule_obstacles.size(); i++) {
+//         OccupationArea traffic_rule_obstacle_occupation_area = OccupationArea(traffic_rule_obstacles[i]);
+//         size_t subvehicle_interact_index, obstacle_interact_index;
+//         // 判断两占用区域是否相交
+//         if (occupationInteractionJudgement(subvehicle_occupation_area, traffic_rule_obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//             if (subvehicle_interact_index > 0) {
+//                 // 如果这一次碰撞点比上一次更近，对碰撞点进行更新
+//                 // 由于交通规则中都是固定空气墙，不是未来轨迹，就算碰撞点在车辆当前所在位置，也是发生碰撞的
+//                 if (subvehicle_interact_index < *cut_index) {
+//                     *cut_index = subvehicle_interact_index;
+//                     collision_result = true;
+//                 }
+//             } else {
+//                 // 如果已经碰撞判断是不是红绿灯，如果是还是要等
+//                 if (traffic_rule_obstacles[i].mode == vec_map_cpp_msgs::VirtualObstacle::CONDITION_DECISION) {
+//                     LOG(INFO) << "current is in traffic condition obstacle";
+//                     *cut_index = subvehicle_interact_index;
+//                     collision_result = true;
+//                 }
+//             }
+//         }
+//     }
+//     return collision_result;
+// }
 
-// 得到障碍物与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
-bool DecisionMaking::RSS::collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index) {
-    // 初始化返回值
-    *cut_index = judge_curve.size();
-    bool collision_result = false;
-    // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
-    // 遍历障碍物
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        // 遍历障碍物的每一个预测路径
-        for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
-            // 判断是静止障碍物还是动态障碍物
-            if (Tools::isZero(obstacle.getObstacleVelocity())) {
-                // 如果是静止障碍物
-                // 构造障碍物占用区
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, vehicle_velocity, 1);
-                size_t subvehicle_interact_index, obstacle_interact_index;
-                // 判断两占用区域是否相交
-                if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                    // 如果相交，且这一次碰撞点比当前更近，对碰撞点进行更新
-                    // 由于是静态障碍物，不是未来轨迹，就算碰撞点在车辆当前所在位置，也是发生碰撞的
-                    // if (GLOBAL_IS_IN_JIFEI_) {
-                    //     if (subvehicle_interact_index == 0) {
-                    //         continue;
-                    //     }
-                    // }
-                    if (subvehicle_interact_index < *cut_index) {
-                        *cut_index = subvehicle_interact_index;
-                        collision_result = true;
-                    }
-                }
-            } else {
-            }
-        }
-    }
-    return collision_result;
-}
+// // 得到障碍物与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
+// bool DecisionMaking::RSS::collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index) {
+//     // 初始化返回值
+//     *cut_index = judge_curve.size();
+//     bool collision_result = false;
+//     // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
+//     // 遍历障碍物
+//     for (size_t i = 0; i < obstacles.size(); i++) {
+//         Obstacle obstacle = obstacles[i];
+//         // 遍历障碍物的每一个预测路径
+//         for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
+//             // 判断是静止障碍物还是动态障碍物
+//             if (Tools::isZero(obstacle.getObstacleVelocity())) {
+//                 // 如果是静止障碍物
+//                 // 构造障碍物占用区
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, vehicle_velocity, 1);
+//                 size_t subvehicle_interact_index, obstacle_interact_index;
+//                 // 判断两占用区域是否相交
+//                 if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                     // 如果相交，且这一次碰撞点比当前更近，对碰撞点进行更新
+//                     // 由于是静态障碍物，不是未来轨迹，就算碰撞点在车辆当前所在位置，也是发生碰撞的
+//                     // if (GLOBAL_IS_IN_JIFEI_) {
+//                     //     if (subvehicle_interact_index == 0) {
+//                     //         continue;
+//                     //     }
+//                     // }
+//                     if (subvehicle_interact_index < *cut_index) {
+//                         *cut_index = subvehicle_interact_index;
+//                         collision_result = true;
+//                     }
+//                 }
+//             } else {
+//             }
+//         }
+//     }
+//     return collision_result;
+// }
 
-// 得到障碍物与路径碰撞的最近碰撞点在路径中的下标(带距离判断)，返回值是true表示发生碰撞，false表示未发生碰撞
-bool DecisionMaking::RSS::collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index, bool is_big) {
-    // 初始化返回值
-    *cut_index = judge_curve.size();
-    bool collision_result = false;
-    // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
-    // 遍历障碍物
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        // 遍历障碍物的每一个预测路径
-        for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
-            // 判断是静止障碍物还是动态障碍物
-            if (Tools::isZero(obstacle.getObstacleVelocity())) {
-                // 如果是静止障碍物
-                // 构造障碍物占用区
-                if (is_big) {
-                    // 需要大膨胀障碍物,修改障碍物长和宽
-                    obstacle.setObstacleShape(obstacle.getObstacleWidth() + BIGGER_OBSTACLE_EXTRA_EXPAND_CONST, obstacle.getObstacleLength() + BIGGER_OBSTACLE_EXTRA_EXPAND_CONST);
-                }
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, vehicle_velocity, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE);
-                size_t subvehicle_interact_index, obstacle_interact_index;
-                // 判断两占用区域是否相交
-                if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                    // 如果相交，且这一次碰撞点比当前更近，对碰撞点进行更新
-                    // 由于是静态障碍物，不是未来轨迹，就算碰撞点在车辆当前所在位置，也是发生碰撞的
-                    // if (GLOBAL_IS_IN_JIFEI_) {
-                    //     if (subvehicle_interact_index == 0) {
-                    //         continue;
-                    //     }
-                    // }
-                    if (subvehicle_interact_index < *cut_index) {
-                        *cut_index = subvehicle_interact_index;
-                        collision_result = true;
-                    }
-                } else {
-                    // 如果不碰撞
-                }
-            }
-        }
-    }
-    return collision_result;
-}
+// // 得到障碍物与路径碰撞的最近碰撞点在路径中的下标(带距离判断)，返回值是true表示发生碰撞，false表示未发生碰撞
+// bool DecisionMaking::RSS::collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index, bool is_big) {
+//     // 初始化返回值
+//     *cut_index = judge_curve.size();
+//     bool collision_result = false;
+//     // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
+//     // 遍历障碍物
+//     for (size_t i = 0; i < obstacles.size(); i++) {
+//         Obstacle obstacle = obstacles[i];
+//         // 遍历障碍物的每一个预测路径
+//         for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
+//             // 判断是静止障碍物还是动态障碍物
+//             if (Tools::isZero(obstacle.getObstacleVelocity())) {
+//                 // 如果是静止障碍物
+//                 // 构造障碍物占用区
+//                 if (is_big) {
+//                     // 需要大膨胀障碍物,修改障碍物长和宽
+//                     obstacle.setObstacleShape(obstacle.getObstacleWidth() + BIGGER_OBSTACLE_EXTRA_EXPAND_CONST, obstacle.getObstacleLength() + BIGGER_OBSTACLE_EXTRA_EXPAND_CONST);
+//                 }
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, vehicle_velocity, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE);
+//                 size_t subvehicle_interact_index, obstacle_interact_index;
+//                 // 判断两占用区域是否相交
+//                 if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                     // 如果相交，且这一次碰撞点比当前更近，对碰撞点进行更新
+//                     // 由于是静态障碍物，不是未来轨迹，就算碰撞点在车辆当前所在位置，也是发生碰撞的
+//                     // if (GLOBAL_IS_IN_JIFEI_) {
+//                     //     if (subvehicle_interact_index == 0) {
+//                     //         continue;
+//                     //     }
+//                     // }
+//                     if (subvehicle_interact_index < *cut_index) {
+//                         *cut_index = subvehicle_interact_index;
+//                         collision_result = true;
+//                     }
+//                 } else {
+//                     // 如果不碰撞
+//                 }
+//             }
+//         }
+//     }
+//     return collision_result;
+// }
 
-// 得到动态障碍物与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
-bool DecisionMaking::RSS::collisionWithDynamicObstacles(const PathPlanningUtilities::Curve &judge_curve, double velocity,double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles, size_t *cut_index) {
-    // 初始化返回值
-    *cut_index = judge_curve.size();
-    bool collision_result = false;
-    // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
-    // 遍历障碍物
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        // 遍历障碍物的每一个预测路径
-        for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
-            // 判断是静止障碍物还是动态障碍物
-            if (Tools::isZero(obstacle.getObstacleVelocity())) {
-                // 如果是静止障碍物，不进行处理
-            } else {
-                // 如果是运动障碍物
-                // 构造障碍物占用区
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, velocity, DYNAMIC_OBSTACLE_COLLISION_CHECK_SAMPLING_GAP);
-                size_t subvehicle_interact_index, obstacle_interact_index;
-                // 判断两占用区域是否相交
-                if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                    // 发生碰撞时，有两种情况可以不用考虑障碍物，一是本车先到碰撞点且障碍物还有风险距离，二是障碍物到碰撞点时本车还有风险距离
-                    bool is_safe = false;
-                    // 碰撞点是车所在位置为特殊情况
-                    if (subvehicle_interact_index == 0 && obstacle_interact_index != 0) {
-                        is_safe = true;
-                    }
-                    // 第一种情况
-                    {
-                        // 本车到达碰撞点所花时间
-                        double traveled_time = static_cast<double>(subvehicle_interact_index) * LANE_GAP_DISTANCE / velocity;
-                        // 风险距离
-                        double safe_distance = Tools::getOvertakeSafeDistance(velocity, obstacle.getObstacleVelocity());
-                        if (!Tools::isSmall(static_cast<double>(obstacle_interact_index) * OBSTACLE_MARGIN, traveled_time * obstacle.getObstacleVelocity() + safe_distance)) {
-                            is_safe = true;                        
-                        }
-                    }
-                    // 第二种情况
-                    {
-                        // 障碍物到达碰撞点所花时间
-                        double traveled_time = static_cast<double>(obstacle_interact_index) * OBSTACLE_MARGIN / obstacle.getObstacleVelocity();
-                        // 风险距离
-                        double safe_distance = Tools::getWaitSafeDistance(velocity, obstacle.getObstacleVelocity());
-                        if (!Tools::isSmall(static_cast<double>(subvehicle_interact_index) * LANE_GAP_DISTANCE, velocity * traveled_time + safe_distance)) {
-                            is_safe = true;
-                        }
-                    }
+// // 得到动态障碍物与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
+// bool DecisionMaking::RSS::collisionWithDynamicObstacles(const PathPlanningUtilities::Curve &judge_curve, double velocity,double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles, size_t *cut_index) {
+//     // 初始化返回值
+//     *cut_index = judge_curve.size();
+//     bool collision_result = false;
+//     // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
+//     // 遍历障碍物
+//     for (size_t i = 0; i < obstacles.size(); i++) {
+//         Obstacle obstacle = obstacles[i];
+//         // 遍历障碍物的每一个预测路径
+//         for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
+//             // 判断是静止障碍物还是动态障碍物
+//             if (Tools::isZero(obstacle.getObstacleVelocity())) {
+//                 // 如果是静止障碍物，不进行处理
+//             } else {
+//                 // 如果是运动障碍物
+//                 // 构造障碍物占用区
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, velocity, DYNAMIC_OBSTACLE_COLLISION_CHECK_SAMPLING_GAP);
+//                 size_t subvehicle_interact_index, obstacle_interact_index;
+//                 // 判断两占用区域是否相交
+//                 if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                     // 发生碰撞时，有两种情况可以不用考虑障碍物，一是本车先到碰撞点且障碍物还有风险距离，二是障碍物到碰撞点时本车还有风险距离
+//                     bool is_safe = false;
+//                     // 碰撞点是车所在位置为特殊情况
+//                     if (subvehicle_interact_index == 0 && obstacle_interact_index != 0) {
+//                         is_safe = true;
+//                     }
+//                     // 第一种情况
+//                     {
+//                         // 本车到达碰撞点所花时间
+//                         double traveled_time = static_cast<double>(subvehicle_interact_index) * LANE_GAP_DISTANCE / velocity;
+//                         // 风险距离
+//                         double safe_distance = Tools::getOvertakeSafeDistance(velocity, obstacle.getObstacleVelocity());
+//                         if (!Tools::isSmall(static_cast<double>(obstacle_interact_index) * OBSTACLE_MARGIN, traveled_time * obstacle.getObstacleVelocity() + safe_distance)) {
+//                             is_safe = true;                        
+//                         }
+//                     }
+//                     // 第二种情况
+//                     {
+//                         // 障碍物到达碰撞点所花时间
+//                         double traveled_time = static_cast<double>(obstacle_interact_index) * OBSTACLE_MARGIN / obstacle.getObstacleVelocity();
+//                         // 风险距离
+//                         double safe_distance = Tools::getWaitSafeDistance(velocity, obstacle.getObstacleVelocity());
+//                         if (!Tools::isSmall(static_cast<double>(subvehicle_interact_index) * LANE_GAP_DISTANCE, velocity * traveled_time + safe_distance)) {
+//                             is_safe = true;
+//                         }
+//                     }
 
-                    if (!is_safe) {
-                        if (subvehicle_interact_index < *cut_index) {
-                            *cut_index = subvehicle_interact_index;
-                            collision_result = true;
-                        }
-                    } else {
-                        // 判断是否为逆向来车
-                        double yaw_gap = std::abs(Tools::safeThetaTransform(obstacle_occupation_area.getOccupationArea()[obstacle_interact_index].rotation_ - subvehicle_occupation_area.getOccupationArea()[subvehicle_interact_index].rotation_));
-                        if (Tools::isLarge(yaw_gap, 4.0 / 5.0 * PI)) {
-                            LOG(INFO) << "逆向来车";
-                            *cut_index = subvehicle_interact_index;
-                            collision_result = true;
-                        } else {
-                            LOG(INFO) << "障碍物离碰撞点较远，无需考虑";
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return collision_result;
-}
+//                     if (!is_safe) {
+//                         if (subvehicle_interact_index < *cut_index) {
+//                             *cut_index = subvehicle_interact_index;
+//                             collision_result = true;
+//                         }
+//                     } else {
+//                         // 判断是否为逆向来车
+//                         double yaw_gap = std::abs(Tools::safeThetaTransform(obstacle_occupation_area.getOccupationArea()[obstacle_interact_index].rotation_ - subvehicle_occupation_area.getOccupationArea()[subvehicle_interact_index].rotation_));
+//                         if (Tools::isLarge(yaw_gap, 4.0 / 5.0 * PI)) {
+//                             LOG(INFO) << "逆向来车";
+//                             *cut_index = subvehicle_interact_index;
+//                             collision_result = true;
+//                         } else {
+//                             LOG(INFO) << "障碍物离碰撞点较远，无需考虑";
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     return collision_result;
+// }
 
-// 判断蔽障道路是否可以快速通过
-bool DecisionMaking::RSS::isAvoidanceQuickPass(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles) {
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        // 遍历障碍物的每一个预测路径
-        for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
-            // 判断是静止障碍物还是动态障碍物
-            if (Tools::isZero(obstacle.getObstacleVelocity())) {
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE, true);
-                size_t subvehicle_interact_index, obstacle_interact_index;
-                // 判断两占用区域是否相交
-                if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
+// // 判断蔽障道路是否可以快速通过
+// bool DecisionMaking::RSS::isAvoidanceQuickPass(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles) {
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, vehicle_width * SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK, vehicle_length * SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK);
+//     for (size_t i = 0; i < obstacles.size(); i++) {
+//         Obstacle obstacle = obstacles[i];
+//         // 遍历障碍物的每一个预测路径
+//         for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
+//             // 判断是静止障碍物还是动态障碍物
+//             if (Tools::isZero(obstacle.getObstacleVelocity())) {
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, OBSTACLE_OCCUPANCY_AREA_SAMPLING_GAP_FOR_STATIC_OBSTACLE, true);
+//                 size_t subvehicle_interact_index, obstacle_interact_index;
+//                 // 判断两占用区域是否相交
+//                 if (occupationInteractionJudgement(subvehicle_occupation_area, obstacle_occupation_area, &subvehicle_interact_index, &obstacle_interact_index)) {
+//                     return false;
+//                 }
+//             }
+//         }
+//     }
+//     return true;
+// }
 
-// 获取障碍物到路径的距离
-double DecisionMaking::RSS::getObstacleDistanceToCurve(const PathPlanningUtilities::Curve &curve, const Obstacle &obstacle) {
-    double distance = OBSTACLE_TO_PATH_MAX_DISTANCE;
-    for (size_t j = 0; j < curve.size(); j++) {
-        // 进行坐标转化
-        PathPlanningUtilities::Point2f local_position = Tools::calcNewCoordinationPosition(curve[j], obstacle.getObstaclePosition());
-        if (Tools::isSmall(local_position.x_,0.0) && j > 0) {
-            // 找到了对应的点
-            distance = std::fabs(local_position.y_);
-            return distance;
-        }
-    }
-    return distance;
-}
+// // 获取障碍物到路径的距离
+// double DecisionMaking::RSS::getObstacleDistanceToCurve(const PathPlanningUtilities::Curve &curve, const Obstacle &obstacle) {
+//     double distance = OBSTACLE_TO_PATH_MAX_DISTANCE;
+//     for (size_t j = 0; j < curve.size(); j++) {
+//         // 进行坐标转化
+//         PathPlanningUtilities::Point2f local_position = Tools::calcNewCoordinationPosition(curve[j], obstacle.getObstaclePosition());
+//         if (Tools::isSmall(local_position.x_,0.0) && j > 0) {
+//             // 找到了对应的点
+//             distance = std::fabs(local_position.y_);
+//             return distance;
+//         }
+//     }
+//     return distance;
+// }
 
-// 计算两个占用区域之间的距离
-void DecisionMaking::RSS::occupationDistanceCalculation(const OccupationArea &subvehicle_occupation_area, const OccupationArea &obstacle_occupation_area, double distance_upper, std::vector<double>* result) {
-    for (size_t i = 0; i < subvehicle_occupation_area.getSampledOccupationArea().size(); i++) {
-        double min_distance = distance_upper;
-        size_t subvehicle_true_index = subvehicle_occupation_area.getSampledOccupationAreaBijectionIndex(i);
-        for (size_t j = 0; j < obstacle_occupation_area.getSampledOccupationArea().size(); j++) {
-            double distance = Tools::rectangleShortestDistanceWithUpper(subvehicle_occupation_area.getSampledOccupationArea()[i], obstacle_occupation_area.getSampledOccupationArea()[j], distance_upper);
-            if (Tools::isSmall(distance, min_distance)) {
-                min_distance = distance;
-            }
-            // 如果最小距离是0,要精确化碰撞点
-            if (Tools::isZero(min_distance)) {
-                // 首先记录当前点距离为0.0
-                assert(subvehicle_true_index < (*result).size());
-                (*result)[subvehicle_true_index] = min_distance;
-                // 进行精细化
-                if (i == 0) {
-                    // 如果相交点就在车辆当前所在位置，不需要进行精细化
-                    goto record;
-                } else {
-                    // 如果相交点不在车辆当前所在位置
-                    size_t subvehicle_last_interact_index = subvehicle_occupation_area.getSampledOccupationAreaBijectionIndex(i - 1);
-                    for (size_t k = subvehicle_last_interact_index; k <= subvehicle_true_index; k++) {
-                        if (Tools::isZero(Tools::rectangleShortestDistance(subvehicle_occupation_area.getOccupationArea()[k], obstacle_occupation_area.getSampledOccupationArea()[j]))) {
-                            subvehicle_true_index = k;
-                            goto record;
-                        }
-                    }
-                }
-            }
-        }
-        record:
-        // 更新距离保存结果
-        assert(subvehicle_true_index < (*result).size());
-        if (Tools::isLarge((*result)[subvehicle_true_index], min_distance)) {
-            (*result)[subvehicle_true_index] = min_distance;
-        }
-    }
-}
+// // 计算两个占用区域之间的距离
+// void DecisionMaking::RSS::occupationDistanceCalculation(const OccupationArea &subvehicle_occupation_area, const OccupationArea &obstacle_occupation_area, double distance_upper, std::vector<double>* result) {
+//     for (size_t i = 0; i < subvehicle_occupation_area.getSampledOccupationArea().size(); i++) {
+//         double min_distance = distance_upper;
+//         size_t subvehicle_true_index = subvehicle_occupation_area.getSampledOccupationAreaBijectionIndex(i);
+//         for (size_t j = 0; j < obstacle_occupation_area.getSampledOccupationArea().size(); j++) {
+//             double distance = Tools::rectangleShortestDistanceWithUpper(subvehicle_occupation_area.getSampledOccupationArea()[i], obstacle_occupation_area.getSampledOccupationArea()[j], distance_upper);
+//             if (Tools::isSmall(distance, min_distance)) {
+//                 min_distance = distance;
+//             }
+//             // 如果最小距离是0,要精确化碰撞点
+//             if (Tools::isZero(min_distance)) {
+//                 // 首先记录当前点距离为0.0
+//                 assert(subvehicle_true_index < (*result).size());
+//                 (*result)[subvehicle_true_index] = min_distance;
+//                 // 进行精细化
+//                 if (i == 0) {
+//                     // 如果相交点就在车辆当前所在位置，不需要进行精细化
+//                     goto record;
+//                 } else {
+//                     // 如果相交点不在车辆当前所在位置
+//                     size_t subvehicle_last_interact_index = subvehicle_occupation_area.getSampledOccupationAreaBijectionIndex(i - 1);
+//                     for (size_t k = subvehicle_last_interact_index; k <= subvehicle_true_index; k++) {
+//                         if (Tools::isZero(Tools::rectangleShortestDistance(subvehicle_occupation_area.getOccupationArea()[k], obstacle_occupation_area.getSampledOccupationArea()[j]))) {
+//                             subvehicle_true_index = k;
+//                             goto record;
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         record:
+//         // 更新距离保存结果
+//         assert(subvehicle_true_index < (*result).size());
+//         if (Tools::isLarge((*result)[subvehicle_true_index], min_distance)) {
+//             (*result)[subvehicle_true_index] = min_distance;
+//         }
+//     }
+// }
 
-// 计算障碍物与路径之间的距离
-void DecisionMaking::RSS::obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, std::vector<double>* result) {
-    // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK * vehicle_width, SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK * vehicle_length, 1);
-    // 初始化障碍物与路径距离上限
-    double distance_upper = MAX_DISTANCE_RATIO * vehicle_width;
-    // 初始化result
-    (*result) = std::vector<double>(judge_curve.size(), distance_upper);
-    // 遍历障碍物
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        // 遍历障碍物的每一个预测路径
-        for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
-            // 判断是静止障碍物还是动态障碍物
-            if (Tools::isZero(obstacle.getObstacleVelocity())) {
-                // 如果是静止障碍物
-                // 构造障碍物占用区
-                OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, vehicle_velocity, 1);
-                // 计算两个占用区域的距离
-                occupationDistanceCalculation(subvehicle_occupation_area, obstacle_occupation_area, distance_upper, result);
-            }
-        }
-    }
-}
+// // 计算障碍物与路径之间的距离
+// void DecisionMaking::RSS::obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, std::vector<double>* result) {
+//     // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, SUBVEHICLE_OCCUPANCY_WIDTH_EXPAND_RATIO_OBSTACLE_CHECK * vehicle_width, SUBVEHICLE_OCCUPANCY_LENGTH_EXPAND_RATIO_OBSTACLE_CHECK * vehicle_length, 1);
+//     // 初始化障碍物与路径距离上限
+//     double distance_upper = MAX_DISTANCE_RATIO * vehicle_width;
+//     // 初始化result
+//     (*result) = std::vector<double>(judge_curve.size(), distance_upper);
+//     // 遍历障碍物
+//     for (size_t i = 0; i < obstacles.size(); i++) {
+//         Obstacle obstacle = obstacles[i];
+//         // 遍历障碍物的每一个预测路径
+//         for (size_t lane_index = 0; lane_index < obstacle.getPredictedTrajectoryNumber(); lane_index++) {
+//             // 判断是静止障碍物还是动态障碍物
+//             if (Tools::isZero(obstacle.getObstacleVelocity())) {
+//                 // 如果是静止障碍物
+//                 // 构造障碍物占用区
+//                 OccupationArea obstacle_occupation_area = OccupationArea(obstacle, lane_index, vehicle_velocity, 1);
+//                 // 计算两个占用区域的距离
+//                 occupationDistanceCalculation(subvehicle_occupation_area, obstacle_occupation_area, distance_upper, result);
+//             }
+//         }
+//     }
+// }
 
-// 计算交通障碍物与路径之间的距离
-void DecisionMaking::RSS::obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, std::vector<double>* result) {
-    // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
-    OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, EXPAND_RATIO * vehicle_width, EXPAND_RATIO * vehicle_length, 1);
-    // 初始化障碍物与路径距离上限
-    double distance_upper = MAX_DISTANCE_RATIO * vehicle_width;
-    // 初始化result
-    (*result) = std::vector<double>(judge_curve.size(), distance_upper);
-    // 遍历交通障碍物，生成占用区
-    for (size_t i = 0; i < traffic_rule_obstacles.size(); i++) {
-        OccupationArea traffic_rule_obstacle_occupation_area = OccupationArea(traffic_rule_obstacles[i]);
-        // 计算两个占用区域的距离
-        occupationDistanceCalculation(subvehicle_occupation_area, traffic_rule_obstacle_occupation_area, distance_upper, result);
-    }
-}
+// // 计算交通障碍物与路径之间的距离
+// void DecisionMaking::RSS::obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, std::vector<double>* result) {
+//     // 首先得到当前状态的占用区域，由于不是一个状态，占用区域是通过曲线生成的
+//     OccupationArea subvehicle_occupation_area = OccupationArea(judge_curve, EXPAND_RATIO * vehicle_width, EXPAND_RATIO * vehicle_length, 1);
+//     // 初始化障碍物与路径距离上限
+//     double distance_upper = MAX_DISTANCE_RATIO * vehicle_width;
+//     // 初始化result
+//     (*result) = std::vector<double>(judge_curve.size(), distance_upper);
+//     // 遍历交通障碍物，生成占用区
+//     for (size_t i = 0; i < traffic_rule_obstacles.size(); i++) {
+//         OccupationArea traffic_rule_obstacle_occupation_area = OccupationArea(traffic_rule_obstacles[i]);
+//         // 计算两个占用区域的距离
+//         occupationDistanceCalculation(subvehicle_occupation_area, traffic_rule_obstacle_occupation_area, distance_upper, result);
+//     }
+// }
 
-// 判断道路是否被障碍物所占据
-void DecisionMaking::SubVehicle::judgeStateCorrespondingLaneBeingOccupied(StandardState *judge_state, const std::vector<Obstacle> &obstacles) {
-    if (!judge_state->getCapability()) {
-        return;
-    }
-    // 初始化结果
-    bool is_occupied = false;
-    // 得到判断的起点和终点
-    size_t start_index, end_index;
-    // 得到车辆当前定位
-    PathPlanningUtilities::CurvePoint current_position = judge_state->getVehicleCurrentPosition();
-    start_index = Tools::findNearestPositionIndexInCoordination(judge_state->getRespondingLane().getLaneCoordnation(), current_position.position_);
-    end_index = judge_state->getRespondingLane().getLaneCoordnation().size();
+// // 判断道路是否被障碍物所占据
+// void DecisionMaking::SubVehicle::judgeStateCorrespondingLaneBeingOccupied(StandardState *judge_state, const std::vector<Obstacle> &obstacles) {
+//     if (!judge_state->getCapability()) {
+//         return;
+//     }
+//     // 初始化结果
+//     bool is_occupied = false;
+//     // 得到判断的起点和终点
+//     size_t start_index, end_index;
+//     // 得到车辆当前定位
+//     PathPlanningUtilities::CurvePoint current_position = judge_state->getVehicleCurrentPosition();
+//     start_index = Tools::findNearestPositionIndexInCoordination(judge_state->getRespondingLane().getLaneCoordnation(), current_position.position_);
+//     end_index = judge_state->getRespondingLane().getLaneCoordnation().size();
     
-    // 遍历障碍物
-    for (auto obstacle: obstacles) {
-        for (auto predict_path: obstacle.getPredictedTrajectorySet()) {
-            if (judge_state->getRespondingLane().judgePoint2fInLane(predict_path.back().position_, start_index, end_index, 3.0)) {
-                // 被占据
-                is_occupied = true;
-                break;
-            }
-        }
-        if (is_occupied) {
-            break;
-        }
-    }
-    if (is_occupied) {
-        LOG(INFO) << "状态" << DIC_STATE_NAME[judge_state->getStateName()] << "被占据";
-    } else {
-        LOG(INFO) << "状态" << DIC_STATE_NAME[judge_state->getStateName()] << "不被占据";
-    }
-    judge_state->setLaneBeingOccupiedByObstacle(is_occupied);
-    return;
-}
+//     // 遍历障碍物
+//     for (auto obstacle: obstacles) {
+//         for (auto predict_path: obstacle.getPredictedTrajectorySet()) {
+//             if (judge_state->getRespondingLane().judgePoint2fInLane(predict_path.back().position_, start_index, end_index, 3.0)) {
+//                 // 被占据
+//                 is_occupied = true;
+//                 break;
+//             }
+//         }
+//         if (is_occupied) {
+//             break;
+//         }
+//     }
+//     if (is_occupied) {
+//         LOG(INFO) << "状态" << DIC_STATE_NAME[judge_state->getStateName()] << "被占据";
+//     } else {
+//         LOG(INFO) << "状态" << DIC_STATE_NAME[judge_state->getStateName()] << "不被占据";
+//     }
+//     judge_state->setLaneBeingOccupiedByObstacle(is_occupied);
+//     return;
+// }

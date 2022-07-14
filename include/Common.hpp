@@ -114,541 +114,541 @@ enum SpecialStateNames {
 
 // 定义不同的状态、包括了状态的名称、状态的相邻状态、起始点和终止点、起始速度和终止速度、路径、优先级。
 // 实际上状态为车辆运动和规划信息变量的集合
-class StandardState {
- public:
-    // 构造函数，定义状态的名字和邻居，不可更改
-    StandardState() {}
+// class StandardState {
+//  public:
+//     // 构造函数，定义状态的名字和邻居，不可更改
+//     StandardState() {}
 
-    StandardState(size_t state_name,
-                    std::vector<size_t> neighbor_states) {
-        this->state_name_ = state_name;
-        this->neighbor_states_ = neighbor_states;
-    }
+//     StandardState(size_t state_name,
+//                     std::vector<size_t> neighbor_states) {
+//         this->state_name_ = state_name;
+//         this->neighbor_states_ = neighbor_states;
+//     }
 
-    ~StandardState() {}
+//     ~StandardState() {}
 
-    // 确定状态是否可行
-    void enable() {
-        this->capability_ = true;
-    }
+//     // 确定状态是否可行
+//     void enable() {
+//         this->capability_ = true;
+//     }
 
-    void disable() {
-        this->capability_ = false;
-    }
+//     void disable() {
+//         this->capability_ = false;
+//     }
 
-    bool getCapability() const {
-        return this->capability_;
-    }
+//     bool getCapability() const {
+//         return this->capability_;
+//     }
 
-    // 确定是否安全
-    void setSafety(bool safety) {
-        this->safety_ = safety;
-    }
+//     // 确定是否安全
+//     void setSafety(bool safety) {
+//         this->safety_ = safety;
+//     }
 
-    bool getSafety() const {
-        return this->safety_;
-    }
+//     bool getSafety() const {
+//         return this->safety_;
+//     }
 
-    // 确定优先级(值越大，优先级越高)
-    void setPriority(double priority) {
-        this->priority_ = priority;
-    }
+//     // 确定优先级(值越大，优先级越高)
+//     void setPriority(double priority) {
+//         this->priority_ = priority;
+//     }
 
-    double getPriority() const {
-        return this->priority_;
-    }
+//     double getPriority() const {
+//         return this->priority_;
+//     }
 
-    // 获取状态名称
-    size_t getStateName() const {
-        return this->state_name_;
-    }
+//     // 获取状态名称
+//     size_t getStateName() const {
+//         return this->state_name_;
+//     }
 
-    // 获取状态邻居状态
-    const std::vector<size_t> &getNeighborStates() const {
-        return this->neighbor_states_;
-    }
+//     // 获取状态邻居状态
+//     const std::vector<size_t> &getNeighborStates() const {
+//         return this->neighbor_states_;
+//     }
 
-    // 确定车辆长宽
-    void setVehicleSize(double length, double width) {
-        this->vehicle_length_ = length;
-        this->vehicle_width_ = width;
-    }
+//     // 确定车辆长宽
+//     void setVehicleSize(double length, double width) {
+//         this->vehicle_length_ = length;
+//         this->vehicle_width_ = width;
+//     }
 
-    double getVehicleLength() const {
-        return this->vehicle_length_;
-    }
+//     double getVehicleLength() const {
+//         return this->vehicle_length_;
+//     }
 
-    double getVehicleWidth() const {
-        return this->vehicle_width_;
-    }
+//     double getVehicleWidth() const {
+//         return this->vehicle_width_;
+//     }
 
-    // 确定起始点位置
-    void setVehicleStartState(const PathPlanningUtilities::VehicleState &start_point) {
-        this->start_point_ = start_point;
-    }
+//     // 确定起始点位置
+//     void setVehicleStartState(const PathPlanningUtilities::VehicleState &start_point) {
+//         this->start_point_ = start_point;
+//     }
 
-    const PathPlanningUtilities::VehicleState &getVehicleStartState() const {
-        return this->start_point_;
-    }
+//     const PathPlanningUtilities::VehicleState &getVehicleStartState() const {
+//         return this->start_point_;
+//     }
 
-    // 确定车辆当前点在路径上的位置下标
-    void setVehicleCurrentPositionIndexInTrajectory(size_t vehicle_current_position_index) {
-        this->vehicle_current_position_index_ = vehicle_current_position_index;
-    }
+//     // 确定车辆当前点在路径上的位置下标
+//     void setVehicleCurrentPositionIndexInTrajectory(size_t vehicle_current_position_index) {
+//         this->vehicle_current_position_index_ = vehicle_current_position_index;
+//     }
 
-    size_t getVehicleCurrentPositionIndexInTrajectory() const {
-        return this->vehicle_current_position_index_;
-    }
+//     size_t getVehicleCurrentPositionIndexInTrajectory() const {
+//         return this->vehicle_current_position_index_;
+//     }
 
-    // 获取车辆当前点的位置信息
-    PathPlanningUtilities::CurvePoint getVehicleCurrentPosition() const {
-        if (this->vehicle_current_position_index_ < this->trajectory_curves_[this->choosed_trajectory_index_].size()) {
-            return this->trajectory_curves_[this->choosed_trajectory_index_][this->vehicle_current_position_index_];
-        } else {
-            return this->extended_curves_[this->choosed_trajectory_index_][this->vehicle_current_position_index_ - this->trajectory_curves_[this->choosed_trajectory_index_].size()];
-        }
-    }
+//     // 获取车辆当前点的位置信息
+//     PathPlanningUtilities::CurvePoint getVehicleCurrentPosition() const {
+//         if (this->vehicle_current_position_index_ < this->trajectory_curves_[this->choosed_trajectory_index_].size()) {
+//             return this->trajectory_curves_[this->choosed_trajectory_index_][this->vehicle_current_position_index_];
+//         } else {
+//             return this->extended_curves_[this->choosed_trajectory_index_][this->vehicle_current_position_index_ - this->trajectory_curves_[this->choosed_trajectory_index_].size()];
+//         }
+//     }
 
-    // 确定车辆动态规划目标点在路径上的位置下标
-    void setVehicleDynamicPlanningGoalPositionIndexInTrajectory(size_t vehicle_goal_position_index) {
-        this->vehicle_goal_position_index_ = vehicle_goal_position_index;
-    }
+//     // 确定车辆动态规划目标点在路径上的位置下标
+//     void setVehicleDynamicPlanningGoalPositionIndexInTrajectory(size_t vehicle_goal_position_index) {
+//         this->vehicle_goal_position_index_ = vehicle_goal_position_index;
+//     }
 
-    size_t getVehicleDynamicPlanningGoalPositionIndexInTrajectory() const {
-        return this->vehicle_goal_position_index_;
-    }
+//     size_t getVehicleDynamicPlanningGoalPositionIndexInTrajectory() const {
+//         return this->vehicle_goal_position_index_;
+//     }
 
-    // 确定车辆动态规划期望保持的加速度
-    void setVehicleDynamicPlanningExpectedAcceleration(double vehicle_goal_expected_average_acceleration) {
-        this->vehicle_goal_expected_average_acceleration_ = vehicle_goal_expected_average_acceleration;
-    }
+//     // 确定车辆动态规划期望保持的加速度
+//     void setVehicleDynamicPlanningExpectedAcceleration(double vehicle_goal_expected_average_acceleration) {
+//         this->vehicle_goal_expected_average_acceleration_ = vehicle_goal_expected_average_acceleration;
+//     }
 
-    double getVehicleDynamicPlanningExpectedAcceleration() const {
-        return this->vehicle_goal_expected_average_acceleration_;
-    }
+//     double getVehicleDynamicPlanningExpectedAcceleration() const {
+//         return this->vehicle_goal_expected_average_acceleration_;
+//     }
 
-    // 确定起始点速度，加速度
-    void setVehicleStartMovement(const PathPlanningUtilities::VehicleMovementState &start_movement) {
-        this->start_movement_ = start_movement;
-    }
+//     // 确定起始点速度，加速度
+//     void setVehicleStartMovement(const PathPlanningUtilities::VehicleMovementState &start_movement) {
+//         this->start_movement_ = start_movement;
+//     }
 
-    const PathPlanningUtilities::VehicleMovementState &getVehicleStartMovement() const {
-        return this->start_movement_;
-    }
+//     const PathPlanningUtilities::VehicleMovementState &getVehicleStartMovement() const {
+//         return this->start_movement_;
+//     }
 
-    // 确定当前速度、加速度
-    void setVehicleCurrentMovement(const PathPlanningUtilities::VehicleMovementState &current_movement) {
-        this->current_movement_ = current_movement;
-    }
+//     // 确定当前速度、加速度
+//     void setVehicleCurrentMovement(const PathPlanningUtilities::VehicleMovementState &current_movement) {
+//         this->current_movement_ = current_movement;
+//     }
 
-    const PathPlanningUtilities::VehicleMovementState &getVehicleCurrentMovement() const {
-        return this->current_movement_;
-    }
+//     const PathPlanningUtilities::VehicleMovementState &getVehicleCurrentMovement() const {
+//         return this->current_movement_;
+//     }
 
-    // 设置车辆速度上下界
-    void setVelocityLimitation(double velocity_limitation_max, double velocity_limitation_min) {
-        this->velocity_limitation_max_ = velocity_limitation_max;
-        this->velocity_limitation_min_ = velocity_limitation_min;
-    }
+//     // 设置车辆速度上下界
+//     void setVelocityLimitation(double velocity_limitation_max, double velocity_limitation_min) {
+//         this->velocity_limitation_max_ = velocity_limitation_max;
+//         this->velocity_limitation_min_ = velocity_limitation_min;
+//     }
 
-    double getVelocityLimitationMax() const {
-        return this->velocity_limitation_max_;
-    }
+//     double getVelocityLimitationMax() const {
+//         return this->velocity_limitation_max_;
+//     }
 
-    double getVelocityLimitationMin() const {
-        return this->velocity_limitation_min_;
-    }
+//     double getVelocityLimitationMin() const {
+//         return this->velocity_limitation_min_;
+//     }
 
-    // 设置加速度上下限
-    void setAccelerationLimitationMax(double acceleration_limitation_max) {
-        this->acceleration_limitation_max_ = acceleration_limitation_max;
-    }
+//     // 设置加速度上下限
+//     void setAccelerationLimitationMax(double acceleration_limitation_max) {
+//         this->acceleration_limitation_max_ = acceleration_limitation_max;
+//     }
 
-    void setAccelerationLimitationMin(double acceleration_limitation_min) {
-        this->acceleration_limitation_min_ = acceleration_limitation_min;
-    }
+//     void setAccelerationLimitationMin(double acceleration_limitation_min) {
+//         this->acceleration_limitation_min_ = acceleration_limitation_min;
+//     }
 
-    double getAccelerationLimitationMax() const {
-        return this->acceleration_limitation_max_;
-    }
+//     double getAccelerationLimitationMax() const {
+//         return this->acceleration_limitation_max_;
+//     }
 
-    double getAccelerationLimitationMin() const {
-        return this->acceleration_limitation_min_;
-    }
+//     double getAccelerationLimitationMin() const {
+//         return this->acceleration_limitation_min_;
+//     }
 
-    // 设置道路速度期望
-    void setExpectedVelocity(double velocity_expectation_current, double velocity_expectation_limitation) {
-        this->velocity_expectation_current_ = velocity_expectation_current;
-        this->velocity_expectation_limitation_ = velocity_expectation_limitation;
-    }
+//     // 设置道路速度期望
+//     void setExpectedVelocity(double velocity_expectation_current, double velocity_expectation_limitation) {
+//         this->velocity_expectation_current_ = velocity_expectation_current;
+//         this->velocity_expectation_limitation_ = velocity_expectation_limitation;
+//     }
 
-    double getExpectedVelocityCurrent() const {
-        return this->velocity_expectation_current_;
-    }
+//     double getExpectedVelocityCurrent() const {
+//         return this->velocity_expectation_current_;
+//     }
 
-    double getExpectedVelocityLimitation() const {
-        return this->velocity_expectation_limitation_;
-    }
+//     double getExpectedVelocityLimitation() const {
+//         return this->velocity_expectation_limitation_;
+//     }
 
-    // 设置目标点速度
-    void setGoalVelocity(double goal_velocity) {
-        this->goal_velocity_ = goal_velocity;
-    }
+//     // 设置目标点速度
+//     void setGoalVelocity(double goal_velocity) {
+//         this->goal_velocity_ = goal_velocity;
+//     }
 
-    double getGoalVelocity() const {
-        return this->goal_velocity_;
-    }
+//     double getGoalVelocity() const {
+//         return this->goal_velocity_;
+//     }
 
-    // 确定路径
-    void setTrajectory(const std::vector<PathPlanningUtilities::Curve> &trajectory_curves) {
-        this->trajectory_curves_ = trajectory_curves;
-    }
+//     // 确定路径
+//     void setTrajectory(const std::vector<PathPlanningUtilities::Curve> &trajectory_curves) {
+//         this->trajectory_curves_ = trajectory_curves;
+//     }
 
-    const std::vector<PathPlanningUtilities::Curve>& getTrajectory() const {
-        return this->trajectory_curves_;
-    }
+//     const std::vector<PathPlanningUtilities::Curve>& getTrajectory() const {
+//         return this->trajectory_curves_;
+//     }
 
-    const size_t getTrajectoryLength() const {
-        return this->trajectory_curves_[this->choosed_trajectory_index_].size();
-    }
+//     const size_t getTrajectoryLength() const {
+//         return this->trajectory_curves_[this->choosed_trajectory_index_].size();
+//     }
 
-    // 确定路径在frenet坐标系下坐标
-    void setFrenetTrajectory(const std::vector<PathPlanningUtilities::Curve> &frenet_curves) {
-        this->frenet_curves_ = frenet_curves;
-    }
+//     // 确定路径在frenet坐标系下坐标
+//     void setFrenetTrajectory(const std::vector<PathPlanningUtilities::Curve> &frenet_curves) {
+//         this->frenet_curves_ = frenet_curves;
+//     }
 
-    std::vector<PathPlanningUtilities::Curve> getFrenetTrajectory() const {
-        return this->frenet_curves_;
-    }
+//     std::vector<PathPlanningUtilities::Curve> getFrenetTrajectory() const {
+//         return this->frenet_curves_;
+//     }
 
-    // 确定路径的衍生段
-    void setExtendedTrajectory(const std::vector<PathPlanningUtilities::Curve> &extended_curves) {
-        this->extended_curves_ = extended_curves;
-    }
+//     // 确定路径的衍生段
+//     void setExtendedTrajectory(const std::vector<PathPlanningUtilities::Curve> &extended_curves) {
+//         this->extended_curves_ = extended_curves;
+//     }
 
-    const std::vector<PathPlanningUtilities::Curve> &getExtendedTrajectory() const {
-        return this->extended_curves_;
-    }
+//     const std::vector<PathPlanningUtilities::Curve> &getExtendedTrajectory() const {
+//         return this->extended_curves_;
+//     }
 
-    size_t getExtendedTrajectoryLength() const {
-        return this->extended_curves_[this->choosed_trajectory_index_].size();
-    }
+//     size_t getExtendedTrajectoryLength() const {
+//         return this->extended_curves_[this->choosed_trajectory_index_].size();
+//     }
 
-    // 确定全路径
-    PathPlanningUtilities::Curve getTotalTrajectory() const {
-        PathPlanningUtilities::Curve total_curve;
-        total_curve.assign(this->trajectory_curves_[this->choosed_trajectory_index_].begin(), this->trajectory_curves_[this->choosed_trajectory_index_].end());
-        total_curve.insert(total_curve.end(), this->extended_curves_[this->choosed_trajectory_index_].begin(), this->extended_curves_[this->choosed_trajectory_index_].end());
-        return total_curve;
-    }
+//     // 确定全路径
+//     PathPlanningUtilities::Curve getTotalTrajectory() const {
+//         PathPlanningUtilities::Curve total_curve;
+//         total_curve.assign(this->trajectory_curves_[this->choosed_trajectory_index_].begin(), this->trajectory_curves_[this->choosed_trajectory_index_].end());
+//         total_curve.insert(total_curve.end(), this->extended_curves_[this->choosed_trajectory_index_].begin(), this->extended_curves_[this->choosed_trajectory_index_].end());
+//         return total_curve;
+//     }
 
-    // 确定选择的路径
-    void setChoosedTrajectoryIndex(size_t choosed_trajectory_index) {
-        this->choosed_trajectory_index_ = choosed_trajectory_index;
-    }
+//     // 确定选择的路径
+//     void setChoosedTrajectoryIndex(size_t choosed_trajectory_index) {
+//         this->choosed_trajectory_index_ = choosed_trajectory_index;
+//     }
 
-    size_t getChoosedTrajectoryIndex() const {
-        return this->choosed_trajectory_index_;
-    }
+//     size_t getChoosedTrajectoryIndex() const {
+//         return this->choosed_trajectory_index_;
+//     }
 
-    // 状态的有效障碍物信息
-    void addInfluenceObstacle(const InfluenceObstacle &influence_obstacle) {
-        this->influence_obstacles_.push_back(influence_obstacle);
-    }
+//     // 状态的有效障碍物信息
+//     void addInfluenceObstacle(const InfluenceObstacle &influence_obstacle) {
+//         this->influence_obstacles_.push_back(influence_obstacle);
+//     }
 
-    const std::vector<InfluenceObstacle> &getInfluenceObstacle() const {
-        return this->influence_obstacles_;
-    }
+//     const std::vector<InfluenceObstacle> &getInfluenceObstacle() const {
+//         return this->influence_obstacles_;
+//     }
 
-    void clearInfluenceObstacle() {
-        std::vector<InfluenceObstacle>().swap(this->influence_obstacles_);
-    }
+//     void clearInfluenceObstacle() {
+//         std::vector<InfluenceObstacle>().swap(this->influence_obstacles_);
+//     }
 
-    // 发布路径（保持速度模式）
-    void publishCurveMsgVelocityMaintain(const ros::Publisher &publisher) const {
-        if (this->state_name_ != StateNames::TURN_LEFT && this->state_name_ != StateNames::TURN_RIGHT && this->state_name_ != StateNames::FORWARD) {
-            std::cout << "[Error] publish error curve message" << std::endl;
-            LOG(INFO) << "[Error] publish error curve message";
-            exit(0);
-        }
-        path_planning_msgs::MotionPlanningCurve final_curve;
-        // 填充必备信息
-        // 填充消息头
-        final_curve.header.frame_id = "world";
-        final_curve.header.stamp = ros::Time::now();
-        // 填充路径点
-        // 计算速度上限
-        double max_velocity = this->velocity_expectation_limitation_;
-        max_velocity = std::min(max_velocity, this->velocity_limitation_max_);
-        assert(Tools::isLarge(max_velocity, this->velocity_limitation_min_));
-        // 得到全路径
-        PathPlanningUtilities::Curve total_curve;
-        total_curve.assign(this->trajectory_curves_[this->choosed_trajectory_index_].begin(), this->trajectory_curves_[this->choosed_trajectory_index_].end());
-        total_curve.insert(total_curve.end(), this->extended_curves_[this->choosed_trajectory_index_].begin(), this->extended_curves_[this->choosed_trajectory_index_].end());
-        final_curve.points.resize(total_curve.size());
-        // 进行赋值
-        for (size_t i = 0; i < total_curve.size(); i++) {
-            path_planning_msgs::CurvePoint point;
-            // 填充位置点的空间信息
-            point.x = total_curve[i].position_.x_;
-            point.y = total_curve[i].position_.y_;
-            point.theta = total_curve[i].theta_;
-            point.kappa = total_curve[i].kappa_;
-             // 填充位置点的速度信息
-            if (i <= this->vehicle_current_position_index_) {
-                // 在当前位置前的点速度都为当前速度
-                point.velocity = this->current_movement_.velocity_;
-            } else {
-                double distance = LANE_GAP_DISTANCE * (i - this->vehicle_current_position_index_);
-                if (Tools::isLarge(this->current_movement_.velocity_, max_velocity)) {
-                    // 如果当前车速大于最大车速
-                    point.velocity = std::max(sqrt(std::max(this->current_movement_.velocity_ * this->current_movement_.velocity_ + 2.0 * this->vehicle_goal_expected_average_acceleration_ * distance, 0.0)), this->velocity_limitation_min_);
-                } else if (Tools::isSmall(this->current_movement_.velocity_, this->velocity_limitation_min_)) {
-                    // 如果当前车速小于最小车速
-                    point.velocity = std::min(sqrt(std::max(this->current_movement_.velocity_ * this->current_movement_.velocity_ + 2.0 * this->vehicle_goal_expected_average_acceleration_ * distance, 0.0)), max_velocity);
-                } else {
-                    // 如果当前车速大于最小车速，小于最大车速
-                    point.velocity = std::max(std::min(sqrt(std::max(this->current_movement_.velocity_ * this->current_movement_.velocity_ + 2.0 * this->vehicle_goal_expected_average_acceleration_ * distance, 0.0)), max_velocity), this->velocity_limitation_min_);
-                }
-            }
-            final_curve.points[i] = point;
-        }
-        // 填充路径点之间的间隔（单位为米）
-        final_curve.point_margin = LANE_GAP_DISTANCE;
-        // 填充路径模式
-        final_curve.mode = path_planning_msgs::MotionPlanningCurve::MAINTAIN_VELOCITY;
-        // 填充车辆中心点当前处于路径上对应的位置
-        final_curve.vehicle_position_index = this->vehicle_current_position_index_;
-        // 填充是否允许倒车
-        final_curve.reverse_allowing = false;
-        // 标志位
-        final_curve.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
+//     // 发布路径（保持速度模式）
+//     void publishCurveMsgVelocityMaintain(const ros::Publisher &publisher) const {
+//         if (this->state_name_ != StateNames::TURN_LEFT && this->state_name_ != StateNames::TURN_RIGHT && this->state_name_ != StateNames::FORWARD) {
+//             std::cout << "[Error] publish error curve message" << std::endl;
+//             LOG(INFO) << "[Error] publish error curve message";
+//             exit(0);
+//         }
+//         path_planning_msgs::MotionPlanningCurve final_curve;
+//         // 填充必备信息
+//         // 填充消息头
+//         final_curve.header.frame_id = "world";
+//         final_curve.header.stamp = ros::Time::now();
+//         // 填充路径点
+//         // 计算速度上限
+//         double max_velocity = this->velocity_expectation_limitation_;
+//         max_velocity = std::min(max_velocity, this->velocity_limitation_max_);
+//         assert(Tools::isLarge(max_velocity, this->velocity_limitation_min_));
+//         // 得到全路径
+//         PathPlanningUtilities::Curve total_curve;
+//         total_curve.assign(this->trajectory_curves_[this->choosed_trajectory_index_].begin(), this->trajectory_curves_[this->choosed_trajectory_index_].end());
+//         total_curve.insert(total_curve.end(), this->extended_curves_[this->choosed_trajectory_index_].begin(), this->extended_curves_[this->choosed_trajectory_index_].end());
+//         final_curve.points.resize(total_curve.size());
+//         // 进行赋值
+//         for (size_t i = 0; i < total_curve.size(); i++) {
+//             path_planning_msgs::CurvePoint point;
+//             // 填充位置点的空间信息
+//             point.x = total_curve[i].position_.x_;
+//             point.y = total_curve[i].position_.y_;
+//             point.theta = total_curve[i].theta_;
+//             point.kappa = total_curve[i].kappa_;
+//              // 填充位置点的速度信息
+//             if (i <= this->vehicle_current_position_index_) {
+//                 // 在当前位置前的点速度都为当前速度
+//                 point.velocity = this->current_movement_.velocity_;
+//             } else {
+//                 double distance = LANE_GAP_DISTANCE * (i - this->vehicle_current_position_index_);
+//                 if (Tools::isLarge(this->current_movement_.velocity_, max_velocity)) {
+//                     // 如果当前车速大于最大车速
+//                     point.velocity = std::max(sqrt(std::max(this->current_movement_.velocity_ * this->current_movement_.velocity_ + 2.0 * this->vehicle_goal_expected_average_acceleration_ * distance, 0.0)), this->velocity_limitation_min_);
+//                 } else if (Tools::isSmall(this->current_movement_.velocity_, this->velocity_limitation_min_)) {
+//                     // 如果当前车速小于最小车速
+//                     point.velocity = std::min(sqrt(std::max(this->current_movement_.velocity_ * this->current_movement_.velocity_ + 2.0 * this->vehicle_goal_expected_average_acceleration_ * distance, 0.0)), max_velocity);
+//                 } else {
+//                     // 如果当前车速大于最小车速，小于最大车速
+//                     point.velocity = std::max(std::min(sqrt(std::max(this->current_movement_.velocity_ * this->current_movement_.velocity_ + 2.0 * this->vehicle_goal_expected_average_acceleration_ * distance, 0.0)), max_velocity), this->velocity_limitation_min_);
+//                 }
+//             }
+//             final_curve.points[i] = point;
+//         }
+//         // 填充路径点之间的间隔（单位为米）
+//         final_curve.point_margin = LANE_GAP_DISTANCE;
+//         // 填充路径模式
+//         final_curve.mode = path_planning_msgs::MotionPlanningCurve::MAINTAIN_VELOCITY;
+//         // 填充车辆中心点当前处于路径上对应的位置
+//         final_curve.vehicle_position_index = this->vehicle_current_position_index_;
+//         // 填充是否允许倒车
+//         final_curve.reverse_allowing = false;
+//         // 标志位
+//         final_curve.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
 
-        // 填充模式MAINTAIN_ACCELERATION下的特定内容
-        // 填充期望保持的加速度
-        final_curve.expected_acceleration = this->vehicle_goal_expected_average_acceleration_;
-        // 填充能够到达的最高速度(可以超速1.2倍)
-        final_curve.velocity_limitation_max = max_velocity;
-        // 填充能够到达的最低速度
-        final_curve.velocity_limitation_min = this->velocity_limitation_min_;
+//         // 填充模式MAINTAIN_ACCELERATION下的特定内容
+//         // 填充期望保持的加速度
+//         final_curve.expected_acceleration = this->vehicle_goal_expected_average_acceleration_;
+//         // 填充能够到达的最高速度(可以超速1.2倍)
+//         final_curve.velocity_limitation_max = max_velocity;
+//         // 填充能够到达的最低速度
+//         final_curve.velocity_limitation_min = this->velocity_limitation_min_;
 
-        // 消息填充完毕，开始发布
-        publisher.publish(final_curve);
+//         // 消息填充完毕，开始发布
+//         publisher.publish(final_curve);
 
-        LOG(INFO) << "轨迹发布: 轨迹类型为保持速度, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点, 轨迹更新点为第" << this->trajectory_curves_[this->choosed_trajectory_index_].size() << "个点. 轨迹的特征包括轨迹的加速度和速度上下限, 其中加速度为" << final_curve.expected_acceleration << ", 速度上限为" << final_curve.velocity_limitation_max << "米/秒, 速度下限为" << final_curve.velocity_limitation_min << "米/秒.";
-        std::cout << "轨迹发布: 轨迹类型为保持速度, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点, 轨迹更新点为第" << this->trajectory_curves_[this->choosed_trajectory_index_].size() << "个点. 轨迹的特征包括轨迹的加速度和速度上下限, 其中加速度为" << final_curve.expected_acceleration << ", 速度上限为" << final_curve.velocity_limitation_max << "米/秒, 速度下限为" << final_curve.velocity_limitation_min << "米/秒." << std::endl;
+//         LOG(INFO) << "轨迹发布: 轨迹类型为保持速度, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点, 轨迹更新点为第" << this->trajectory_curves_[this->choosed_trajectory_index_].size() << "个点. 轨迹的特征包括轨迹的加速度和速度上下限, 其中加速度为" << final_curve.expected_acceleration << ", 速度上限为" << final_curve.velocity_limitation_max << "米/秒, 速度下限为" << final_curve.velocity_limitation_min << "米/秒.";
+//         std::cout << "轨迹发布: 轨迹类型为保持速度, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点, 轨迹更新点为第" << this->trajectory_curves_[this->choosed_trajectory_index_].size() << "个点. 轨迹的特征包括轨迹的加速度和速度上下限, 其中加速度为" << final_curve.expected_acceleration << ", 速度上限为" << final_curve.velocity_limitation_max << "米/秒, 速度下限为" << final_curve.velocity_limitation_min << "米/秒." << std::endl;
 
-        #ifndef NDEBUG
-        // 首先本工程的目录
-        std::string root_path = ros::package::getPath("motion_planning");
-        std::string log_file_path = "/curve_record/" + Tools::returnCurrentTimeAndDate() + ".csv";
-        log_file_path = root_path + log_file_path;
-        std::ofstream file(log_file_path);
-        if (file) {
-            for (auto point: final_curve.points) {
-                file << std::setprecision(14) << point.x << "," << point.y << "," << point.theta << "," << point.kappa << "\n";
-            }
-        }
-        file.close();
-        #endif
-    }
+//         #ifndef NDEBUG
+//         // 首先本工程的目录
+//         std::string root_path = ros::package::getPath("motion_planning");
+//         std::string log_file_path = "/curve_record/" + Tools::returnCurrentTimeAndDate() + ".csv";
+//         log_file_path = root_path + log_file_path;
+//         std::ofstream file(log_file_path);
+//         if (file) {
+//             for (auto point: final_curve.points) {
+//                 file << std::setprecision(14) << point.x << "," << point.y << "," << point.theta << "," << point.kappa << "\n";
+//             }
+//         }
+//         file.close();
+//         #endif
+//     }
 
-    // 发布路径（追踪目标点模式）
-    void publishCurveMsgPointReach(const ros::Publisher &publisher) {
-        if (this->state_name_ == StateNames::TURN_LEFT || this->state_name_ == StateNames::TURN_RIGHT || this->state_name_ == StateNames::FORWARD) {
-            std::cout << "[Error] publish error curve message" << std::endl;
-            LOG(INFO) << "[Error] publish error curve message";
-            exit(0);
-        }
-        path_planning_msgs::MotionPlanningCurve final_curve;
-        // 填充必备信息
-        // 填充消息头
-        final_curve.header.frame_id = "world";
-        final_curve.header.stamp = ros::Time::now();
-        // 填充路径点
-        for (size_t i = 0; i < this->trajectory_curves_[this->choosed_trajectory_index_].size(); i++) {
-            path_planning_msgs::CurvePoint point;
-            point.x = this->trajectory_curves_[this->choosed_trajectory_index_][i].position_.x_;
-            point.y = this->trajectory_curves_[this->choosed_trajectory_index_][i].position_.y_;
-            point.theta = this->trajectory_curves_[this->choosed_trajectory_index_][i].theta_;
-            point.kappa = this->trajectory_curves_[this->choosed_trajectory_index_][i].kappa_;
-            final_curve.points.push_back(point);
-        }
-        for (size_t i = 0; i < this->extended_curves_[this->choosed_trajectory_index_].size(); i++) {
-            path_planning_msgs::CurvePoint point;
-            point.x = this->extended_curves_[this->choosed_trajectory_index_][i].position_.x_;
-            point.y = this->extended_curves_[this->choosed_trajectory_index_][i].position_.y_;
-            point.theta = this->extended_curves_[this->choosed_trajectory_index_][i].theta_;
-            point.kappa = this->extended_curves_[this->choosed_trajectory_index_][i].kappa_;
-            final_curve.points.push_back(point);
-        }
-        // 填充路径点之间的间隔（单位为米）
-        if (this->state_name_ == StateNames::REVERSE) {
-            final_curve.point_margin = LANE_GAP_DISTANCE * 0.1;
-        } else {
-            final_curve.point_margin = LANE_GAP_DISTANCE;
-        }
-        // 填充路径模式
-        if (this->state_name_ == StateNames::ROTATE) {
-            final_curve.mode = path_planning_msgs::MotionPlanningCurve::ROTATE;
-            final_curve.aim_curvature = final_curve.points[0].kappa;
-        } else {
-            final_curve.mode = path_planning_msgs::MotionPlanningCurve::REACH_POINT;
-        }
-        // 填充车辆中心点当前处于路径上对应的位置
-        final_curve.vehicle_position_index = this->vehicle_current_position_index_;
-        // 填充是否允许倒车
-        if (this->state_name_ == StateNames::REVERSE) {
-            final_curve.reverse_allowing = true;
-        } else {
-            final_curve.reverse_allowing = false;
-        }
-        // 标志位
-        final_curve.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
+//     // 发布路径（追踪目标点模式）
+//     void publishCurveMsgPointReach(const ros::Publisher &publisher) {
+//         if (this->state_name_ == StateNames::TURN_LEFT || this->state_name_ == StateNames::TURN_RIGHT || this->state_name_ == StateNames::FORWARD) {
+//             std::cout << "[Error] publish error curve message" << std::endl;
+//             LOG(INFO) << "[Error] publish error curve message";
+//             exit(0);
+//         }
+//         path_planning_msgs::MotionPlanningCurve final_curve;
+//         // 填充必备信息
+//         // 填充消息头
+//         final_curve.header.frame_id = "world";
+//         final_curve.header.stamp = ros::Time::now();
+//         // 填充路径点
+//         for (size_t i = 0; i < this->trajectory_curves_[this->choosed_trajectory_index_].size(); i++) {
+//             path_planning_msgs::CurvePoint point;
+//             point.x = this->trajectory_curves_[this->choosed_trajectory_index_][i].position_.x_;
+//             point.y = this->trajectory_curves_[this->choosed_trajectory_index_][i].position_.y_;
+//             point.theta = this->trajectory_curves_[this->choosed_trajectory_index_][i].theta_;
+//             point.kappa = this->trajectory_curves_[this->choosed_trajectory_index_][i].kappa_;
+//             final_curve.points.push_back(point);
+//         }
+//         for (size_t i = 0; i < this->extended_curves_[this->choosed_trajectory_index_].size(); i++) {
+//             path_planning_msgs::CurvePoint point;
+//             point.x = this->extended_curves_[this->choosed_trajectory_index_][i].position_.x_;
+//             point.y = this->extended_curves_[this->choosed_trajectory_index_][i].position_.y_;
+//             point.theta = this->extended_curves_[this->choosed_trajectory_index_][i].theta_;
+//             point.kappa = this->extended_curves_[this->choosed_trajectory_index_][i].kappa_;
+//             final_curve.points.push_back(point);
+//         }
+//         // 填充路径点之间的间隔（单位为米）
+//         if (this->state_name_ == StateNames::REVERSE) {
+//             final_curve.point_margin = LANE_GAP_DISTANCE * 0.1;
+//         } else {
+//             final_curve.point_margin = LANE_GAP_DISTANCE;
+//         }
+//         // 填充路径模式
+//         if (this->state_name_ == StateNames::ROTATE) {
+//             final_curve.mode = path_planning_msgs::MotionPlanningCurve::ROTATE;
+//             final_curve.aim_curvature = final_curve.points[0].kappa;
+//         } else {
+//             final_curve.mode = path_planning_msgs::MotionPlanningCurve::REACH_POINT;
+//         }
+//         // 填充车辆中心点当前处于路径上对应的位置
+//         final_curve.vehicle_position_index = this->vehicle_current_position_index_;
+//         // 填充是否允许倒车
+//         if (this->state_name_ == StateNames::REVERSE) {
+//             final_curve.reverse_allowing = true;
+//         } else {
+//             final_curve.reverse_allowing = false;
+//         }
+//         // 标志位
+//         final_curve.tracking_mode = path_planning_msgs::MotionPlanningCurve::CENTER;
 
-        // 填充模式REACH_POINT下的特定内容
-        // 填充目标点的速度
-        final_curve.goal_velocity = this->goal_velocity_;
-        // 填充目标点在路径中的下标
-        final_curve.goal_index = this->vehicle_goal_position_index_;
-        // 填充速度上限
-        final_curve.allowable_max_velocity = this->allowable_max_velocity_;
+//         // 填充模式REACH_POINT下的特定内容
+//         // 填充目标点的速度
+//         final_curve.goal_velocity = this->goal_velocity_;
+//         // 填充目标点在路径中的下标
+//         final_curve.goal_index = this->vehicle_goal_position_index_;
+//         // 填充速度上限
+//         final_curve.allowable_max_velocity = this->allowable_max_velocity_;
         
-        // 消息填充完毕，开始发布
-        publisher.publish(final_curve);
+//         // 消息填充完毕，开始发布
+//         publisher.publish(final_curve);
 
-        LOG(INFO) << "轨迹发布: 轨迹类型为追踪目标点, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点. 轨迹的特征包括轨迹的目标点和目标点速度, 其中目标点处于轨迹第" << final_curve.goal_index << "个点, 目标点速度为" << final_curve.goal_velocity << "米/秒." << ", 目标点坐标为" << final_curve.points[final_curve.goal_index].x << ", " << final_curve.points[final_curve.goal_index].y;
-        std::cout << "轨迹发布: 轨迹类型为追踪目标点, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点. 轨迹的特征包括轨迹的目标点和目标点速度, 其中目标点处于轨迹第" << final_curve.goal_index << "个点, 目标点速度为" << final_curve.goal_velocity << "米/秒." << std::endl;
+//         LOG(INFO) << "轨迹发布: 轨迹类型为追踪目标点, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点. 轨迹的特征包括轨迹的目标点和目标点速度, 其中目标点处于轨迹第" << final_curve.goal_index << "个点, 目标点速度为" << final_curve.goal_velocity << "米/秒." << ", 目标点坐标为" << final_curve.points[final_curve.goal_index].x << ", " << final_curve.points[final_curve.goal_index].y;
+//         std::cout << "轨迹发布: 轨迹类型为追踪目标点, 轨迹长度为" << final_curve.points.size() << ", 车辆当前处于轨迹中第" << final_curve.vehicle_position_index << "个点. 轨迹的特征包括轨迹的目标点和目标点速度, 其中目标点处于轨迹第" << final_curve.goal_index << "个点, 目标点速度为" << final_curve.goal_velocity << "米/秒." << std::endl;
 
-        #ifndef NDEBUG
-        // 首先本工程的目录
-        std::string root_path = ros::package::getPath("motion_planning");
-        std::string log_file_path = "/curve_record/" + Tools::returnCurrentTimeAndDate() + ".csv";
-        log_file_path = root_path + log_file_path;
-        std::ofstream file(log_file_path);
-        if (file) {
-            for (auto point: final_curve.points) {
-                file << std::setprecision(14) << point.x << "," << point.y << "," << point.theta << "," << point.kappa << "\n";
-            }
-        }
-        file.close();
-        #endif
-    }
+//         #ifndef NDEBUG
+//         // 首先本工程的目录
+//         std::string root_path = ros::package::getPath("motion_planning");
+//         std::string log_file_path = "/curve_record/" + Tools::returnCurrentTimeAndDate() + ".csv";
+//         log_file_path = root_path + log_file_path;
+//         std::ofstream file(log_file_path);
+//         if (file) {
+//             for (auto point: final_curve.points) {
+//                 file << std::setprecision(14) << point.x << "," << point.y << "," << point.theta << "," << point.kappa << "\n";
+//             }
+//         }
+//         file.close();
+//         #endif
+//     }
 
-    // ---------------------------------非通用的特殊位--------------------------------
+//     // ---------------------------------非通用的特殊位--------------------------------
         
-    // 设置状态是否完成（只有current_state才用得到这一项）
-    void setStateCompleted(bool is_completed) {
-        this->is_completed_ = is_completed;
-    }
+//     // 设置状态是否完成（只有current_state才用得到这一项）
+//     void setStateCompleted(bool is_completed) {
+//         this->is_completed_ = is_completed;
+//     }
 
-    const bool getStateCompleted() const {
-        return this->is_completed_;
-    }
+//     const bool getStateCompleted() const {
+//         return this->is_completed_;
+//     }
 
-    // 状态可以达到的最大加速度
-    void setStateMaxAvailableAcceleration(double max_available_acceleration) {
-        this->max_available_acceleration_ = max_available_acceleration;
-    }
+//     // 状态可以达到的最大加速度
+//     void setStateMaxAvailableAcceleration(double max_available_acceleration) {
+//         this->max_available_acceleration_ = max_available_acceleration;
+//     }
 
-    double getStateMaxAvailableAcceleration() const {
-        return this->max_available_acceleration_;
-    }
+//     double getStateMaxAvailableAcceleration() const {
+//         return this->max_available_acceleration_;
+//     }
 
-    // 状态的可行加速度区间
-    void setStateAccelerationSection(const SectionSet &acceleration_section) {
-        this->acceleration_section_ = acceleration_section;
-    }
-    const SectionSet &getStateAccelerationSection() const {
-        return this->acceleration_section_;
-    }
+//     // 状态的可行加速度区间
+//     void setStateAccelerationSection(const SectionSet &acceleration_section) {
+//         this->acceleration_section_ = acceleration_section;
+//     }
+//     const SectionSet &getStateAccelerationSection() const {
+//         return this->acceleration_section_;
+//     }
 
-    // 是否接着之前未完成状态
-    void isStateContinue(bool is_continue) {
-        this->is_continue_ = is_continue;
-    }
+//     // 是否接着之前未完成状态
+//     void isStateContinue(bool is_continue) {
+//         this->is_continue_ = is_continue;
+//     }
 
-    bool getStateContinue() const {
-        return this->is_continue_;
-    }
+//     bool getStateContinue() const {
+//         return this->is_continue_;
+//     }
 
-    void setRespondingLane(const Lane &lane) {
-        this->responding_lane_ = lane;
-    }
+//     void setRespondingLane(const Lane &lane) {
+//         this->responding_lane_ = lane;
+//     }
 
-    const Lane &getRespondingLane() const {
-        return this->responding_lane_;
-    }
+//     const Lane &getRespondingLane() const {
+//         return this->responding_lane_;
+//     }
 
-    // 是否进行状态保持
-    void setStateMaintain(bool state_maintain) {
-        this->state_maintain_ = state_maintain;
-    }
+//     // 是否进行状态保持
+//     void setStateMaintain(bool state_maintain) {
+//         this->state_maintain_ = state_maintain;
+//     }
 
-    bool getStateMaintain() const {
-        return this->state_maintain_;
-    }
+//     bool getStateMaintain() const {
+//         return this->state_maintain_;
+//     }
 
-    // 设置道路是否被障碍物占据
-    void setLaneBeingOccupiedByObstacle(bool is_lane_being_occupied_by_obstacle) {
-        this->is_lane_being_occupied_by_obstacle_ = is_lane_being_occupied_by_obstacle;
-    }
+//     // 设置道路是否被障碍物占据
+//     void setLaneBeingOccupiedByObstacle(bool is_lane_being_occupied_by_obstacle) {
+//         this->is_lane_being_occupied_by_obstacle_ = is_lane_being_occupied_by_obstacle;
+//     }
 
-    // 获取道路是否被障碍物占据
-    bool getLaneBeingOccupiedByObstacle() const {
-        return this->is_lane_being_occupied_by_obstacle_;
-    }
+//     // 获取道路是否被障碍物占据
+//     bool getLaneBeingOccupiedByObstacle() const {
+//         return this->is_lane_being_occupied_by_obstacle_;
+//     }
 
-    void setAllowMaxVelocity(double allowable_max_velocity) {
-        this->allowable_max_velocity_ = allowable_max_velocity;
-    }
+//     void setAllowMaxVelocity(double allowable_max_velocity) {
+//         this->allowable_max_velocity_ = allowable_max_velocity;
+//     }
 
-    // 设置为脱困模式
-    void setOutofTrapping(bool is_outof_trapping) {
-        this->is_outof_trapping_ = is_outof_trapping;
-    }
+//     // 设置为脱困模式
+//     void setOutofTrapping(bool is_outof_trapping) {
+//         this->is_outof_trapping_ = is_outof_trapping;
+//     }
 
-    // 获取是否为脱困模式
-    bool getOutofTrapping() const {
-        return this->is_outof_trapping_;
-    }
+//     // 获取是否为脱困模式
+//     bool getOutofTrapping() const {
+//         return this->is_outof_trapping_;
+//     }
 
- private:
-    size_t state_name_;  // 名称
-    std::vector<size_t> neighbor_states_;  // 邻居
-    bool capability_ = false;  // 可行性
-    bool safety_ = false;  //安全性
-    bool is_completed_ = true;  // 状态是否完成(默认为状态完成)
-    double priority_ = -1.0;  // 优先级(值越大，优先级越高，区间在0.0~10.0)
-    double velocity_limitation_max_;  //状态的速度上限（随时间变化，自动更新）
-    double velocity_limitation_min_;  //状态的速度下限（随时间变化，自动更新）
-    double acceleration_limitation_max_;  // 加速度上限（随时间变化，自动更新）
-    double acceleration_limitation_min_;  // 减速度上限（随时间变化，自动更新）
-    double velocity_expectation_current_;  // 当前道路期望速度（随时间变化，自动更新）
-    double velocity_expectation_limitation_;  // 未来道路期望速度（随时间变化，自动更新）
-    double vehicle_width_;  // 车辆宽度
-    double vehicle_length_;  // 车辆长度
-    PathPlanningUtilities::VehicleState start_point_;  // 起始点位置状态
-    PathPlanningUtilities::VehicleMovementState start_movement_;  // 起始点速度,加速度
-    size_t vehicle_current_position_index_;  // 车辆当前位置在路径中的下标，如果路径不存在，此也不存在（随时间变化，自动更新）
-    PathPlanningUtilities::VehicleMovementState current_movement_;  // 当前速度、加速度（随时间变化，自动更新）
-    size_t vehicle_goal_position_index_;  // 车辆动态速度规划目标点在路径中的下标（随时间变化，速度规划更新）
-    double goal_velocity_;  // 目标点速度（随时间变化，速度规划更新）
-    double vehicle_goal_expected_average_acceleration_;  // 车辆在动态速度规划中期望保持的加速度(随时间变化，速度规划更新)
-    std::vector<PathPlanningUtilities::Curve> trajectory_curves_;  // 生成轨迹
-    std::vector<PathPlanningUtilities::Curve> frenet_curves_;  // 生成轨迹在frenet坐标系下坐标
-    std::vector<PathPlanningUtilities::Curve> extended_curves_;  // 生成轨迹延道路方向的衍生段
-    size_t choosed_trajectory_index_ = 0;  //选择的轨迹
-    std::vector<InfluenceObstacle> influence_obstacles_;  // 状态对应的有效障碍物信息(随时间变化，自动更新)
-    double max_available_acceleration_;  // 状态可以达到的最大加速度
-    SectionSet acceleration_section_;  // 状态的可行加速度区间
-    bool is_continue_ = false;  // 是否接着没走完的路走
-    Lane responding_lane_;  // 对应道路
-    bool state_maintain_ = true;  // 是否进行状态保持 
-    bool is_lane_being_occupied_by_obstacle_ = false;  // 判断对应道路是不是没有被障碍物占据
-    double allowable_max_velocity_;  // 最大允许速度
-    bool is_outof_trapping_ = false;  // 是否为脱困模式
-};
+//  private:
+//     size_t state_name_;  // 名称
+//     std::vector<size_t> neighbor_states_;  // 邻居
+//     bool capability_ = false;  // 可行性
+//     bool safety_ = false;  //安全性
+//     bool is_completed_ = true;  // 状态是否完成(默认为状态完成)
+//     double priority_ = -1.0;  // 优先级(值越大，优先级越高，区间在0.0~10.0)
+//     double velocity_limitation_max_;  //状态的速度上限（随时间变化，自动更新）
+//     double velocity_limitation_min_;  //状态的速度下限（随时间变化，自动更新）
+//     double acceleration_limitation_max_;  // 加速度上限（随时间变化，自动更新）
+//     double acceleration_limitation_min_;  // 减速度上限（随时间变化，自动更新）
+//     double velocity_expectation_current_;  // 当前道路期望速度（随时间变化，自动更新）
+//     double velocity_expectation_limitation_;  // 未来道路期望速度（随时间变化，自动更新）
+//     double vehicle_width_;  // 车辆宽度
+//     double vehicle_length_;  // 车辆长度
+//     PathPlanningUtilities::VehicleState start_point_;  // 起始点位置状态
+//     PathPlanningUtilities::VehicleMovementState start_movement_;  // 起始点速度,加速度
+//     size_t vehicle_current_position_index_;  // 车辆当前位置在路径中的下标，如果路径不存在，此也不存在（随时间变化，自动更新）
+//     PathPlanningUtilities::VehicleMovementState current_movement_;  // 当前速度、加速度（随时间变化，自动更新）
+//     size_t vehicle_goal_position_index_;  // 车辆动态速度规划目标点在路径中的下标（随时间变化，速度规划更新）
+//     double goal_velocity_;  // 目标点速度（随时间变化，速度规划更新）
+//     double vehicle_goal_expected_average_acceleration_;  // 车辆在动态速度规划中期望保持的加速度(随时间变化，速度规划更新)
+//     std::vector<PathPlanningUtilities::Curve> trajectory_curves_;  // 生成轨迹
+//     std::vector<PathPlanningUtilities::Curve> frenet_curves_;  // 生成轨迹在frenet坐标系下坐标
+//     std::vector<PathPlanningUtilities::Curve> extended_curves_;  // 生成轨迹延道路方向的衍生段
+//     size_t choosed_trajectory_index_ = 0;  //选择的轨迹
+//     std::vector<InfluenceObstacle> influence_obstacles_;  // 状态对应的有效障碍物信息(随时间变化，自动更新)
+//     double max_available_acceleration_;  // 状态可以达到的最大加速度
+//     SectionSet acceleration_section_;  // 状态的可行加速度区间
+//     bool is_continue_ = false;  // 是否接着没走完的路走
+//     Lane responding_lane_;  // 对应道路
+//     bool state_maintain_ = true;  // 是否进行状态保持 
+//     bool is_lane_being_occupied_by_obstacle_ = false;  // 判断对应道路是不是没有被障碍物占据
+//     double allowable_max_velocity_;  // 最大允许速度
+//     bool is_outof_trapping_ = false;  // 是否为脱困模式
+// };
 
 // // 障碍物与自身的关系枚举
 // enum ObstacleRelationship {
@@ -669,9 +669,9 @@ class SubVehicle{
         // 获取ros句柄
         this->nh_ = nh;
         // 初始化车辆的状态机
-        this->initVehicleStates();
-        // 初始化当前状态为停车状态
-        this->current_state_ = this->states_set_[StateNames::STOP];
+        // this->initVehicleStates();
+        // // 初始化当前状态为停车状态
+        // this->current_state_ = this->states_set_[StateNames::STOP];
         // 初始化车辆信息
         double vehicle_width, vehicle_length, vehicle_rear_axis_center_scale;
         this->nh_.getParam("vehicle_width", vehicle_width);
@@ -714,7 +714,7 @@ class SubVehicle{
 
  private:
     // 状态机初始化
-    void initVehicleStates();
+    // void initVehicleStates();
 
     // 初始化ros节点
     void rosInit();
@@ -749,11 +749,11 @@ class SubVehicle{
     // 开始任务
     bool startMission(mission_msgs::StartMainRequest &request ,mission_msgs::StartMainResponse &response);
 
-    // 强制停车
-    bool forcedStop(std_srvs::TriggerRequest &request, std_srvs::TriggerResponse &response);
+    // // 强制停车
+    // bool forcedStop(std_srvs::TriggerRequest &request, std_srvs::TriggerResponse &response);
 
-    // 判断任务结束
-    bool missionFinishJudgement();
+    // // 判断任务结束
+    // bool missionFinishJudgement();
 
     // 规划和决策线程,30hz
     void motionPlanningThread();
@@ -761,14 +761,14 @@ class SubVehicle{
     // 更新地图信息，ros服务(TODO)
     void updateMapInformation();
 
-    // 更新状态
-    // 1. 根据当前状态判断可行状态（停车恒定可行，避障在速度大于阈值时恒定不可行）
-    // 2. 给每一个可行状态赋值起终点、起点速度和规划出的局部路径(不包含停车和避障)
-    // 3. 给每一个可行状态优先级
-    void updateStates();
+    // // 更新状态
+    // // 1. 根据当前状态判断可行状态（停车恒定可行，避障在速度大于阈值时恒定不可行）
+    // // 2. 给每一个可行状态赋值起终点、起点速度和规划出的局部路径(不包含停车和避障)
+    // // 3. 给每一个可行状态优先级
+    // void updateStates();
 
-    // 规划出某个状态在对应道路上的行驶轨迹,为更新状态服务
-    void updateLaneTrajectoryforStates(StandardState *standard_state, const Lane &lane, const PathPlanningUtilities::VehicleState &start_point_in_world, const PathPlanningUtilities::VehicleMovementState &start_point_movement, double start_point_steering_angle);
+    // // 规划出某个状态在对应道路上的行驶轨迹,为更新状态服务
+    // void updateLaneTrajectoryforStates(StandardState *standard_state, const Lane &lane, const PathPlanningUtilities::VehicleState &start_point_in_world, const PathPlanningUtilities::VehicleMovementState &start_point_movement, double start_point_steering_angle);
 
     // 辅助状态更新
     // 更新停车状态，并选择停车状态
@@ -796,73 +796,73 @@ class SubVehicle{
     // 得到有效的交通障碍物列表
     void updateValidateTrafficRuleInformation();
 
-    // 判断状态的安全性（不包含避障和停车）
-    // 根据优先级高低查询障碍物对路径影响、加入观察距离内是否存在静态障碍物、最高速度约束、速度变化约束等，计算出可行速度,如果没有可行速度则放弃
-    // 静态障碍物出现在路径上则为换道直接放弃、高速变低速、低速变避障。
-    // 详解：如果换道最优先，则判断其路径以及观测距离内有无静态障碍物，再判断是否存在一定速度区间实现安全换道；
-    // 如果直行最优先，判断路径及观测距离内有无静态障碍物，如果有，高速进入低速模式，如果是再路径内则低速变为避障模式。
-    void checkStates();
+    // // 判断状态的安全性（不包含避障和停车）
+    // // 根据优先级高低查询障碍物对路径影响、加入观察距离内是否存在静态障碍物、最高速度约束、速度变化约束等，计算出可行速度,如果没有可行速度则放弃
+    // // 静态障碍物出现在路径上则为换道直接放弃、高速变低速、低速变避障。
+    // // 详解：如果换道最优先，则判断其路径以及观测距离内有无静态障碍物，再判断是否存在一定速度区间实现安全换道；
+    // // 如果直行最优先，判断路径及观测距离内有无静态障碍物，如果有，高速进入低速模式，如果是再路径内则低速变为避障模式。
+    // void checkStates();
 
-    // 生成低速机动状态（包括避障和停车）
-    void generateLowVelocityState();
+    // // 生成低速机动状态（包括避障和停车）
+    // void generateLowVelocityState();
 
-    // 生成低速避障路径
-    void AvoidancePathGenerator(const Lane &lane, std::vector<DecisionMaking::AvoidancePath> &avoidance_curves);
+    // // 生成低速避障路径
+    // void AvoidancePathGenerator(const Lane &lane, std::vector<DecisionMaking::AvoidancePath> &avoidance_curves);
 
-    // 进行低速避障路径选择
-    size_t selectAvoidancePath(const std::vector<DecisionMaking::AvoidancePath> &avoidance_paths);
+    // // 进行低速避障路径选择
+    // size_t selectAvoidancePath(const std::vector<DecisionMaking::AvoidancePath> &avoidance_paths);
 
     // // 判断是否有需要填充低优先级状态的信息，如果有，进行填充(可能不需要)
     // void generateLowPriorityStates();
 
-    // 填充特殊状态的信息
-    void generateSpecialState();
+    // // 填充特殊状态的信息
+    // void generateSpecialState();
 
-    // 生成倒车状态
-    int generateReverseState();
+    // // 生成倒车状态
+    // int generateReverseState();
 
-    // 生成转向状态
-    int generateRotateState();
+    // // 生成转向状态
+    // int generateRotateState();
 
-    // 进行状态选择
-    // 如果优先度最高的状态可行、选最高的（同时判断是否需要超车）、如果优先度最高状态不可行、进行判别,如果状态都不行则进入停车状态。
-    void chooseStates();
+    // // 进行状态选择
+    // // 如果优先度最高的状态可行、选最高的（同时判断是否需要超车）、如果优先度最高状态不可行、进行判别,如果状态都不行则进入停车状态。
+    // void chooseStates();
 
-    // 进行可视化
-    void Visualization();
+    // // 进行可视化
+    // void Visualization();
 
-    // 根据上一次状态和此次选中的状态判断规划模块是否已经无效
-    bool motionPlanningUncapableJudgement();
+    // // 根据上一次状态和此次选中的状态判断规划模块是否已经无效
+    // bool motionPlanningUncapableJudgement();
 
-    // 进行车辆和障碍物状态更新，判断当前状态是否安全，判断期望状态是否可行，进行动态速度规划。
-    void maintainStates();
+    // // 进行车辆和障碍物状态更新，判断当前状态是否安全，判断期望状态是否可行，进行动态速度规划。
+    // void maintainStates();
 
-    // 判断停车状态是否需要继续，还是重新进行规划
-    void stopStateMaintain();
+    // // 判断停车状态是否需要继续，还是重新进行规划
+    // void stopStateMaintain();
 
-    // 判断避障状态是否需要继续，还是重新进行规划
-    void avoidanceStateMaintain();
+    // // 判断避障状态是否需要继续，还是重新进行规划
+    // void avoidanceStateMaintain();
 
-    // 特殊状态保持
-    void specialStateMaintain();
+    // // 特殊状态保持
+    // void specialStateMaintain();
 
-    // 速度规划（为了进行多线程操作才创建的函数）(要注意线程安全性)
-    void velocityPlanningForState(StandardState *judge_state, const std::vector<Obstacle> &obstacles, bool is_aggressive);
+    // // 速度规划（为了进行多线程操作才创建的函数）(要注意线程安全性)
+    // void velocityPlanningForState(StandardState *judge_state, const std::vector<Obstacle> &obstacles, bool is_aggressive);
 
-    // 自检测函数
-    void selfTestForProgress(diagnostic_updater::DiagnosticStatusWrapper& status);
+    // // 自检测函数
+    // void selfTestForProgress(diagnostic_updater::DiagnosticStatusWrapper& status);
 
-    // 判断道路是否被障碍物所占据
-    void judgeStateCorrespondingLaneBeingOccupied(StandardState *judge_state, const std::vector<Obstacle> &obstacles);
+    // // 判断道路是否被障碍物所占据
+    // void judgeStateCorrespondingLaneBeingOccupied(StandardState *judge_state, const std::vector<Obstacle> &obstacles);
 
-    // 计算状态的曲线中最大曲率点
-    double calcMaxKappaForState(const StandardState &state, size_t length);
+    // // 计算状态的曲线中最大曲率点
+    // double calcMaxKappaForState(const StandardState &state, size_t length);
 
-    // 计算状态的曲线中的最大曲率变化率
-    double calcMaxCurvatureChangeRateForState(const StandardState &state, size_t length);
+    // // 计算状态的曲线中的最大曲率变化率
+    // double calcMaxCurvatureChangeRateForState(const StandardState &state, size_t length);
 
-    // 对状态机可行状态进行排序
-    bool sortStatesPriority(std::vector<DecisionMaking::StandardState> *states_set);
+    // // 对状态机可行状态进行排序
+    // bool sortStatesPriority(std::vector<DecisionMaking::StandardState> *states_set);
 
     // ros相关变量
     ros::NodeHandle nh_;  // ros句柄
@@ -897,12 +897,12 @@ class SubVehicle{
     ros::ServiceServer forced_stop_service_server_;  // 强制停车服务
     self_test::TestRunner self_test_;  // 自检测对象
 
-    //状态机相关变量
-    std::vector<StandardState> states_set_;  // 状态机
-    StandardState current_state_;  // 当前的状态
-    StandardState choosed_state_;  // 选择的状态
-    StandardState expected_state_;  // 期望的状态
-    StandardState special_state_;  // 特殊状态
+    // //状态机相关变量
+    // std::vector<StandardState> states_set_;  // 状态机
+    // StandardState current_state_;  // 当前的状态
+    // StandardState choosed_state_;  // 选择的状态
+    // StandardState expected_state_;  // 期望的状态
+    // StandardState special_state_;  // 特殊状态
 
     // 地图信息变量
     // 左车道信息
@@ -948,7 +948,7 @@ class SubVehicle{
     bool IS_DANGEROUS_FLAG_ = false;  // 是否有障碍物导致状态不安全
     bool IS_OVERTAKE_ENABLE_FLAG_ = false;  // 是否允许高速主动换道
     bool IS_SURROUND_RADAR_ENABLE_FLAG_ = false;  // 是否使用毫米波雷达
-    bool IS_EMERGENCY_BREAK_FLAG_ = false;  // 紧急停车标志
+    // bool IS_EMERGENCY_BREAK_FLAG_ = false;  // 紧急停车标志
     bool IS_TOTAL_AUTONOMOUS_FLAG_ = false;  // 是否为全自动模式
     bool CONTROL_FINISHED_FLAG_ = false;  // 控制完成信号
     bool ROTATE_AND_REVERSE_ENABLE_FLAG_ = false;  // 允许进行倒车或转向
@@ -1033,34 +1033,34 @@ class SubVehicle{
 
 namespace RSS {
 
-// 交通规则判定
-void trafficRuleCheck(StandardState *judge_state, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &obstacles);
+// // 交通规则判定
+// void trafficRuleCheck(StandardState *judge_state, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &obstacles);
 
-// 判断状态的路径是否与静态障碍物重合
-bool checkStateBeingBlocked(StandardState *judge_state, const Obstacle &obstacle, size_t lane_index);
+// // 判断状态的路径是否与静态障碍物重合
+// bool checkStateBeingBlocked(StandardState *judge_state, const Obstacle &obstacle, size_t lane_index);
 
-// 得到期望的加速度区间
-SectionSet getAccelerationSectionSet(StandardState *judge_state, const std::vector<Obstacle> &obstacles, bool is_aggressive);
+// // 得到期望的加速度区间
+// SectionSet getAccelerationSectionSet(StandardState *judge_state, const std::vector<Obstacle> &obstacles, bool is_aggressive);
 
-// 调整车辆状态来满足安全模型
-SectionSet checkSaftyModel(StandardState *judge_state, const std::vector<Obstacle> &obstacles, bool is_aggressive);
+// // 调整车辆状态来满足安全模型
+// SectionSet checkSaftyModel(StandardState *judge_state, const std::vector<Obstacle> &obstacles, bool is_aggressive);
 
-// 判断当前状态是否安全
-bool stateSafetyJudgement(const StandardState &judge_state, const std::vector<Obstacle> &obstacles);
+// // 判断当前状态是否安全
+// bool stateSafetyJudgement(const StandardState &judge_state, const std::vector<Obstacle> &obstacles);
 
-// 得到交通规则与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
-bool collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, size_t *cut_index);
+// // 得到交通规则与路径碰撞的最近碰撞点在路径中的下标，返回值是true表示发生碰撞，false表示未发生碰撞
+// bool collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, size_t *cut_index);
 
-// 得到障碍物与路径碰撞的最近碰撞点在路径中的下标（不带距离判断），返回值是true表示发生碰撞，false表示未发生碰撞
-bool collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index);
+// // 得到障碍物与路径碰撞的最近碰撞点在路径中的下标（不带距离判断），返回值是true表示发生碰撞，false表示未发生碰撞
+// bool collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index);
 
-// 得到障碍物与路径碰撞的最近碰撞点在路径中的下标(带距离判断)，返回值是true表示发生碰撞，false表示未发生碰撞
-bool collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index, bool is_big);
+// // 得到障碍物与路径碰撞的最近碰撞点在路径中的下标(带距离判断)，返回值是true表示发生碰撞，false表示未发生碰撞
+// bool collisionPositionIndexInCurve(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, size_t *cut_index, bool is_big);
 
-bool collisionWithDynamicObstacles(const PathPlanningUtilities::Curve &judge_curve, double velocity, double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles, size_t *cut_index);
+// bool collisionWithDynamicObstacles(const PathPlanningUtilities::Curve &judge_curve, double velocity, double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles, size_t *cut_index);
 
-// 判断蔽障道路是否可以快速通过
-bool isAvoidanceQuickPass(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles);
+// // 判断蔽障道路是否可以快速通过
+// bool isAvoidanceQuickPass(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<Obstacle> &obstacles);
 
 // 占用区域类（障碍物或本车占用的区域）
 class OccupationArea {
@@ -1075,8 +1075,8 @@ class OccupationArea {
     // 构造障碍物类型的占用区，占用区为障碍物在第lane_index条路径上的占用区
     explicit OccupationArea(const Obstacle &obstacle, size_t lane_index, double velocity, int sample_gap = 3);
 
-    // 构造车道类型的占用区
-    explicit OccupationArea(const StandardState &judge_state, int sample_gap = 30, double width_expanded_factor = 1.2, double length_expanded_factor = 1.1);
+    // // 构造车道类型的占用区
+    // explicit OccupationArea(const StandardState &judge_state, int sample_gap = 30, double width_expanded_factor = 1.2, double length_expanded_factor = 1.1);
 
     // 构造空气墙类型的占用区
     explicit OccupationArea(const vec_map_cpp_msgs::VirtualObstacle &obstacle, int sample_gap = 1);
@@ -1125,17 +1125,17 @@ class OccupationArea {
 // 判断两个占用区域是否产生相交, true表示相交，false表示不相交
 bool occupationInteractionJudgement(const OccupationArea &subvehicle_occupation_area, const OccupationArea &obstacle_occupation_area, size_t *subvehicle_interact_index, size_t *obstacle_interact_index);
 
-// 获取障碍物到路径的距离
-double getObstacleDistanceToCurve(const PathPlanningUtilities::Curve &curve, const Obstacle &obstacle);
+// // 获取障碍物到路径的距离
+// double getObstacleDistanceToCurve(const PathPlanningUtilities::Curve &curve, const Obstacle &obstacle);
 
-// 计算两个占用区域之间的距离
-void occupationDistanceCalculation(const OccupationArea &subvehicle_occupation_area, const OccupationArea &obstacle_occupation_area, double distance_upper, std::vector<double>* result);
+// // 计算两个占用区域之间的距离
+// void occupationDistanceCalculation(const OccupationArea &subvehicle_occupation_area, const OccupationArea &obstacle_occupation_area, double distance_upper, std::vector<double>* result);
 
-// 计算障碍物与路径之间的距离
-void obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, std::vector<double>* result);
+// // 计算障碍物与路径之间的距离
+// void obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, double vehicle_velocity, const std::vector<Obstacle> &obstacles, std::vector<double>* result);
 
-// 计算交通障碍物与路径之间的距离
-void obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, std::vector<double>* result);
+// // 计算交通障碍物与路径之间的距离
+// void obstacleDistanceJudgment(const PathPlanningUtilities::Curve &judge_curve, double vehicle_width, double vehicle_length, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_rule_obstacles, std::vector<double>* result);
 
 };  // namespace RSS
 
@@ -1195,8 +1195,8 @@ visualization_msgs::Marker visualizedeleteMarker(int id);
 // 删除从起始id开始的全部可视化marker
 visualization_msgs::Marker visualizedeleteAllMarker(int start_id);
 
-// 将状态机可视化在车辆规划位置附近
-void visualizeStates(const std::vector<DecisionMaking::StandardState> &state_set, const DecisionMaking::StandardState &choosed_state, double position_x, double position_y, int start_id, const ros::Publisher &publisher);
+// // 将状态机可视化在车辆规划位置附近
+// void visualizeStates(const std::vector<DecisionMaking::StandardState> &state_set, const DecisionMaking::StandardState &choosed_state, double position_x, double position_y, int start_id, const ros::Publisher &publisher);
 
 // 可视化选中的路径及车辆延路径行驶的边界
 void visualizeChoosedCurveWithBoundary(const PathPlanningUtilities::Curve &choosed_curve, double width, double length, double center_scale, int start_id, int gap, const ros::Publisher &publisher);
@@ -1207,8 +1207,8 @@ void visualizeVehicleState(double position_x, double position_y, const std::stri
 // 可视化交通规则
 void visualizeTrafficRules(const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_obstacles, const ros::Publisher &publisher);
 
-// 可视化本车占用区域
-void visualizeSubvehicleOccupationArea(const DecisionMaking::StandardState &choosed_state, double center_scale, const ros::Publisher &publisher, size_t gap = 20);
+// // 可视化本车占用区域
+// void visualizeSubvehicleOccupationArea(const DecisionMaking::StandardState &choosed_state, double center_scale, const ros::Publisher &publisher, size_t gap = 20);
 
 // 将障碍物形状转化为marker
 visualization_msgs::Marker visualizeObstacleShape(const DecisionMaking::Obstacle &obstacle, int id);

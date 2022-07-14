@@ -122,170 +122,170 @@ visualization_msgs::Marker VisualizationMethods::visualizedeleteAllMarker(int st
     return delete_marker;
 }
 
-// 将状态机可视化在车辆规划位置附近
-void VisualizationMethods::visualizeStates(const std::vector<DecisionMaking::StandardState> &state_set, const DecisionMaking::StandardState &choosed_state, double position_x, double position_y, int start_id, const ros::Publisher &publisher) {
-    visualization_msgs::MarkerArray states_marker_array;
+// // 将状态机可视化在车辆规划位置附近
+// void VisualizationMethods::visualizeStates(const std::vector<DecisionMaking::StandardState> &state_set, const DecisionMaking::StandardState &choosed_state, double position_x, double position_y, int start_id, const ros::Publisher &publisher) {
+//     visualization_msgs::MarkerArray states_marker_array;
 
-    // 发布新的marker array
-    for (size_t i = 0; i < state_set.size(); i++) {
-        visualization_msgs::MarkerArray state_marker;
-        switch (i) {
-            case DecisionMaking::StateNames::STOP:
-            {
-                // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
-                std_msgs::ColorRGBA color;
-                if (choosed_state.getStateName() == i) {
-                    color.r = 1;
-                    color.g = 0;
-                    color.b = 0;
-                    color.a = 1;
-                } else {
-                    if (state_set[i].getCapability() && state_set[i].getSafety()) {
-                        color.r = 1;
-                        color.g = 1;
-                        color.b = 1;
-                        color.a = 1;
-                    } else {
-                        color.r = 0.75;
-                        color.g = 0.75;
-                        color.b = 0.75;
-                        color.a = 0.75;
-                    }
-                }
-                states_marker_array.markers.push_back(visualizeStringToMarker("STOP", position_x, position_y + i, color, start_id + i));
-                break;
-            }
-            case DecisionMaking::StateNames::TURN_LEFT:
-            {
-                // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
-                std_msgs::ColorRGBA color;
-                if (choosed_state.getStateName() == i) {
-                    color.r = 1;
-                    color.g = 0;
-                    color.b = 0;
-                    color.a = 1;
-                } else {
-                    if (state_set[i].getCapability() && state_set[i].getSafety()) {
-                        color.r = 1;
-                        color.g = 1;
-                        color.b = 1;
-                        color.a = 1;
-                    }  else {
-                        color.r = 0.75;
-                        color.g = 0.75;
-                        color.b = 0.75;
-                        color.a = 0.75;
-                    }
-                }
-                states_marker_array.markers.push_back(visualizeStringToMarker("TURN_LEFT", position_x, position_y + i, color, start_id + i));
-                break;
-            }
-            case DecisionMaking::StateNames::TURN_RIGHT:
-            {
-                // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
-                std_msgs::ColorRGBA color;
-                if (choosed_state.getStateName() == i) {
-                    color.r = 1;
-                    color.g = 0;
-                    color.b = 0;
-                    color.a = 1;
-                } else {
-                    if (state_set[i].getCapability() && state_set[i].getSafety()) {
-                        color.r = 1;
-                        color.g = 1;
-                        color.b = 1;
-                        color.a = 1;
-                    } else {
-                        color.r = 0.75;
-                        color.g = 0.75;
-                        color.b = 0.75;
-                        color.a = 0.75;
-                    }
-                }
-                states_marker_array.markers.push_back(visualizeStringToMarker("TURN_RIGHT", position_x, position_y + i, color, start_id + i));
-                break;
-            }
-            case DecisionMaking::StateNames::FORWARD:
-            {
-                // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
-                std_msgs::ColorRGBA color;
-                if (choosed_state.getStateName() == i) {
-                    color.r = 1;
-                    color.g = 0;
-                    color.b = 0;
-                    color.a = 1;
-                } else {
-                    if (state_set[i].getCapability() && state_set[i].getSafety()) {
-                        color.r = 1;
-                        color.g = 1;
-                        color.b = 1;
-                        color.a = 1;
-                    } else {
-                        color.r = 0.75;
-                        color.g = 0.75;
-                        color.b = 0.75;
-                        color.a = 0.75;
-                    }
-                }
-                states_marker_array.markers.push_back(visualizeStringToMarker("FORWARD", position_x, position_y + i, color, start_id + i));
-                break;
-            }
-            case DecisionMaking::StateNames::AVOIDANCE:
-            {
-                // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
-                std_msgs::ColorRGBA color;
-                if (choosed_state.getStateName() == i) {
-                    color.r = 1;
-                    color.g = 0;
-                    color.b = 0;
-                    color.a = 1;
-                } else {
-                    if (state_set[i].getCapability() && state_set[i].getSafety()) {
-                        color.r = 1;
-                        color.g = 1;
-                        color.b = 1;
-                        color.a = 1;
-                    } else {
-                        color.r = 0.75;
-                        color.g = 0.75;
-                        color.b = 0.75;
-                        color.a = 0.75;
-                    }
-                }
-                states_marker_array.markers.push_back(visualizeStringToMarker("AVOIDANCE", position_x, position_y + i, color, start_id + i));
-                break;
-            }
-            case DecisionMaking::StateNames::REVERSE:
-            {
-                // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
-                std_msgs::ColorRGBA color;
-                if (choosed_state.getStateName() == i) {
-                    color.r = 1;
-                    color.g = 0;
-                    color.b = 0;
-                    color.a = 1;
-                } else {
-                    if (state_set[i].getCapability() && state_set[i].getSafety()) {
-                        color.r = 1;
-                        color.g = 1;
-                        color.b = 1;
-                        color.a = 1;
-                    } else {
-                        color.r = 0.75;
-                        color.g = 0.75;
-                        color.b = 0.75;
-                        color.a = 0.75;
-                    }
-                }
-                states_marker_array.markers.push_back(visualizeStringToMarker("REVERSE", position_x, position_y + i, color, start_id + i));
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    publisher.publish(states_marker_array);
-}
+//     // 发布新的marker array
+//     for (size_t i = 0; i < state_set.size(); i++) {
+//         visualization_msgs::MarkerArray state_marker;
+//         switch (i) {
+//             case DecisionMaking::StateNames::STOP:
+//             {
+//                 // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
+//                 std_msgs::ColorRGBA color;
+//                 if (choosed_state.getStateName() == i) {
+//                     color.r = 1;
+//                     color.g = 0;
+//                     color.b = 0;
+//                     color.a = 1;
+//                 } else {
+//                     if (state_set[i].getCapability() && state_set[i].getSafety()) {
+//                         color.r = 1;
+//                         color.g = 1;
+//                         color.b = 1;
+//                         color.a = 1;
+//                     } else {
+//                         color.r = 0.75;
+//                         color.g = 0.75;
+//                         color.b = 0.75;
+//                         color.a = 0.75;
+//                     }
+//                 }
+//                 states_marker_array.markers.push_back(visualizeStringToMarker("STOP", position_x, position_y + i, color, start_id + i));
+//                 break;
+//             }
+//             case DecisionMaking::StateNames::TURN_LEFT:
+//             {
+//                 // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
+//                 std_msgs::ColorRGBA color;
+//                 if (choosed_state.getStateName() == i) {
+//                     color.r = 1;
+//                     color.g = 0;
+//                     color.b = 0;
+//                     color.a = 1;
+//                 } else {
+//                     if (state_set[i].getCapability() && state_set[i].getSafety()) {
+//                         color.r = 1;
+//                         color.g = 1;
+//                         color.b = 1;
+//                         color.a = 1;
+//                     }  else {
+//                         color.r = 0.75;
+//                         color.g = 0.75;
+//                         color.b = 0.75;
+//                         color.a = 0.75;
+//                     }
+//                 }
+//                 states_marker_array.markers.push_back(visualizeStringToMarker("TURN_LEFT", position_x, position_y + i, color, start_id + i));
+//                 break;
+//             }
+//             case DecisionMaking::StateNames::TURN_RIGHT:
+//             {
+//                 // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
+//                 std_msgs::ColorRGBA color;
+//                 if (choosed_state.getStateName() == i) {
+//                     color.r = 1;
+//                     color.g = 0;
+//                     color.b = 0;
+//                     color.a = 1;
+//                 } else {
+//                     if (state_set[i].getCapability() && state_set[i].getSafety()) {
+//                         color.r = 1;
+//                         color.g = 1;
+//                         color.b = 1;
+//                         color.a = 1;
+//                     } else {
+//                         color.r = 0.75;
+//                         color.g = 0.75;
+//                         color.b = 0.75;
+//                         color.a = 0.75;
+//                     }
+//                 }
+//                 states_marker_array.markers.push_back(visualizeStringToMarker("TURN_RIGHT", position_x, position_y + i, color, start_id + i));
+//                 break;
+//             }
+//             case DecisionMaking::StateNames::FORWARD:
+//             {
+//                 // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
+//                 std_msgs::ColorRGBA color;
+//                 if (choosed_state.getStateName() == i) {
+//                     color.r = 1;
+//                     color.g = 0;
+//                     color.b = 0;
+//                     color.a = 1;
+//                 } else {
+//                     if (state_set[i].getCapability() && state_set[i].getSafety()) {
+//                         color.r = 1;
+//                         color.g = 1;
+//                         color.b = 1;
+//                         color.a = 1;
+//                     } else {
+//                         color.r = 0.75;
+//                         color.g = 0.75;
+//                         color.b = 0.75;
+//                         color.a = 0.75;
+//                     }
+//                 }
+//                 states_marker_array.markers.push_back(visualizeStringToMarker("FORWARD", position_x, position_y + i, color, start_id + i));
+//                 break;
+//             }
+//             case DecisionMaking::StateNames::AVOIDANCE:
+//             {
+//                 // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
+//                 std_msgs::ColorRGBA color;
+//                 if (choosed_state.getStateName() == i) {
+//                     color.r = 1;
+//                     color.g = 0;
+//                     color.b = 0;
+//                     color.a = 1;
+//                 } else {
+//                     if (state_set[i].getCapability() && state_set[i].getSafety()) {
+//                         color.r = 1;
+//                         color.g = 1;
+//                         color.b = 1;
+//                         color.a = 1;
+//                     } else {
+//                         color.r = 0.75;
+//                         color.g = 0.75;
+//                         color.b = 0.75;
+//                         color.a = 0.75;
+//                     }
+//                 }
+//                 states_marker_array.markers.push_back(visualizeStringToMarker("AVOIDANCE", position_x, position_y + i, color, start_id + i));
+//                 break;
+//             }
+//             case DecisionMaking::StateNames::REVERSE:
+//             {
+//                 // 给出颜色，红色代表选中，白色代表可行，灰色代表不可行
+//                 std_msgs::ColorRGBA color;
+//                 if (choosed_state.getStateName() == i) {
+//                     color.r = 1;
+//                     color.g = 0;
+//                     color.b = 0;
+//                     color.a = 1;
+//                 } else {
+//                     if (state_set[i].getCapability() && state_set[i].getSafety()) {
+//                         color.r = 1;
+//                         color.g = 1;
+//                         color.b = 1;
+//                         color.a = 1;
+//                     } else {
+//                         color.r = 0.75;
+//                         color.g = 0.75;
+//                         color.b = 0.75;
+//                         color.a = 0.75;
+//                     }
+//                 }
+//                 states_marker_array.markers.push_back(visualizeStringToMarker("REVERSE", position_x, position_y + i, color, start_id + i));
+//                 break;
+//             }
+//             default:
+//                 break;
+//         }
+//     }
+//     publisher.publish(states_marker_array);
+// }
 
 // 可视化选中的路径及车辆延路径行驶的边界
 void VisualizationMethods::visualizeChoosedCurveWithBoundary(const PathPlanningUtilities::Curve &choosed_curve, double width, double length, double center_scale, int start_id, int gap, const ros::Publisher &publisher) {
@@ -366,26 +366,26 @@ void VisualizationMethods::visualizeTrafficRules(const std::vector<vec_map_cpp_m
     publisher.publish(traffic_rule_marker_array);
 }
 
-// 可视化本车占用区域
-void VisualizationMethods::visualizeSubvehicleOccupationArea(const DecisionMaking::StandardState &choosed_state, double center_scale, const ros::Publisher &publisher, size_t gap) {
-    visualization_msgs::MarkerArray occupation_marker_array;
-    std_msgs::ColorRGBA color;
-    color.r = 1;
-    color.g = 1;
-    color.b = 1;
-    color.a = 1;
-    size_t length = std::min(static_cast<size_t>(Tools::normalSubvehicleOccupationDistance(choosed_state.getExpectedVelocityCurrent(), MAX_DECCELERATION, CONSTANT_DISTANCE) / LANE_GAP_DISTANCE), choosed_state.getTrajectoryLength() + choosed_state.getExtendedTrajectoryLength() - choosed_state.getVehicleCurrentPositionIndexInTrajectory());
-    for (size_t i = choosed_state.getVehicleCurrentPositionIndexInTrajectory(); i < choosed_state.getVehicleCurrentPositionIndexInTrajectory() + length; i += gap) {
-        PathPlanningUtilities::CurvePoint curve_point;
-        if (i < choosed_state.getTrajectoryLength()) {
-            curve_point = choosed_state.getTrajectory()[choosed_state.getChoosedTrajectoryIndex()][i];
-        } else {
-            curve_point = choosed_state.getExtendedTrajectory()[choosed_state.getChoosedTrajectoryIndex()][i - choosed_state.getTrajectoryLength()];
-        }
-        occupation_marker_array.markers.push_back(visualizeRectToMarker(curve_point.position_.x_, curve_point.position_.y_, Tools::centerYawToRearYaw(curve_point.theta_, curve_point.kappa_, DISTANCE_FROM_REAR_TO_CENTER), choosed_state.getVehicleWidth(), choosed_state.getVehicleLength(), center_scale, color, i + VisualizationMethods::VisualizationID::OCCUPATION_AREA_START_ID));
-    }
-    publisher.publish(occupation_marker_array);
-}
+// // 可视化本车占用区域
+// void VisualizationMethods::visualizeSubvehicleOccupationArea(const DecisionMaking::StandardState &choosed_state, double center_scale, const ros::Publisher &publisher, size_t gap) {
+//     visualization_msgs::MarkerArray occupation_marker_array;
+//     std_msgs::ColorRGBA color;
+//     color.r = 1;
+//     color.g = 1;
+//     color.b = 1;
+//     color.a = 1;
+//     size_t length = std::min(static_cast<size_t>(Tools::normalSubvehicleOccupationDistance(choosed_state.getExpectedVelocityCurrent(), MAX_DECCELERATION, CONSTANT_DISTANCE) / LANE_GAP_DISTANCE), choosed_state.getTrajectoryLength() + choosed_state.getExtendedTrajectoryLength() - choosed_state.getVehicleCurrentPositionIndexInTrajectory());
+//     for (size_t i = choosed_state.getVehicleCurrentPositionIndexInTrajectory(); i < choosed_state.getVehicleCurrentPositionIndexInTrajectory() + length; i += gap) {
+//         PathPlanningUtilities::CurvePoint curve_point;
+//         if (i < choosed_state.getTrajectoryLength()) {
+//             curve_point = choosed_state.getTrajectory()[choosed_state.getChoosedTrajectoryIndex()][i];
+//         } else {
+//             curve_point = choosed_state.getExtendedTrajectory()[choosed_state.getChoosedTrajectoryIndex()][i - choosed_state.getTrajectoryLength()];
+//         }
+//         occupation_marker_array.markers.push_back(visualizeRectToMarker(curve_point.position_.x_, curve_point.position_.y_, Tools::centerYawToRearYaw(curve_point.theta_, curve_point.kappa_, DISTANCE_FROM_REAR_TO_CENTER), choosed_state.getVehicleWidth(), choosed_state.getVehicleLength(), center_scale, color, i + VisualizationMethods::VisualizationID::OCCUPATION_AREA_START_ID));
+//     }
+//     publisher.publish(occupation_marker_array);
+// }
 
 // 将障碍物形状转化为maker，障碍物类型为obstacle
 visualization_msgs::Marker VisualizationMethods::visualizeObstacleShape(const DecisionMaking::Obstacle &obstacle, int id) {

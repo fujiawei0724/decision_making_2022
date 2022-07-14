@@ -210,9 +210,6 @@ class ParametricLane {
     std::vector<Eigen::Vector2d> points_; // Scatter key points
     Eigen::Matrix<double, Eigen::Dynamic, 12> coefficients_; // Coefficients for piecewise quintic spline
 
-
-
-    
 };
 
 
