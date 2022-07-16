@@ -2,9 +2,11 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-10 16:22:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-11 11:30:55
+ * @LastEditTime: 2022-07-16 19:13:50
  * @Description: Generate image from the percepted obstacles.
  */
+
+#pragma once
 
 #include "Const.hpp"
 #include "VehicleState.hpp"

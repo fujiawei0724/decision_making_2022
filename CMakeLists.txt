@@ -171,7 +171,7 @@ include_directories(/home/fjw/OOQP/OOQP/include)
 link_directories(/home/fjw/OOQP/OOQP/lib)
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_lib src/ImageGenerator.cc src/Lane.cc src/Utils.cc src/HpdmPlanner.cc src/SscPlanner.cc src/BehaviorPlanning.cc src/TrajectoryPlanning.cc src/BehaviorPlanner.cc src/MotionPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp)
+add_library(${PROJECT_NAME}_lib src/ObservationBuffer.cc src/ImageGenerator.cc src/Lane.cc src/Utils.cc src/HpdmPlanner.cc src/SscPlanner.cc src/BehaviorPlanning.cc src/TrajectoryPlanning.cc src/BehaviorPlanner.cc src/MotionPlanning.cpp src/PathGenerator.cpp src/PathUtilities.cpp src/Tools.cpp src/Visualization.cpp src/SubVehicle.cpp src/ObstacleAndRSS.cpp src/MessageConverter.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
