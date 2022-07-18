@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-11 14:40:38
+ * @LastEditTime: 2022-07-18 14:50:35
  * @Description: Hpdm planner.
  */
 
@@ -176,6 +176,32 @@ namespace HpdmPlanner {
     }
 
     /**
+     * @brief generate observations and additional state
+     * @param obs_buffer observation buffer that is used to generate observations
+     * @param observations the generated observations
+     * @param additional_state the generated additional state
+     * @return {*}
+     */
+    void  StateInterface::runOnce(const std::vector<double>& lane_info, const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& sur_vehicles, Utils::ObservationBuffer& obs_buffer, std::vector<cv::Mat>* observations, std::vector<double>* additional_state) {
+        // Transform vehicles 
+        std::vector<FsImageVehicle> fs_image_vehicles = transformSurroundImageVehicle(sur_vehicles);
+
+        // Supply observation buffer with the current observation
+        std::chrono::steady_clock::time_point cur_time = std::chrono::steady_clock::now();
+        obs_buffer.update(fs_image_vehicles, cur_time);
+
+        // Fill buffer is necessary
+        if (obs_buffer.size() < obs_buffer.full_size_) {
+            obs_buffer.selfFill();
+        }
+        
+
+        *observations = obs_buffer.output(lane_info);
+        std::vector<double> ego_vehicle_state_array = stf_->getFrenetEgoVehicleStateArray(ego_vehicle);
+        *additional_state = std::vector<double>{ego_vehicle_state_array[1], ego_vehicle_state_array[2], ego_vehicle.state_.velocity_ / SPEED_NORMALIZATION, ego_vehicle.state_.acceleration_ / ACCELERATION_NORMALIZATION, ego_vehicle_state_array[7], ego_vehicle.state_.steer_, lane_info[4]};
+    }
+
+    /**
      * @brief transform single vehicle state
      * @param {*}
      * @return {*}
@@ -217,6 +243,18 @@ namespace HpdmPlanner {
 
     }
 
+    /**
+     * @description: transform the vehicles to image vehicles, which are used to draw BEV
+     * @return {*}
+     */
+    std::vector<FsImageVehicle> StateInterface::transformSurroundImageVehicle(const std::unordered_map<int, Vehicle>& vehicles) {
+        std::vector<FsImageVehicle> fs_vehilces;
+        for (auto& veh_info : vehicles) {
+            fs_vehilces.emplace_back(stf_->getFsImageVehicleFromVehicle(veh_info.second));
+        }
+        return fs_vehilces;
+    }
+
     TorchInterface::TorchInterface(const std::string& model_path) {
         model_path_ = model_path;
     }
@@ -251,6 +289,53 @@ namespace HpdmPlanner {
 
         // Cache 
         *candi_action_indices = res;
+    }
+
+    /**
+     * @brief generate best action index from forwarding model
+     * @param observations percepted time order observations
+     * @param additional_states represent the state that also used in the network
+     * @return {*}
+     */    
+    void TorchInterface::runOnce(const std::vector<cv::Mat>& observations, const std::vector<double>& additional_state, std::vector<int>* candi_action_indices) {
+        
+        // DEBUG
+        assert(observations.size() == 10);
+        // END DEBUG
+        
+        // Load model
+        torch::jit::script::Module module = torch::jit::load(model_path_);
+
+        // Convert data
+        std::vector<torch::Tensor> tensor_images;
+        for (int i = 0; i < 10; i++) {
+            tensor_images.emplace_back(torch::from_blob(observations[i].data, {1, observations[i].rows, observations[i].cols}, torch::kByte));
+        }
+        torch::Tensor tensor_image_sequence = torch::cat(tensor_images, 0).unsqueeze(0).to(torch::kFloat);
+        torch::Tensor tensor_additional_state = torch::tensor(additional_state).unsqueeze(0);
+        std::vector<torch::jit::IValue> inputs;
+        inputs.emplace_back(tensor_image_sequence);
+        inputs.emplace_back(tensor_additional_state);
+
+        // Forward
+        torch::Tensor pred_res = module.forward(inputs).toTensor();
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
+        auto top_values = std::get<0>(result).view(-1);
+        auto top_idxs = std::get<1>(result).view(-1);
+        std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
+
+        printf("[HpdmPlanner] candidate action indices include: \n");
+        for (int i = 0; i < static_cast<int>(res.size()); i++) {
+            printf("%d, ", res[i]);
+        }
+        printf("\n");
+
+        // Cache 
+        *candi_action_indices = res;
+
+
+
+
     }
 
 
@@ -743,6 +828,14 @@ namespace HpdmPlanner {
         vis_pub_ = vis_pub;
 
     }
+    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
+        map_itf_ = map_itf;
+        obs_buffer_ = observation_buffer;
+        traj_generator_ = new TrajectoryGenerator(map_itf, vis_pub_2);
+        state_itf_ = new StateInterface(nearest_lane);
+        torch_itf_ = new TorchInterface(model_path);
+        vis_pub_ = vis_pub;
+    }
     HpdmPlannerCore::~HpdmPlannerCore() = default;
 
     // Load data with consistence, which means in an replanning circle
@@ -765,9 +858,27 @@ namespace HpdmPlanner {
 
     // Run HPDM planner
     void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed) {
-        // ~Stage I: construct state array
-        std::vector<double> state_array;
-        state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, &state_array);
+        std::vector<int> candi_action_idxs;
+        if (obs_buffer_ == nullptr) {
+            // Apply state array
+            // ~Stage I: construct state array
+            std::vector<double> state_array;
+            state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, &state_array);
+
+            // ~Stage II: model predict to generate action index
+            torch_itf_->runOnce(state_array, &candi_action_idxs);
+        } else {
+            // Apply time ordered BEV sequence
+            // ~Stage I: construct observations and additional state
+            std::vector<cv::Mat> observations;
+            std::vector<double> additional_state;
+            state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, *obs_buffer_, &observations, &additional_state);
+
+            // ~Stage II: model predict to generate action index
+            torch_itf_->runOnce(observations, additional_state, &candi_action_idxs);
+            
+        }
+
         
         // // DEBUG
         // for (const auto& state_it : state_array) {
@@ -775,9 +886,6 @@ namespace HpdmPlanner {
         // }
         // // END DEBUG
 
-        // ~Stage II: model predict to generate action index
-        std::vector<int> candi_action_idxs;
-        torch_itf_->runOnce(state_array, &candi_action_idxs);
 
         // Superimpose the backup behaviors
         // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent

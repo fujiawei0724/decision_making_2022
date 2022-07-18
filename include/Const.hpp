@@ -135,6 +135,9 @@
 #define EXPAND_RATIO 1.0  // 碰撞判定时的膨胀系数
 #define MAX_DISTANCE_RATIO 0.8  // 障碍物最远考虑距离与车辆宽度比值
 
+#define SPEED_NORMALIZATION 25.0
+#define ACCELERATION_NORMALIZATION 3.0
+
 // 世界坐标系到frenet坐标系的变换矩阵
 struct TransMatrix {
     Eigen::Matrix2d rotation_;

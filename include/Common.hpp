@@ -1008,6 +1008,7 @@ class SubVehicle{
 
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
+    Utils::ObservationBuffer observation_buffer_; 
     std::vector<Obstacle> unlaned_obstacles_;
     Lane reference_lane_;
     bool is_previous_behavior_lane_changed_{false};

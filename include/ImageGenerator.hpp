@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-10 16:22:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-16 19:13:50
+ * @LastEditTime: 2022-07-18 08:29:26
  * @Description: Generate image from the percepted obstacles.
  */
 
@@ -25,7 +25,7 @@ public:
      * @description: generate image from provided surrounding vehicle in frenet frame.
      * @return matrix with the specific size.
      */    
-    static cv::Mat generateSingleImage(const std::vector<double>& lane_info, const std::unordered_map<int, Common::FsImageVehicle>& surrounding_vehicles);
+    static cv::Mat generateSingleImage(const std::vector<double>& lane_info, const std::vector<Common::FsImageVehicle>& surrounding_vehicles);
 
 
     /**

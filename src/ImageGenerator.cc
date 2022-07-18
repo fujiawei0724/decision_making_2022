@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-10 21:55:14
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-11 11:32:14
+ * @LastEditTime: 2022-07-18 14:07:51
  * @Description: Generate image from the percepted obstacles.
  */
 
@@ -12,7 +12,7 @@ namespace Utils {
 
 
 
-cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info, const std::unordered_map<int, Common::FsImageVehicle>& surrounding_vehicles) {
+cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info, const std::vector<Common::FsImageVehicle>& surrounding_vehicles) {
     // Initialize canvas 
     cv::Mat img = cv::Mat(ImageGenerator::height_, ImageGenerator::width_, CV_8UC1, cv::Scalar(0));
 
@@ -27,8 +27,8 @@ cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info
 
     // supply surrounding vehicles
     std::vector<std::vector<cv::Point>> contours;
-    for (auto& sur_image_veh_info : surrounding_vehicles) {
-        FsImageVehicle cur_sur_image_veh = sur_image_veh_info.second;
+    for (auto& sur_image_veh : surrounding_vehicles) {
+        FsImageVehicle cur_sur_image_veh = sur_image_veh;
         cv::Point2f vertex[4];
         cv::RotatedRect box(ImageGenerator::positionTransform(cur_sur_image_veh.position_), cv::Size(std::round(cur_sur_image_veh.length_ * ImageGenerator::scale_), std::round(cur_sur_image_veh.width_ * ImageGenerator::scale_)), -cur_sur_image_veh.theta_ * 180.0 / M_PI + 90.0);
         box.points(vertex);
@@ -40,7 +40,7 @@ cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info
     }
     cv::fillPoly(img, contours, cv::Scalar(0), 8);
 
-    return img;
+    return img / 255.0;
 
 }
 
