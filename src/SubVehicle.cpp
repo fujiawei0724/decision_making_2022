@@ -16,6 +16,56 @@
 // bool GLOBAL_IS_IN_OVERTAKE_ = false;
 // int GLOBAL_IS_IN_CHECK_COUNT_FLAG_ = 0;
 
+// 构造函数和析构函数
+DecisionMaking::SubVehicle::SubVehicle(const ros::NodeHandle &nh) {
+    // 获取ros句柄
+    this->nh_ = nh;
+    // 初始化车辆的状态机
+    // this->initVehicleStates();
+    // // 初始化当前状态为停车状态
+    // this->current_state_ = this->states_set_[StateNames::STOP];
+    // 初始化车辆信息
+    double vehicle_width, vehicle_length, vehicle_rear_axis_center_scale;
+    this->nh_.getParam("vehicle_width", vehicle_width);
+    this->nh_.getParam("vehicle_length", vehicle_length);
+    this->nh_.getParam("vehicle_rear_axis_center_scale", vehicle_rear_axis_center_scale);
+    this->vehicle_width_ = vehicle_width;
+    this->vehicle_length_ = vehicle_length;
+    this->vehicle_rear_axis_center_scale_ = vehicle_rear_axis_center_scale;
+
+    // 初始化全局变量
+    // 获取是否允许超车标志位
+    this->nh_.getParam("is_overtake_enable", this->IS_OVERTAKE_ENABLE_FLAG_);
+    // 获取环绕雷达是否使用标志位
+    this->nh_.getParam("is_surround_radar_enable", this->IS_SURROUND_RADAR_ENABLE_FLAG_);
+    // 获取交通灯使用标志位
+    this->nh_.getParam("traffic_light_usage_flag", this->TRAFFIC_LIGHT_USAGE_FLAG_);
+    // 获取临时空气墙是否使用标志位
+    this->nh_.getParam("not_permanent_traffic_rule_usage_flag", this->NOT_PERMANENT_TRAFFIC_RULE_USAGE_FLAG_);
+    // 获取是否为全自动模式标志位
+    this->nh_.getParam("is_total_autonomous", this->IS_TOTAL_AUTONOMOUS_FLAG_);
+    // 获取是否允许倒车和原地转向
+    this->nh_.getParam("rotate_and_reverse_enable", this->ROTATE_AND_REVERSE_ENABLE_FLAG_);
+
+    // 初始化ros相关节点和服务
+    this->rosInit();
+
+    // // Load model
+    module_ = torch::jit::load("/home/fjw/Desktop/model0.pt");
+    module_.to(torch::kCUDA);
+
+    ROS_INFO("INITAL SUCCESS");
+    std::cout << "IS_OVERTAKE_ENABLE_FLAG: " << this->IS_OVERTAKE_ENABLE_FLAG_ << std::endl;
+    std::cout << "IS_SURROUND_RADAR_ENABLE_FLAG: " << this->IS_SURROUND_RADAR_ENABLE_FLAG_ << std::endl;
+    std::cout << "IS_TRAFFIC_LIGHT_USAGE_FLAG: " << this->TRAFFIC_LIGHT_USAGE_FLAG_ << std::endl;
+    std::cout << "NOT_PERMANENT_TRAFFIC_RULE_USAGE_FLAG: " << this->NOT_PERMANENT_TRAFFIC_RULE_USAGE_FLAG_ << std::endl;
+    std::cout << "IS_TOTAL_AUTONOMOUS_FLAG: " << this->IS_TOTAL_AUTONOMOUS_FLAG_ << std::endl;
+    std::cout << "ROTATE_AND_REVERSE_ENABLE_FLAG: " << this->ROTATE_AND_REVERSE_ENABLE_FLAG_ << std::endl;
+}
+
+DecisionMaking::SubVehicle::~SubVehicle() {}
+
+
 // 初始化并启动线程
 void DecisionMaking::SubVehicle::runMotionPlanning() {
     // 初始化自检测对象

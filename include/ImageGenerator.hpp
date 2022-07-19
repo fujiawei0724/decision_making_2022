@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-10 16:22:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-18 08:29:26
+ * @LastEditTime: 2022-07-18 21:31:39
  * @Description: Generate image from the percepted obstacles.
  */
 
@@ -17,7 +17,7 @@ class ImageGenerator {
 public:
 
     static constexpr int height_{300};
-    static constexpr int width_{50};
+    static constexpr int width_{60};
     static constexpr double scale_{3.0};
     static constexpr double lane_width_{3.5};
 

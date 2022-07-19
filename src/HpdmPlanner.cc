@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-18 14:50:35
+ * @LastEditTime: 2022-07-19 15:13:45
  * @Description: Hpdm planner.
  */
 
@@ -297,31 +297,43 @@ namespace HpdmPlanner {
      * @param additional_states represent the state that also used in the network
      * @return {*}
      */    
-    void TorchInterface::runOnce(const std::vector<cv::Mat>& observations, const std::vector<double>& additional_state, std::vector<int>* candi_action_indices) {
+    void TorchInterface::runOnce(const std::vector<cv::Mat>& observations, const std::vector<double>& additional_state, torch::jit::script::Module& model, std::vector<int>* candi_action_indices) {
         
-        // DEBUG
-        assert(observations.size() == 10);
-        // END DEBUG
-        
-        // Load model
-        torch::jit::script::Module module = torch::jit::load(model_path_);
+        // // DEBUG
+        // assert(observations.size() == 10);
+        // // END DEBUG
+
+        // // DEBUG
+        // cv::Mat img = observations[0];
+        // int img_h = img.rows;
+        // int img_w = img.cols;
+        // int depth = img.channels();
+
+        // std::cout << "Height: " << img_h << ", width: " << img_w << ", channels: " << depth << std::endl;
+        // // END DEBUG
 
         // Convert data
         std::vector<torch::Tensor> tensor_images;
         for (int i = 0; i < 10; i++) {
-            tensor_images.emplace_back(torch::from_blob(observations[i].data, {1, observations[i].rows, observations[i].cols}, torch::kByte));
+            tensor_images.emplace_back(torch::from_blob(observations[i].data, {1, observations[i].rows, observations[i].cols}, torch::kByte).unsqueeze(0));
         }
-        torch::Tensor tensor_image_sequence = torch::cat(tensor_images, 0).unsqueeze(0).to(torch::kFloat);
-        torch::Tensor tensor_additional_state = torch::tensor(additional_state).unsqueeze(0);
+        torch::Tensor tensor_image_sequence = torch::cat(tensor_images, 0).unsqueeze(0).to(torch::kCUDA, torch::kFloat, true);
+        torch::Tensor tensor_additional_state = torch::tensor(additional_state).unsqueeze(0).to(torch::kCUDA, torch::kFloat, true);
         std::vector<torch::jit::IValue> inputs;
         inputs.emplace_back(tensor_image_sequence);
         inputs.emplace_back(tensor_additional_state);
 
         // Forward
-        torch::Tensor pred_res = module.forward(inputs).toTensor();
+        clock_t forward_start_time = clock();
+        torch::Tensor pred_res = model.forward(inputs).toTensor();
+        clock_t forward_end_time = clock();
+        double torch_forward_time_consumption = static_cast<double>((forward_end_time - forward_start_time)) / CLOCKS_PER_SEC;
+        std::cout << "Torch forward time consumption: " << torch_forward_time_consumption << std::endl;
+
+
         std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
-        auto top_values = std::get<0>(result).view(-1);
-        auto top_idxs = std::get<1>(result).view(-1);
+        // auto top_values = std::get<0>(result).view(-1);
+        auto top_idxs = std::get<1>(result).view(-1).to(torch::kCPU);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
 
         printf("[HpdmPlanner] candidate action indices include: \n");
@@ -828,9 +840,10 @@ namespace HpdmPlanner {
         vis_pub_ = vis_pub;
 
     }
-    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
+    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
         map_itf_ = map_itf;
         obs_buffer_ = observation_buffer;
+        model_ = model;
         traj_generator_ = new TrajectoryGenerator(map_itf, vis_pub_2);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
@@ -875,7 +888,12 @@ namespace HpdmPlanner {
             state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, *obs_buffer_, &observations, &additional_state);
 
             // ~Stage II: model predict to generate action index
-            torch_itf_->runOnce(observations, additional_state, &candi_action_idxs);
+            clock_t start_time = clock();
+            torch_itf_->runOnce(observations, additional_state, model_, &candi_action_idxs);
+            clock_t end_time = clock();
+            double torch_time_consumption = static_cast<double>((end_time - start_time)) / CLOCKS_PER_SEC;
+            std::cout << "Torch time consumption: " << torch_time_consumption << std::endl;
+
             
         }
 

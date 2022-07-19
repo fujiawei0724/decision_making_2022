@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-18 14:37:30
+ * @LastEditTime: 2022-07-19 15:14:00
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -127,7 +127,7 @@ class TorchInterface {
      * @param additional_states represent the state that also used in the network
      * @return {*}
      */    
-    void runOnce(const std::vector<cv::Mat>& observations, const std::vector<double>& additional_state, std::vector<int>* candi_action_indices);
+    void runOnce(const std::vector<cv::Mat>& observations, const std::vector<double>& additional_state, torch::jit::script::Module& model, std::vector<int>* candi_action_indices);
 
     std::string model_path_;
 };
@@ -234,7 +234,7 @@ class HpdmPlannerCore {
  public:
     HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path);
     HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
-    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
+    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
     ~HpdmPlannerCore();
 
     // Load data with consistence, which means in an replanning circle
@@ -247,6 +247,7 @@ class HpdmPlannerCore {
     void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed);
 
     Utils::ObservationBuffer* obs_buffer_{nullptr};
+    torch::jit::script::Module model_;
     BehaviorPlanner::MapInterface* map_itf_{nullptr};
     TrajectoryGenerator* traj_generator_{nullptr};
     StateInterface* state_itf_{nullptr};
