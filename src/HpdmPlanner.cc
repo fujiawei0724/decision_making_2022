@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-20 09:33:15
+ * @LastEditTime: 2022-07-20 09:58:35
  * @Description: Hpdm planner.
  */
 
@@ -908,9 +908,9 @@ namespace HpdmPlanner {
         }
         clock_t end_time = clock();
         double time_consumption = static_cast<double>((end_time - start_time)) / CLOCKS_PER_SEC;
-        std::cout << "Flag flag flag: " << time_consumption << std::endl;
-        delete torch_itf_;
-        delete state_itf_;
+        printf("[HpdmPLanner] state transformation and torch time consumption: %lf.\n", time_consumption);
+        // delete torch_itf_;
+        // delete state_itf_;
 
         candi_action_idxs_ = candi_action_idxs;
     }
@@ -1056,7 +1056,12 @@ namespace HpdmPlanner {
     void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed) {
         std::thread candidate_behavior_thread = std::thread(&HpdmPlannerCore::generateCandidateBehavior, this);
         std::thread trajs_generate_thread = std::thread(&HpdmPlannerCore::generateTrajs, this, lon_candidate_num);
-        candidate_behavior_thread.join();
+        if (candi_action_idxs_.empty()) {
+            candidate_behavior_thread.join();
+        } else {
+            candidate_behavior_thread.detach();
+        }
+        // candidate_behavior_thread.join();
         trajs_generate_thread.join();
         
         *ego_traj = ego_trajectory_;

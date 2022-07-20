@@ -353,7 +353,7 @@ class SubVehicle{
 
     void triggerThread();
 
-    // HpdmPlanner::HpdmPlannerCore* hpdm_planner_{nullptr};
+    HpdmPlanner::HpdmPlannerCore* hpdm_planner_{nullptr};
 
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
