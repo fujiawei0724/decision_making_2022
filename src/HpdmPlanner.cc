@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-19 15:13:45
+ * @LastEditTime: 2022-07-20 09:33:15
  * @Description: Hpdm planner.
  */
 
@@ -328,10 +328,10 @@ namespace HpdmPlanner {
         torch::Tensor pred_res = model.forward(inputs).toTensor();
         clock_t forward_end_time = clock();
         double torch_forward_time_consumption = static_cast<double>((forward_end_time - forward_start_time)) / CLOCKS_PER_SEC;
-        std::cout << "Torch forward time consumption: " << torch_forward_time_consumption << std::endl;
+        printf("[TorchInterface] torch forward time consumption: %lf.\n", torch_forward_time_consumption);
 
 
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(5, 1);
         // auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1).to(torch::kCPU);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
@@ -826,13 +826,16 @@ namespace HpdmPlanner {
         candi_is_lane_changed_[index] = is_lane_changed;
     }
 
-    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
+    HpdmPlannerCore::HpdmPlannerCore() = default;
+    HpdmPlannerCore::~HpdmPlannerCore() = default;
+
+    void HpdmPlannerCore::initialize(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path) {
         map_itf_ = map_itf;
         traj_generator_ = new TrajectoryGenerator(map_itf);
         state_itf_ = new StateInterface(nearest_lane);
         torch_itf_ = new TorchInterface(model_path);
     }
-    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
+    void HpdmPlannerCore::initialize(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
         map_itf_ = map_itf;
         traj_generator_ = new TrajectoryGenerator(map_itf, vis_pub_2);
         state_itf_ = new StateInterface(nearest_lane);
@@ -840,7 +843,7 @@ namespace HpdmPlanner {
         vis_pub_ = vis_pub;
 
     }
-    HpdmPlannerCore::HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
+    void HpdmPlannerCore::initialize(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2) {
         map_itf_ = map_itf;
         obs_buffer_ = observation_buffer;
         model_ = model;
@@ -849,7 +852,7 @@ namespace HpdmPlanner {
         torch_itf_ = new TorchInterface(model_path);
         vis_pub_ = vis_pub;
     }
-    HpdmPlannerCore::~HpdmPlannerCore() = default;
+
 
     // Load data with consistence, which means in an replanning circle
     void HpdmPlannerCore::load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
@@ -869,8 +872,12 @@ namespace HpdmPlanner {
         lane_info_ = lane_info;
     }
 
-    // Run HPDM planner
-    void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed) {
+    // DEBUG
+    // Separate the code to test time consumption
+    // Generate candidate behavior
+    void HpdmPlannerCore::generateCandidateBehavior() {
+        // Record the time to debug
+        clock_t start_time = clock();
         std::vector<int> candi_action_idxs;
         if (obs_buffer_ == nullptr) {
             // Apply state array
@@ -885,24 +892,45 @@ namespace HpdmPlanner {
             // ~Stage I: construct observations and additional state
             std::vector<cv::Mat> observations;
             std::vector<double> additional_state;
+            clock_t state_trans_start_time = clock();
             state_itf_->runOnce(lane_info_, ego_vehicle_, surround_vehicles_, *obs_buffer_, &observations, &additional_state);
+            clock_t state_trans_end_time = clock();
+            double state_trans_time_consumption = static_cast<double>((state_trans_end_time - state_trans_start_time)) / CLOCKS_PER_SEC;
+            printf("[HpdmPLanner] state transformation time consumption: %lf.\n", state_trans_time_consumption);
+
 
             // ~Stage II: model predict to generate action index
-            clock_t start_time = clock();
+            clock_t torch_start_time = clock();
             torch_itf_->runOnce(observations, additional_state, model_, &candi_action_idxs);
-            clock_t end_time = clock();
-            double torch_time_consumption = static_cast<double>((end_time - start_time)) / CLOCKS_PER_SEC;
-            std::cout << "Torch time consumption: " << torch_time_consumption << std::endl;
+            clock_t torch_end_time = clock();
+            double torch_time_consumption = static_cast<double>((torch_end_time - torch_start_time)) / CLOCKS_PER_SEC;
+            printf("[HpdmPLanner] torch time consumption: %lf.\n", torch_time_consumption);
+        }
+        clock_t end_time = clock();
+        double time_consumption = static_cast<double>((end_time - start_time)) / CLOCKS_PER_SEC;
+        std::cout << "Flag flag flag: " << time_consumption << std::endl;
+        delete torch_itf_;
+        delete state_itf_;
 
-            
+        candi_action_idxs_ = candi_action_idxs;
+    }
+
+    // END DEBUG
+
+    // Run HPDM planner
+    void HpdmPlannerCore::generateTrajs(int lon_candidate_num) {
+
+        while (ros::ok()) {
+            if (!candi_action_idxs_.empty()) {
+                break;
+            }
         }
 
-        
-        // // DEBUG
-        // for (const auto& state_it : state_array) {
-        //     std::cout << state_it << std::endl;
-        // }
+        // // DEBUG    
+        // candi_action_idxs = std::vector<int>{228, 230, 229, 214, 210};
         // // END DEBUG
+
+        std::cout << candi_action_idxs_ << std::endl;
 
 
         // Superimpose the backup behaviors
@@ -910,14 +938,14 @@ namespace HpdmPlanner {
         if (lon_candidate_num == 3) {
             // TODO: add backup behaviors here 
         } else if (lon_candidate_num == 11) {
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 147) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(147);
+            if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 147) == candi_action_idxs_.end()) {
+                candi_action_idxs_.emplace_back(147);
             }
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 148) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(148);
+            if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 148) == candi_action_idxs_.end()) {
+                candi_action_idxs_.emplace_back(148);
             }
-            if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-                candi_action_idxs.emplace_back(167);
+            if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 167) == candi_action_idxs_.end()) {
+                candi_action_idxs_.emplace_back(167);
             }
         } else {
             assert(false);
@@ -945,7 +973,7 @@ namespace HpdmPlanner {
         // END DEBUG
         
         if (lon_candidate_num == 3) {
-            behavior_sequence_vec_raw = ActionInterface::indexVecToBehSeqVec(candi_action_idxs);
+            behavior_sequence_vec_raw = ActionInterface::indexVecToBehSeqVec(candi_action_idxs_);
             for (const auto& beh_seq : behavior_sequence_vec_raw) {
                 if (beh_seq.back().lat_beh_ == LateralBehavior::LaneChangeLeft && !map_itf_->left_lane_exist_) {
                     continue;
@@ -956,7 +984,7 @@ namespace HpdmPlanner {
                 behavior_sequence_vec.emplace_back(beh_seq);
             }
         } else if (lon_candidate_num == 11) {
-            intention_sequence_vec_raw = ActionInterface::indexVecToIntentionSeqVec(candi_action_idxs);
+            intention_sequence_vec_raw = ActionInterface::indexVecToIntentionSeqVec(candi_action_idxs_);
             for (const auto& intention_seq : intention_sequence_vec_raw) {
                 if (intention_seq.back().lat_beh_ == LateralBehavior::LaneChangeLeft && !map_itf_->left_lane_exist_) {
                     continue;
@@ -992,7 +1020,11 @@ namespace HpdmPlanner {
             traj_generator_->simulateCandidatesBehaviorSequences(ego_vehicle_, surround_vehicles_, behavior_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
             // END DEBUG
         } else if (lon_candidate_num == 11) {
-            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, candi_action_idxs, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
+            clock_t traj_generation_start_time = clock();
+            traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, candi_action_idxs_, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
+            clock_t traj_generation_end_time = clock();
+            double traj_generation_time_consumption = static_cast<double>((traj_generation_end_time - traj_generation_start_time)) / CLOCKS_PER_SEC;
+            std::cout << "Trajectory generation time consumption: " << traj_generation_time_consumption << std::endl;
         } else {
             assert(false);
         }
@@ -1006,15 +1038,33 @@ namespace HpdmPlanner {
             color.b = 0.0;
             VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 1000, color);
         }
-        printf("[HpdmPLanner] selected action index: %d, is safe: %d, cost: %lf.\n", candi_action_idxs[final_win_index], is_safe, policy_cost);
+        printf("[HpdmPLanner] selected action index: %d, is safe: %d, cost: %lf.\n", candi_action_idxs_[final_win_index], is_safe, policy_cost);
 
 
-        *ego_traj = ego_trajectory;
-        *sur_trajs = sur_trajectories;
-        *safe = is_safe;
-        *cost = policy_cost;
-        *target_reference_lane = target_ref_lane;
-        *is_lane_changed = is_final_lane_changed;
+        ego_trajectory_ = ego_trajectory;
+        sur_trajectories_ = sur_trajectories;
+        is_safe_ = is_safe;
+        policy_cost_ = policy_cost;
+        target_ref_lane_ = target_ref_lane;
+        is_final_lane_changed_ = is_final_lane_changed;
+
+
+
+    }
+
+    // Generate trajectories
+    void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed) {
+        std::thread candidate_behavior_thread = std::thread(&HpdmPlannerCore::generateCandidateBehavior, this);
+        std::thread trajs_generate_thread = std::thread(&HpdmPlannerCore::generateTrajs, this, lon_candidate_num);
+        candidate_behavior_thread.join();
+        trajs_generate_thread.join();
+        
+        *ego_traj = ego_trajectory_;
+        *sur_trajs = sur_trajectories_;
+        *safe = is_safe_;
+        *cost = policy_cost_;
+        *target_reference_lane = target_ref_lane_;
+        *is_lane_changed = is_final_lane_changed_;
     }
     
 } // End of HpdmPlanner

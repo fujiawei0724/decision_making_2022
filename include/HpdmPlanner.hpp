@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-19 15:14:00
+ * @LastEditTime: 2022-07-20 09:21:44
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -232,10 +232,15 @@ class TrajectoryGenerator {
 
 class HpdmPlannerCore {
  public:
-    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path);
-    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
-    HpdmPlannerCore(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
+
+    HpdmPlannerCore();
     ~HpdmPlannerCore();
+
+    void initialize(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path);
+    void initialize(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
+    void initialize(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
+
+
 
     // Load data with consistence, which means in an replanning circle
     void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
@@ -243,7 +248,13 @@ class HpdmPlannerCore {
     // Load data without consistence
     void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info);
 
-    // Run HPDM planner
+    // Generate trajectories for candidate behaviors
+    void generateTrajs(int lon_candidate_num);
+
+    // Generate candidate behavior
+    void generateCandidateBehavior();
+
+    // Generate trajectories
     void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed);
 
     Utils::ObservationBuffer* obs_buffer_{nullptr};
@@ -255,12 +266,24 @@ class HpdmPlannerCore {
     // DEBUG visualization
     ros::Publisher vis_pub_;
 
+    // Inputs
     Vehicle ego_vehicle_;
     std::unordered_map<int, Vehicle> surround_vehicles_;
     std::vector<double> lane_info_;
     bool with_consistence_ = false;
     Lane pre_reference_lane_;
     Vehicle pre_ego_desired_vehicle_state_;
+
+    // Middle variable
+    std::vector<int> candi_action_idxs_;
+
+    // Outputs
+    std::vector<Vehicle> ego_trajectory_;
+    std::unordered_map<int, std::vector<Vehicle>> sur_trajectories_;
+    bool is_safe_{false};
+    double policy_cost_{0.0};
+    Lane target_ref_lane_;
+    bool is_final_lane_changed_{false};
 
 };
 
