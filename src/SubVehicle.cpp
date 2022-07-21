@@ -54,7 +54,7 @@ DecisionMaking::SubVehicle::SubVehicle(const ros::NodeHandle &nh) {
     hpdm_planner_ = new HpdmPlanner::HpdmPlannerCore();
 
     // // Load model
-    module_ = torch::jit::load("/home/fjw/Desktop/model0.pt");
+    module_ = torch::jit::load("/home/fjw/Desktop/model/20220721/gpu/model0.pt");
     module_.to(torch::kCUDA);
 
     ROS_INFO("INITAL SUCCESS");
@@ -529,6 +529,8 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         hpdmPlanning(&is_hpdm_planning_success, &time_cons);
         if (!is_hpdm_planning_success) {
             printf("[MainPineline] hpdm planning failed.\n");
+            ego_trajectory_.clear();
+            surround_trajectories_.clear();
             continue;
         }
 

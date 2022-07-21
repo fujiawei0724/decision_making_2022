@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:33:27
+ * @LastEditTime: 2022-07-21 21:14:51
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -140,6 +140,11 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     double current_vehicle_steer = current_vehicle_steer_;
     current_vehicle_steer_metex_.unlock();
 
+    // DEBUG
+    start_point_kappa = 0.0;
+    current_vehicle_steer = 0.0;
+    // END DEBUG
+
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
@@ -156,12 +161,13 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     // Run HPDM
     // Load information
     // HpdmPlanner::HpdmPlannerCore* hpdm_planner = new HpdmPlanner::HpdmPlannerCore();
-    // std::string model_path = "/home/fjw/Desktop/model/20220714/model0.pt";
+    std::string model_path = "/home/fjw/PioneerTest/catkin_ws/src/planning/motion_planning/model/model0.pt";
     clock_t hpdm_planning_start_time = clock();
     hpdm_planner_->initialize(&map_interface, &observation_buffer_, module_, nearest_lane, vis_behavior_planner_ego_states_pub_, vis_behavior_planner_candidates_states_pub_);
+    // hpdm_planner_->initialize(&map_interface, nearest_lane, model_path, vis_behavior_planner_ego_states_pub_, vis_behavior_planner_candidates_states_pub_);
     
     if (ego_trajectory_.size() != 0 && is_previous_behavior_lane_changed_) {
-        hpdm_planner_->load(ego_vehicle, surround_vehicles, lane_info, reference_lane_, ego_trajectory_.back());
+        hpdm_planner_->load(ego_vehicle, surround_vehicles, lane_info, reference_lane_, ego_trajectory_.back(), previous_behavior_index_);
     } else {
         hpdm_planner_->load(ego_vehicle, surround_vehicles, lane_info);
     }
@@ -173,7 +179,9 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     std::unordered_map<int, Trajectory> current_episode_surround_trajectories;
     bool current_episode_lane_chaned = false;
     ParametricLane current_episode_reference_lane;
-    hpdm_planner_->runHpdmPlanner(11, &current_episode_ego_trajectory, &current_episode_surround_trajectories, &current_episode_reference_lane, &is_safe, &cost, &current_episode_lane_chaned);
+    int current_behavior_index;
+    hpdm_planner_->runHpdmPlanner(11, &current_episode_ego_trajectory, &current_episode_surround_trajectories, &current_episode_reference_lane, &is_safe, &cost, &current_episode_lane_chaned, &current_behavior_index);
+    usleep(150000);
     clock_t hpdm_planning_end_time = clock();
     printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);
 
@@ -184,6 +192,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
         surround_trajectories_ = current_episode_surround_trajectories;
         is_previous_behavior_lane_changed_ = current_episode_lane_chaned;
         reference_lane_ = current_episode_reference_lane;
+        previous_behavior_index_ = current_behavior_index;
     }
     // delete hpdm_planner;
 }

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-15 10:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 15:44:00
+ * @LastEditTime: 2022-07-21 18:03:38
  * @Description: Utils for trajectory planning.
  */
 

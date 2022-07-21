@@ -366,6 +366,7 @@ class SubVehicle{
     std::vector<Obstacle> unlaned_obstacles_;
     ParametricLane reference_lane_;
     bool is_previous_behavior_lane_changed_{false};
+    int previous_behavior_index_{-1};
 
 
     ros::Publisher vis_behavior_planner_ego_states_pub_;

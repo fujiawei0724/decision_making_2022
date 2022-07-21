@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 15:43:24
+ * @LastEditTime: 2022-07-21 21:03:39
  * @Description: Hpdm planner.
  */
 
@@ -94,7 +94,7 @@ namespace HpdmPlanner {
             change_begin_index = lat_beh_val / 2;
         }
         
-        // supply data 
+        // Supply data 
         std::vector<VehicleIntention> intention_sequence;
         if (lat_beh == LateralBehavior::LaneKeeping) {
             for (int i = 0; i < 10; i++) {
@@ -277,7 +277,7 @@ namespace HpdmPlanner {
         
         // Forward 
         torch::Tensor pred_res = module.forward(inputs).toTensor();
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(16, 1);
         auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
@@ -332,7 +332,7 @@ namespace HpdmPlanner {
         printf("[TorchInterface] torch forward time consumption: %lf.\n", torch_forward_time_consumption);
 
 
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(16, 1);
         // auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1).to(torch::kCPU);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
@@ -582,9 +582,9 @@ namespace HpdmPlanner {
         if (with_consistence_) {
             double consistence_cost = BehaviorPlanner::PolicyEvaluater::calculateConsistenceCost(ego_trajectory, pre_reference_lane_, pre_ego_desired_vehicle_state_);
             behavior_cost += consistence_cost;
-            // if (consistence_cost > 0.2) {
-            //     is_safe = false;
-            // }
+            if (consistence_cost > 0.2) {
+                is_safe = false;
+            }
         }
 
         // Cache
@@ -702,18 +702,18 @@ namespace HpdmPlanner {
 
         // Change the thread number with the mutation of the surround vehicle number
         int surround_vehicles_number = surround_vehicles.size();
-        // int thread_num = -1;
-        // if (surround_vehicles_number <= 4) {
-        //     thread_num = 4;
-        // } else if (surround_vehicles_number <= 8) {
-        //     thread_num = 8;
-        // } else if (surround_vehicles_number <= 12) {
-        //     thread_num = 12;
-        // } else {
-        //     thread_num = 16;
-        // }
+        int thread_num = -1;
+        if (surround_vehicles_number <= 4) {
+            thread_num = 4;
+        } else if (surround_vehicles_number <= 8) {
+            thread_num = 8;
+        } else if (surround_vehicles_number <= 12) {
+            thread_num = 12;
+        } else {
+            thread_num = 16;
+        }
 
-        int thread_num = 4;
+        // int thread_num = 4;
 
         int single_thread_executed_num = std::ceil(static_cast<double>(candi_length) / static_cast<double>(thread_num));
         std::vector<std::thread> thread_set(thread_num);
@@ -876,13 +876,14 @@ namespace HpdmPlanner {
 
 
     // Load data with consistence, which means in an replanning circle
-    void HpdmPlannerCore::load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
+    void HpdmPlannerCore::load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state, const int& pre_behavior_index) {
         ego_vehicle_ = ego_vehicle;
         surround_vehicles_ = surround_vehicles;
         lane_info_ = lane_info;
         with_consistence_ = true;
         pre_reference_lane_ = pre_reference_lane;
         pre_ego_desired_vehicle_state_ = pre_ego_desired_vehicle_state;
+        previous_behavior_index_ = pre_behavior_index;
     }
 
 
@@ -891,6 +892,8 @@ namespace HpdmPlanner {
         ego_vehicle_ = ego_vehicle;
         surround_vehicles_ = surround_vehicles;
         lane_info_ = lane_info;
+        with_consistence_ = false;
+        previous_behavior_index_ = -1;
     }
 
     // DEBUG
@@ -933,7 +936,7 @@ namespace HpdmPlanner {
         // delete torch_itf_;
         // delete state_itf_;
 
-        candi_action_idxs_ = candi_action_idxs;
+        candi_action_idxs_set_.insert(candi_action_idxs.begin(), candi_action_idxs.end());
     }
 
     // END DEBUG
@@ -942,7 +945,7 @@ namespace HpdmPlanner {
     void HpdmPlannerCore::generateTrajs(int lon_candidate_num) {
 
         while (ros::ok()) {
-            if (!candi_action_idxs_.empty()) {
+            if (!candi_action_idxs_set_.empty()) {
                 break;
             }
         }
@@ -951,33 +954,63 @@ namespace HpdmPlanner {
         // candi_action_idxs = std::vector<int>{228, 230, 229, 214, 210};
         // // END DEBUG
 
-        std::cout << candi_action_idxs_ << std::endl;
-
+        // std::cout << candi_action_idxs_ << std::endl;
 
         // Superimpose the backup behaviors
         // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        if (lon_candidate_num == 3) {
-            // TODO: add backup behaviors here 
-        } else if (lon_candidate_num == 11) {
-            if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 147) == candi_action_idxs_.end()) {
-                candi_action_idxs_.emplace_back(147);
-            }
-            if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 148) == candi_action_idxs_.end()) {
-                candi_action_idxs_.emplace_back(148);
-            }
-            if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 167) == candi_action_idxs_.end()) {
-                candi_action_idxs_.emplace_back(167);
-            } 
-        } else {
-            assert(false);
-        }
-        // if (ego_vehicle_.state_.velocity_ < 10.0) {
-        //     if (lon_candidate_num == 11) {
-        //         if (std::find(candi_action_idxs.begin(), candi_action_idxs.end(), 167) == candi_action_idxs.end()) {
-        //             candi_action_idxs.emplace_back(167);
-        //         }
-        //     }
+        // if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 147) == candi_action_idxs_.end()) {
+        //     candi_action_idxs_.emplace_back(147);
         // }
+        // if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 148) == candi_action_idxs_.end()) {
+        //     candi_action_idxs_.emplace_back(148);
+        // }
+        // if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 167) == candi_action_idxs_.end()) {
+        //     candi_action_idxs_.emplace_back(167);
+        // }
+        candi_action_idxs_set_.insert(147);
+        candi_action_idxs_set_.insert(148);
+        candi_action_idxs_set_.insert(167);
+
+        // // Parse the previous behavior from the index
+        // if (previous_behavior_index_ != -1) {
+        //     // Calculate related information
+        //     int lon_beh_val = previous_behavior_index_ / 21;
+        //     int lat_beh_val = previous_behavior_index_ % 21;
+        //     double lon_vel_comp = static_cast<double>(lon_beh_val) - 5.0;  
+        //     // LateralBehavior lat_beh;
+        //     int change_begin_index = -1;
+        //     if (lat_beh_val == 20) {
+        //         printf("[HpdmPLanner] invalid previous behavior information.\n");
+        //         // Without lane change
+        //         // lat_beh = LateralBehavior::LaneKeeping;
+        //     } else {
+        //         // if (lat_beh_val % 2 == 0) {
+        //         //     lat_beh = LateralBehavior::LaneChangeLeft;
+        //         // } else {
+        //         //     lat_beh = LateralBehavior::LaneChangeRight;
+        //         // }
+        //         change_begin_index = lat_beh_val / 2;
+        //     }
+            
+        //     // Construct the related behaviors that with different lane change time stamp
+        //     std::vector<int> related_behavior_indice;
+        //     int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
+        //     int lat_base_index = -1;
+        //     if (lat_beh_val % 2 == 0) {
+        //         lat_base_index = 0;
+        //     } else {
+        //         lat_base_index = 1;
+        //     }
+        //     for (int i = lat_base_index; i <= 19; i += 2) {
+        //         related_behavior_indice.emplace_back(lon_base_index + i);
+        //     }
+        //     candi_action_idxs_set_.insert(related_behavior_indice.begin(), related_behavior_indice.end());
+
+        // }
+
+        candi_action_idxs_.assign(candi_action_idxs_set_.begin(), candi_action_idxs_set_.end());
+        
+
 
         // ~Stage III: generate behavior / intention sequence from action index, and do pre-process
         std::vector<std::vector<VehicleBehavior>> behavior_sequence_vec_raw;
@@ -1068,21 +1101,22 @@ namespace HpdmPlanner {
         policy_cost_ = policy_cost;
         target_ref_lane_ = target_ref_lane;
         is_final_lane_changed_ = is_final_lane_changed;
+        current_behavior_index_ = final_win_index;
 
 
 
     }
 
     // Generate trajectories
-    void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed) {
+    void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed, int* behavior_index) {
         std::thread candidate_behavior_thread = std::thread(&HpdmPlannerCore::generateCandidateBehavior, this);
         std::thread trajs_generate_thread = std::thread(&HpdmPlannerCore::generateTrajs, this, lon_candidate_num);
-        if (candi_action_idxs_.empty()) {
-            candidate_behavior_thread.join();
-        } else {
-            candidate_behavior_thread.detach();
-        }
-        // candidate_behavior_thread.join();
+        // if (candi_action_idxs_.empty()) {
+        //     candidate_behavior_thread.join();
+        // } else {
+        //     candidate_behavior_thread.detach();
+        // }
+        candidate_behavior_thread.join();
         trajs_generate_thread.join();
         
         *ego_traj = ego_trajectory_;
@@ -1091,6 +1125,7 @@ namespace HpdmPlanner {
         *cost = policy_cost_;
         *target_reference_lane = target_ref_lane_;
         *is_lane_changed = is_final_lane_changed_;
+        *behavior_index = current_behavior_index_;
     }
     
 } // End of HpdmPlanner

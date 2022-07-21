@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-20 22:27:40
+ * @LastEditTime: 2022-07-21 20:58:44
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -244,7 +244,7 @@ class HpdmPlannerCore {
 
 
     // Load data with consistence, which means in an replanning circle
-    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state, const int& pre_behavior_index);
 
     // Load data without consistence
     void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info);
@@ -256,7 +256,7 @@ class HpdmPlannerCore {
     void generateCandidateBehavior();
 
     // Generate trajectories
-    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed);
+    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed, int* behavior_index);
 
     Utils::ObservationBuffer* obs_buffer_{nullptr};
     torch::jit::script::Module model_;
@@ -274,8 +274,10 @@ class HpdmPlannerCore {
     bool with_consistence_ = false;
     ParametricLane pre_reference_lane_;
     Vehicle pre_ego_desired_vehicle_state_;
+    int previous_behavior_index_{-1};
 
     // Middle variable
+    std::set<int> candi_action_idxs_set_;
     std::vector<int> candi_action_idxs_;
 
     // Outputs
@@ -285,6 +287,7 @@ class HpdmPlannerCore {
     double policy_cost_{0.0};
     ParametricLane target_ref_lane_;
     bool is_final_lane_changed_{false};
+    int current_behavior_index_{-1};
 
 };
 
