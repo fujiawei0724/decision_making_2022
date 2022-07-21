@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-20 20:51:00
+ * @LastEditTime: 2022-07-21 09:24:25
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -359,17 +359,26 @@ class StateTransformer {
         lane_tangent_vec /= lane_tangent_vec.norm();
         Eigen::Matrix<double, 2, 1> lane_normal_vec{-lane_tangent_vec(1), lane_tangent_vec(0)};
 
-        // Check tolerance
-        const double step_tolerance = 0.2;
-        if (fabs((state.position_ - lane_position).dot(lane_tangent_vec)) > step_tolerance) {
-            printf("[StatsTransformer] offset %lf larger than tolerance.\n", fabs((state.position_ - lane_position).dot(lane_tangent_vec)));
-        }
+
+
+        // // DEBUG
+        // // Check tolerance
+        // const double step_tolerance = 0.2;
+        // if (fabs((state.position_ - lane_position).dot(lane_tangent_vec)) > step_tolerance) {
+        //     printf("[StatsTransformer] offset %lf larger than tolerance.\n", fabs((state.position_ - lane_position).dot(lane_tangent_vec)));
+        // }
+        // // END DEBUG
 
         double d = (state.position_ - lane_position).dot(lane_normal_vec);
         double one_minus_curd = 1.0 - curvature * d;
-        if (one_minus_curd < MIDDLE_EPS) {
-            printf("[StateTransformer] d not valid for transform.\n");
-        }
+
+        // // DEBUG
+        // if (one_minus_curd < MIDDLE_EPS) {
+        //     printf("[StateTransformer] d not valid for transform.\n");
+        // }
+        // // END DEBUG
+
+
         double delta_theta = Tools::safeThetaTransform(state.theta_ - lane_orientation);
 
         double cn_delta_theta = cos(delta_theta);

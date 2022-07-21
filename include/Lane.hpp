@@ -263,16 +263,16 @@ class ParametricLane {
 // A segment of quintic spline
 class QuinticSpline {
  public:
-    /**
-     * @brief speed up calculation
-     * @param {double&} remain_station
-     * @param {double*} pos_x
-     * @param {double*} pos_y
-     * @param {double*} theta
-     * @param {double*} curvature
-     * @return {*}
-     */    
-    static void calculatePointInfo(const PathPlanningUtilities::CurvePoint& begin_state, const PathPlanningUtilities::CurvePoint& end_state, const double& real_dis, const double& remain_station, double* pos_x, double* pos_y, double* theta, double* curvature);
+    // /**
+    //  * @brief speed up calculation
+    //  * @param {double&} remain_station
+    //  * @param {double*} pos_x
+    //  * @param {double*} pos_y
+    //  * @param {double*} theta
+    //  * @param {double*} curvature
+    //  * @return {*}
+    //  */    
+    // static void calculatePointInfo(const PathPlanningUtilities::CurvePoint& begin_state, const PathPlanningUtilities::CurvePoint& end_state, const double& real_dis, const double& remain_station, double* pos_x, double* pos_y, double* theta, double* curvature);
 
     /**
      * @brief calculate the point information given a s

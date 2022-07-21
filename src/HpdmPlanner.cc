@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:34:52
+ * @LastEditTime: 2022-07-21 15:43:24
  * @Description: Hpdm planner.
  */
 
@@ -700,8 +700,21 @@ namespace HpdmPlanner {
         // }
         // // END DEBUG
 
-        // Limit the number of threads to reduce time consumption
+        // Change the thread number with the mutation of the surround vehicle number
+        int surround_vehicles_number = surround_vehicles.size();
+        // int thread_num = -1;
+        // if (surround_vehicles_number <= 4) {
+        //     thread_num = 4;
+        // } else if (surround_vehicles_number <= 8) {
+        //     thread_num = 8;
+        // } else if (surround_vehicles_number <= 12) {
+        //     thread_num = 12;
+        // } else {
+        //     thread_num = 16;
+        // }
+
         int thread_num = 4;
+
         int single_thread_executed_num = std::ceil(static_cast<double>(candi_length) / static_cast<double>(thread_num));
         std::vector<std::thread> thread_set(thread_num);
         for (int i = 0; i < thread_num; i++) {
@@ -954,7 +967,7 @@ namespace HpdmPlanner {
             }
             if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 167) == candi_action_idxs_.end()) {
                 candi_action_idxs_.emplace_back(167);
-            }
+            } 
         } else {
             assert(false);
         }
@@ -1032,7 +1045,7 @@ namespace HpdmPlanner {
             traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, candi_action_idxs_, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
             clock_t traj_generation_end_time = clock();
             double traj_generation_time_consumption = static_cast<double>((traj_generation_end_time - traj_generation_start_time)) / CLOCKS_PER_SEC;
-            std::cout << "Trajectory generation time consumption: " << traj_generation_time_consumption << std::endl;
+            std::cout << "[HpdmPLanner] trajectory generation time consumption: " << traj_generation_time_consumption << std::endl;
         } else {
             assert(false);
         }
