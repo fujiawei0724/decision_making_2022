@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-18 08:25:13
+ * @LastEditTime: 2022-07-20 20:51:00
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -295,57 +295,64 @@ class Vehicle {
 class StateTransformer {
  public:
     StateTransformer() = default;
-    StateTransformer(const Lane& lane) {
+    StateTransformer(const ParametricLane& lane) {
         lane_ = lane;
     }
     ~StateTransformer() = default;
 
     
     // Transform world state position to frenet state position     
-    Eigen::Matrix<double, 2, 1> getFrenetPointFromPoint(const Eigen::Matrix<double, 2, 1>& state_position) const {
-        // Transform point formulation
-        PathPlanningUtilities::Point2f path_state_position;
-        path_state_position.x_ = state_position(0);
-        path_state_position.y_ = state_position(1);
+    Eigen::Vector2d getFrenetPointFromPoint(const Eigen::Vector2d& state_position) const {
+        // // Transform point formulation
+        // PathPlanningUtilities::Point2f path_state_position;
+        // path_state_position.x_ = state_position(0);
+        // path_state_position.y_ = state_position(1);
 
-        // Transform 2D point using matrix calculation
-        Eigen::Matrix<double, 2, 1> frenet_state_position{0.0, 0.0};
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        size_t start_index_of_lane = Tools::findNearestPositionIndexInCoordination(lane_coordination, path_state_position);
-        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
-        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
-        Eigen::Vector2d start_point_in_world_v2d(state_position(0), state_position(1));
-        Eigen::Vector2d start_point_position_in_frenet;
-        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
-        frenet_state_position(0) = start_point_position_in_frenet(0);
-        frenet_state_position(1) = start_point_position_in_frenet(1);
+        // // Transform 2D point using matrix calculation
+        // Eigen::Matrix<double, 2, 1> frenet_state_position{0.0, 0.0};
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        // size_t start_index_of_lane = Tools::findNearestPositionIndexInCoordination(lane_coordination, path_state_position);
+        // std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        // TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        // Eigen::Vector2d start_point_in_world_v2d(state_position(0), state_position(1));
+        // Eigen::Vector2d start_point_position_in_frenet;
+        // Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        // frenet_state_position(0) = start_point_position_in_frenet(0);
+        // frenet_state_position(1) = start_point_position_in_frenet(1);
 
-        return frenet_state_position;
+        // return frenet_state_position;
+        return lane_.calculateFrenetPoint(state_position);
+
     }
 
     // Get frenet state
     FrenetState getFrenetStateFromState(const State& state) const {
-        // Get the most nearest lane point information
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(state.position_);
-        PathPlanningUtilities::CoordinationPoint nearest_lane_point = lane_coordination[start_index_of_lane];
-        Eigen::Matrix<double, 2, 1> lane_position{nearest_lane_point.worldpos_.position_.x_, nearest_lane_point.worldpos_.position_.y_};
+        // // Get the most nearest lane point information
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        // size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(state.position_);
+        // PathPlanningUtilities::CoordinationPoint nearest_lane_point = lane_coordination[start_index_of_lane];
+
+
+        // Get the nearest point
+        PathPlanningUtilities::CurvePoint nearest_lane_point = lane_.findNearestPoint(state.position_);
+        Eigen::Matrix<double, 2, 1> lane_position{nearest_lane_point.position_.x_, nearest_lane_point.position_.y_};
 
         // Get curvature and curvature derivative information
         // TODO: load the curvature derivative information from map server
-        double curvature = nearest_lane_point.worldpos_.kappa_;
+        double curvature = nearest_lane_point.kappa_;
         double curvature_derivative = 0.0;
 
         // Get the arc length
-        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
-        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
-        Eigen::Vector2d start_point_in_world_v2d(state.position_(0), state.position_(1));
-        Eigen::Vector2d start_point_position_in_frenet;
-        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
-        double arc_length = start_point_position_in_frenet(0);
+        // std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        // TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        // Eigen::Vector2d start_point_in_world_v2d(state.position_(0), state.position_(1));
+        // Eigen::Vector2d start_point_position_in_frenet;
+        // Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        // double arc_length = start_point_position_in_frenet(0);
+        double arc_length = lane_.calculateArcLength(state.position_);
 
         // Get tangent vector and normal vector, the norm is set with 1.0
-        double lane_orientation = nearest_lane_point.worldpos_.theta_;
+        double lane_orientation = nearest_lane_point.theta_;
         double y = tan(lane_orientation);
         double x = 1.0;
         Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
@@ -384,9 +391,9 @@ class StateTransformer {
     }
 
     // Transform frenet position to world position
-    Eigen::Matrix<double, 2, 1> getPointFromFrenetPoint(const Eigen::Matrix<double, 2, 1>& frenet_point) {
-        // Determine the nearest position to frenet state
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+    Eigen::Vector2d getPointFromFrenetPoint(const Eigen::Vector2d& frenet_point) {
+        // // Determine the nearest position to frenet state
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
         
         // Origin transformation, no use
         // PathPlanningUtilities::CoordinationPoint lane_position;
@@ -397,50 +404,56 @@ class StateTransformer {
         //     }
         // }
         
-        double lane_position_x = 0.0, lane_position_y = 0.0, lane_position_theta = 0.0, lane_position_curvature = 0.0;
-        int i = 0;
-        for (; i < static_cast<int>(lane_coordination.size()); i++) {
-            if (lane_coordination[i].station_ > frenet_point(0)) {
-                if (i == 0) {
-                    printf("[StateTransformer] transformed point out of range.\n");
-                }
-                break;
-            }
-        }
-        double remain_station = frenet_point(0) - lane_coordination[i - 1].station_;
-        QuinticSpline::calculatePointInfo(lane_coordination[i - 1].worldpos_, lane_coordination[i].worldpos_, LANE_GAP_DISTANCE, remain_station, &lane_position_x, &lane_position_y, &lane_position_theta, &lane_position_curvature);
+        // double lane_position_x = 0.0, lane_position_y = 0.0, lane_position_theta = 0.0, lane_position_curvature = 0.0;
+        // int i = 0;
+        // for (; i < static_cast<int>(lane_coordination.size()); i++) {
+        //     if (lane_coordination[i].station_ > frenet_point(0)) {
+        //         if (i == 0) {
+        //             printf("[StateTransformer] transformed point out of range.\n");
+        //         }
+        //         break;
+        //     }
+        // }
+        // double remain_station = frenet_point(0) - lane_coordination[i - 1].station_;
+        // QuinticSpline::calculatePointInfo(lane_coordination[i - 1].worldpos_, lane_coordination[i].worldpos_, LANE_GAP_DISTANCE, remain_station, &lane_position_x, &lane_position_y, &lane_position_theta, &lane_position_curvature);
 
-        Eigen::Matrix<double, 2, 1> lane_pos{lane_position_x, lane_position_y};
+        // Eigen::Matrix<double, 2, 1> lane_pos{lane_position_x, lane_position_y};
         
-        // Get tangent vector and normal vector, the norm is set with 1.0
-        double lane_orientation = lane_position_theta;
-        double y = tan(lane_orientation);
-        double x = 1.0;
-        Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
-        lane_tangent_vec /= lane_tangent_vec.norm();
-        Eigen::Matrix<double, 2, 1> vec_normal{-lane_tangent_vec(1), lane_tangent_vec(0)};
-        Eigen::Matrix<double, 2, 1> point = vec_normal * frenet_point(1) + lane_pos;
-        return point;
+        // // Get tangent vector and normal vector, the norm is set with 1.0
+        // double lane_orientation = lane_position_theta;
+        // double y = tan(lane_orientation);
+        // double x = 1.0;
+        // Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
+        // lane_tangent_vec /= lane_tangent_vec.norm();
+        // Eigen::Matrix<double, 2, 1> vec_normal{-lane_tangent_vec(1), lane_tangent_vec(0)};
+        // Eigen::Matrix<double, 2, 1> point = vec_normal * frenet_point(1) + lane_pos;
+
+        
+        return lane_.calculateWorldPoint(frenet_point);
     }
 
     // Get state 
     // TODO: add interpolation to improve precision
     State getStateFromFrenetState(const FrenetState& frenet_state) const {
-        // Determine the nearest position to frenet state
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        PathPlanningUtilities::CoordinationPoint lane_position;
-        for (const PathPlanningUtilities::CoordinationPoint& lane_point: lane_coordination) {
-            if (lane_point.station_ > frenet_state.vec_s_[0]) {
-                lane_position = lane_point;
-                break;
-            }
-        }
-        Eigen::Matrix<double, 2, 1> lane_pos{lane_position.worldpos_.position_.x_, lane_position.worldpos_.position_.y_};
+        // // Determine the nearest position to frenet state
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        // PathPlanningUtilities::CoordinationPoint lane_position;
+        // for (const PathPlanningUtilities::CoordinationPoint& lane_point: lane_coordination) {
+        //     if (lane_point.station_ > frenet_state.vec_s_[0]) {
+        //         lane_position = lane_point;
+        //         break;
+        //     }
+        // }
+        // Eigen::Matrix<double, 2, 1> lane_pos{lane_position.worldpos_.position_.x_, lane_position.worldpos_.position_.y_};
+
+        // Calculate the corresponding point due to its arc length
+        PathPlanningUtilities::CurvePoint lane_curve_point = lane_.calculateCurvePointFromArcLength(frenet_state.vec_s_[0]);
+        Eigen::Vector2d lane_pos{lane_curve_point.position_.x_, lane_curve_point.position_.y_};
 
 
         // Get curvature and curvature derivative information
         // TODO: load the curvature derivative information from map server
-        double curvature = lane_position.worldpos_.kappa_;
+        double curvature = lane_curve_point.kappa_;
         double curvature_derivative = 0.0;
 
         double one_minus_curd = 1.0 - curvature * frenet_state.vec_s_[0];
@@ -449,7 +462,7 @@ class StateTransformer {
         }
 
         // Get tangent vector and normal vector, the norm is set with 1.0
-        double lane_orientation = lane_position.worldpos_.theta_;
+        double lane_orientation = lane_curve_point.theta_;
         double y = tan(lane_orientation);
         double x = 1.0;
         Eigen::Matrix<double, 2, 1> lane_tangent_vec{x, y};
@@ -477,17 +490,34 @@ class StateTransformer {
     // Transform vehicle to frenet image vehicle
     // TODO: using coefficients based lane to speed up
     FsImageVehicle getFsImageVehicleFromVehicle(const Vehicle& vehicle) {
-        // Get lane information
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
-        // Find the nearest point
-        int start_index_of_lane = lane_.findCurrenPositionIndexInLane(vehicle.state_.position_);
-        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        // // Get lane information
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        // std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        // // Find the nearest point
+        // int start_index_of_lane = lane_.findCurrenPositionIndexInLane(vehicle.state_.position_);
+        // TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        // Eigen::Vector2d start_point_in_world_v2d = vehicle.state_.position_;
+        // Eigen::Vector2d start_point_position_in_frenet;
+        // Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+
+        // Get nearest point
+        PathPlanningUtilities::CurvePoint nearest_curve_point = lane_.findNearestPoint(vehicle.state_.position_);
+        double arc_length = lane_.calculateArcLength(vehicle.state_.position_);
+
+        TransMatrix trans_matrix;
+        Eigen::Matrix2d matrix_2d;
+        matrix_2d << cos(nearest_curve_point.theta_), -sin(nearest_curve_point.theta_), sin(nearest_curve_point.theta_), cos(nearest_curve_point.theta_);
+        trans_matrix.rotation_ = matrix_2d.inverse();
+        // ROS_INFO_STREAM( trans_matrix.rotation_ ) );
+        Eigen::Vector2d world_position(nearest_curve_point.position_.x_, nearest_curve_point.position_.y_);
+        Eigen::Vector2d sd_position(arc_length, 0.0);
+        trans_matrix.trans_ = sd_position - trans_matrix.rotation_*world_position;
+        double start_point_theta_in_frenet;
+        Tools::transferThetaCoordinateSystem(trans_matrix, vehicle.state_.theta_, &start_point_theta_in_frenet);
         Eigen::Vector2d start_point_in_world_v2d = vehicle.state_.position_;
         Eigen::Vector2d start_point_position_in_frenet;
         Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
-        double start_point_theta_in_frenet;
-        Tools::transferThetaCoordinateSystem(trans_matrix, vehicle.state_.theta_, &start_point_theta_in_frenet);
+
 
         return FsImageVehicle(start_point_position_in_frenet, start_point_theta_in_frenet, vehicle.length_, vehicle.width_);
     }
@@ -525,18 +555,39 @@ class StateTransformer {
         // Note that the value need to convert is position.x, position.y, theta, velocity, acceleration, and curvature. To simplify the calculation, the valicity and acceleration have not been converted at the initial version.
         // TODO: convert velocity and acceleration if need
 
-        // Convert position, theta, curvature
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
-        size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(ego_vehicle.state_.position_);
-        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
-        Eigen::Vector2d start_point_in_world_v2d(ego_vehicle.state_.position_(0), ego_vehicle.state_.position_(1));
-        Eigen::Vector2d start_point_position_in_frenet;
-        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        // // Convert position, theta, curvature
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        // std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        // size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(ego_vehicle.state_.position_);
+        // TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        // Eigen::Vector2d start_point_in_world_v2d(ego_vehicle.state_.position_(0), ego_vehicle.state_.position_(1));
+        // Eigen::Vector2d start_point_position_in_frenet;
+        // Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        // double start_point_theta_in_frenet;
+        // Tools::transferThetaCoordinateSystem(trans_matrix, ego_vehicle.state_.theta_, &start_point_theta_in_frenet);
+        // double start_point_kappa_in_frenet;
+        // start_point_kappa_in_frenet = ego_vehicle.state_.curvature_ - cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*1.0/(1.0/lane_coordination[start_index_of_lane].worldpos_.kappa_ - start_point_position_in_frenet(1));
+
+        // Get nearest point
+        PathPlanningUtilities::CurvePoint nearest_curve_point = lane_.findNearestPoint(ego_vehicle.state_.position_);
+        double arc_length = lane_.calculateArcLength(ego_vehicle.state_.position_);
+
+        TransMatrix trans_matrix;
+        Eigen::Matrix2d matrix_2d;
+        matrix_2d << cos(nearest_curve_point.theta_), -sin(nearest_curve_point.theta_), sin(nearest_curve_point.theta_), cos(nearest_curve_point.theta_);
+        trans_matrix.rotation_ = matrix_2d.inverse();
+        // ROS_INFO_STREAM( trans_matrix.rotation_ ) );
+        Eigen::Vector2d world_position(nearest_curve_point.position_.x_, nearest_curve_point.position_.y_);
+        Eigen::Vector2d sd_position(arc_length, 0.0);
+        trans_matrix.trans_ = sd_position - trans_matrix.rotation_*world_position;
         double start_point_theta_in_frenet;
         Tools::transferThetaCoordinateSystem(trans_matrix, ego_vehicle.state_.theta_, &start_point_theta_in_frenet);
+        Eigen::Vector2d start_point_in_world_v2d = ego_vehicle.state_.position_;
+        Eigen::Vector2d start_point_position_in_frenet;
+        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+
         double start_point_kappa_in_frenet;
-        start_point_kappa_in_frenet = ego_vehicle.state_.curvature_ - cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*1.0/(1.0/lane_coordination[start_index_of_lane].worldpos_.kappa_ - start_point_position_in_frenet(1));
+        start_point_kappa_in_frenet = ego_vehicle.state_.curvature_ - cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*cos(start_point_theta_in_frenet)*1.0/(1.0/nearest_curve_point.kappa_ - start_point_position_in_frenet(1));
 
         // supply data
         // Note that ego vehicle's size is identical with training model, length: 5.0, width: 1.95
@@ -552,16 +603,34 @@ class StateTransformer {
         // Note that the value need to convert is position.x, position.y, theta, velocity, acceleration. Different from ego vehicle, curvature and steer information could not be provided, and a special flag is added at the head of the vector to represent whether current surround vehicle is existed. To simplify the calculation, the valicity and acceleration have not been converted at the initial version. 
         // TODO: convert velocity and acceleration if need
 
-        // Convert position, theta
-        std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
-        std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
-        size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(surround_vehicle.state_.position_);
-        TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
-        Eigen::Vector2d start_point_in_world_v2d(surround_vehicle.state_.position_(0), surround_vehicle.state_.position_(1));
-        Eigen::Vector2d start_point_position_in_frenet;
-        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        // // Convert position, theta
+        // std::vector<PathPlanningUtilities::CoordinationPoint> lane_coordination = lane_.getLaneCoordnation();
+        // std::vector<TransMatrix> trans_matrixes = lane_.getLaneTransMatrix();
+        // size_t start_index_of_lane = lane_.findCurrenPositionIndexInLane(surround_vehicle.state_.position_);
+        // TransMatrix trans_matrix = trans_matrixes[start_index_of_lane];
+        // Eigen::Vector2d start_point_in_world_v2d(surround_vehicle.state_.position_(0), surround_vehicle.state_.position_(1));
+        // Eigen::Vector2d start_point_position_in_frenet;
+        // Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
+        // double start_point_theta_in_frenet;
+        // Tools::transferThetaCoordinateSystem(trans_matrix, surround_vehicle.state_.theta_, &start_point_theta_in_frenet);
+
+        // Get nearest point
+        PathPlanningUtilities::CurvePoint nearest_curve_point = lane_.findNearestPoint(surround_vehicle.state_.position_);
+        double arc_length = lane_.calculateArcLength(surround_vehicle.state_.position_);
+
+        TransMatrix trans_matrix;
+        Eigen::Matrix2d matrix_2d;
+        matrix_2d << cos(nearest_curve_point.theta_), -sin(nearest_curve_point.theta_), sin(nearest_curve_point.theta_), cos(nearest_curve_point.theta_);
+        trans_matrix.rotation_ = matrix_2d.inverse();
+        // ROS_INFO_STREAM( trans_matrix.rotation_ ) );
+        Eigen::Vector2d world_position(nearest_curve_point.position_.x_, nearest_curve_point.position_.y_);
+        Eigen::Vector2d sd_position(arc_length, 0.0);
+        trans_matrix.trans_ = sd_position - trans_matrix.rotation_*world_position;
         double start_point_theta_in_frenet;
         Tools::transferThetaCoordinateSystem(trans_matrix, surround_vehicle.state_.theta_, &start_point_theta_in_frenet);
+        Eigen::Vector2d start_point_in_world_v2d = surround_vehicle.state_.position_;
+        Eigen::Vector2d start_point_position_in_frenet;
+        Tools::transferPointCoordinateSystem(trans_matrix, start_point_in_world_v2d, &start_point_position_in_frenet);
 
         // supply data 
         surround_veh_state_array = std::vector<double>{1.0, start_point_position_in_frenet(0), start_point_position_in_frenet(1), start_point_theta_in_frenet, surround_vehicle.length_, surround_vehicle.width_, surround_vehicle.state_.velocity_, surround_vehicle.state_.acceleration_};
@@ -569,7 +638,7 @@ class StateTransformer {
         return surround_veh_state_array;
     }
 
-    Lane lane_;
+    ParametricLane lane_;
 };
 
 
@@ -578,7 +647,7 @@ class SemanticVehicle {
  public:
     // Constructor
     SemanticVehicle() = default;
-    SemanticVehicle(const Vehicle& vehicle, const LaneId& nearest_lane_id, const LaneId& reference_lane_id, const Lane& nearest_lane, const Lane& reference_lane) {
+    SemanticVehicle(const Vehicle& vehicle, const LaneId& nearest_lane_id, const LaneId& reference_lane_id, const ParametricLane& nearest_lane, const ParametricLane& reference_lane) {
         vehicle_ = vehicle;
         nearest_lane_id_ = nearest_lane_id;
         reference_lane_id_ = reference_lane_id;
@@ -594,8 +663,8 @@ class SemanticVehicle {
     Vehicle vehicle_;
     LaneId nearest_lane_id_{LaneId::Undefined};
     LaneId reference_lane_id_{LaneId::Undefined};
-    Lane nearest_lane_;
-    Lane reference_lane_;
+    ParametricLane nearest_lane_;
+    ParametricLane reference_lane_;
 };
 
 
@@ -1165,7 +1234,7 @@ class GridMapND {
 // The data bridge between behavior planner and trajectory planner
 class BpTpBridge {
  public:
-    BpTpBridge(const Lane& ego_reference_lane) {
+    BpTpBridge(const ParametricLane& ego_reference_lane) {
         state_trans_itf_ = new StateTransformer(ego_reference_lane);
     }
     ~BpTpBridge() = default;

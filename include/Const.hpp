@@ -20,7 +20,7 @@
 #define MIN_VALUE -100000000.0  // 最小数
 #define DISTANCE_FROM_REAR_TO_CENTER 1.4249  // 后轴中心与几何中心之间的距离
 #define VELOCITY_THRESHOLD 4.5  // 速度阈值，小于阈值为低速，大于为高速
-#define LANE_GAP_DISTANCE 0.1  // 道路点之间的间距
+#define LANE_GAP_DISTANCE 3.0  // 道路点之间的间距
 #define AVOIDANCE_DEVIATION_GAP 0.3  // 待选路径之间的横向间距
 #define AVOIDANCE_MIN_DISTANCE 6.0  // 避障经过的最小距离
 #define CONSTANT_DISTANCE 12.5  // 规划最小距离

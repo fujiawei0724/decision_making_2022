@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-14 15:47:01
+ * @LastEditTime: 2022-07-20 17:42:54
  * @Description: Lane components
  */
 
@@ -561,20 +561,23 @@ ParametricLane::~ParametricLane() = default;
  * @param {vector<double>} stations: distances in the continuous points, TODO: replace this with a message from map 
  * @param {vector<std::array<double, 12>>} coefficients: coefficients for each segment of the whole piecewise quintic spline, TODO: replace this with a message from map
  */
-void ParametricLane::generateLaneCenter(path_planning_msgs::BoundedCurve geometry, std::vector<double> gaps, std::vector<std::array<double, 12>> coefficients) {
+void ParametricLane::generateLaneCenter(path_planning_msgs::BoundedCurve geometry, double gap, std::vector<vec_map_cpp_msgs::SplineCoef> coefficients) {
     // Supply data for gaps and stations 
-    n_ = gaps.size() + 1;
-    gaps_ = gaps;
+    n_ = coefficients.size() + 1;
+    gaps_ = std::vector<double>(n_ - 1, gap);
     stations_.resize(n_, 0.0);
     for (int i = 1; i < n_; i++) {
-        stations_[i] = stations_[i - 1] + gaps[i - 1];
+        stations_[i] = stations_[i - 1] + gaps_[i - 1];
     }
 
     // Supply data for coefficients
     coefficients_.resize(n_ - 1, 12);
     for (int i = 0; i < n_ - 1; i++) {
-        for (int j = 0; j < 12; j++) {
-            coefficients_(i, j) = coefficients[i][j];
+        for (int j = 0; j < 6; j++) {
+            coefficients_(i, j) = coefficients[i].x_spline_coef[j];
+        }
+        for (int j = 0; j < 6; j++) {
+            coefficients_(i, j + 6) = coefficients[i].y_spline_coef[j];
         }
     }
 
@@ -600,7 +603,7 @@ void ParametricLane::generateLaneCenter(path_planning_msgs::BoundedCurve geometr
  * @description: transform a point from world to frenet (only containing abscissa and ordinate)
  * @return point position in frenet frame
  */    
-Eigen::Vector2d ParametricLane::calculateFrenetPoint(const Eigen::Vector2d& pos) {
+Eigen::Vector2d ParametricLane::calculateFrenetPoint(const Eigen::Vector2d& pos) const {
     // Calculate the nearest key point roughly
     int target_index = calculateNearestScatterPointIndex(pos);
     // Transform position
@@ -637,7 +640,7 @@ Eigen::Vector2d ParametricLane::calculateFrenetPoint(const Eigen::Vector2d& pos)
  * @description: transform a point from frenet to world (only containing abscissa and ordinate)
  * @return point position in world frame
  */ 
-Eigen::Vector2d ParametricLane::calculateWorldPoint(const Eigen::Vector2d& frenet_pos) {
+Eigen::Vector2d ParametricLane::calculateWorldPoint(const Eigen::Vector2d& frenet_pos) const {
     // // Get the target segment
     // int target_segment_index = std::lower_bound(stations_.begin(), stations_.end(), frenet_pos(0)) - stations_.begin();
     // if (target_segment_index == static_cast<int>(stations_.size()) - 1) {
@@ -667,7 +670,7 @@ Eigen::Vector2d ParametricLane::calculateWorldPoint(const Eigen::Vector2d& frene
  * @description: calculate the nearest in the lane given a position
  * @return {*}
  */    
-PathPlanningUtilities::CurvePoint ParametricLane::findNearestPoint(const Eigen::Vector2d& pos) {
+PathPlanningUtilities::CurvePoint ParametricLane::findNearestPoint(const Eigen::Vector2d& pos) const {
     // Calculate the nerest key point roughly
     int target_index = calculateNearestScatterPointIndex(pos);
 
@@ -699,7 +702,7 @@ PathPlanningUtilities::CurvePoint ParametricLane::findNearestPoint(const Eigen::
  * @description: calculate nearest key points index with binary search
  * @return the corresponding index
  */    
-int ParametricLane::calculateNearestScatterPointIndex(const Eigen::Vector2d& pos) {
+int ParametricLane::calculateNearestScatterPointIndex(const Eigen::Vector2d& pos) const {
     int left = 0, right = n_ - 1;
     while (left <= right) {
         int mid = left + (right - left) / 2;
@@ -716,7 +719,7 @@ int ParametricLane::calculateNearestScatterPointIndex(const Eigen::Vector2d& pos
  * @description: find the distance given a position
  * @return nearest distance
  */ 
-double ParametricLane::calculateDistanceFromPosition(const Eigen::Vector2d& cur_pos) {
+double ParametricLane::calculateDistanceFromPosition(const Eigen::Vector2d& cur_pos) const {
     PathPlanningUtilities::CurvePoint nearest_point = findNearestPoint(cur_pos);
     double distance = sqrt(pow(nearest_point.position_.x_ - cur_pos(0), 2) + pow(nearest_point.position_.y_ - cur_pos(1), 2));
 
@@ -728,7 +731,7 @@ double ParametricLane::calculateDistanceFromPosition(const Eigen::Vector2d& cur_
  * @param {double} distance
  * @return {*}
  */    
-Eigen::Vector2d ParametricLane::calculateTargetLanePosition(const Eigen::Vector2d& pos, double distance) {
+Eigen::Vector2d ParametricLane::calculateTargetLanePosition(const Eigen::Vector2d& pos, double distance) const {
     // Calculate the nearest key point roughly
     int target_index = calculateNearestScatterPointIndex(pos);
     // Transform position
@@ -769,7 +772,7 @@ Eigen::Vector2d ParametricLane::calculateTargetLanePosition(const Eigen::Vector2
  * @description: judge whether the given point is in the lane
  * @param {Point2f&} query point
  */    
-bool ParametricLane::isInLane(const PathPlanningUtilities::Point2f& position) {
+bool ParametricLane::isInLane(const PathPlanningUtilities::Point2f& position) const {
     // Parse input
     Eigen::Vector2d pos{position.x_, position.y_};
     // Get lane width from the nearest key point
@@ -791,7 +794,7 @@ bool ParametricLane::isInLane(const PathPlanningUtilities::Point2f& position) {
  * @param {traffic_vistual_obs} obstacles provided by map
  * @return whether the lane is occupied 
  */    
-bool ParametricLane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) {
+bool ParametricLane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) const {
     // Get the start arc length from the current position of the vehicle
     double start_arc_length = calculateArcLength(position);
     // Get the sampled curve points with a gap 5.0m
@@ -839,7 +842,7 @@ bool ParametricLane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>
  * @param {pos} query position
  * @return {*}
  */
-double ParametricLane::calculateArcLength(const Eigen::Vector2d& pos) {
+double ParametricLane::calculateArcLength(const Eigen::Vector2d& pos) const {
     // Calculate the nearest key point roughly
     int target_index = calculateNearestScatterPointIndex(pos);
     // Transform position
@@ -868,7 +871,7 @@ double ParametricLane::calculateArcLength(const Eigen::Vector2d& pos) {
  * @param {arc_length} query arc length
  * @return {*}
  */
-PathPlanningUtilities::CurvePoint ParametricLane::calculateCurvePointFromArcLength(const double& arc_length) {
+PathPlanningUtilities::CurvePoint ParametricLane::calculateCurvePointFromArcLength(const double& arc_length) const {
     // Get the target segment
     int target_segment_index = std::lower_bound(stations_.begin(), stations_.end(), arc_length) - stations_.begin();
     if (target_segment_index == static_cast<int>(stations_.size()) - 1) {

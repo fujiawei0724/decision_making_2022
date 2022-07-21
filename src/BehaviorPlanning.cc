@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-20 09:52:28
+ * @LastEditTime: 2022-07-21 08:33:27
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -38,29 +38,29 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
 
     // Shield the lane which is occupied by static obstacles
     if (left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        left_lane_.lane_existance_ = false;
+        left_lane_.is_existence_ = false;
     }
     if (right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        right_lane_.lane_existance_ = false;
+        right_lane_.is_existence_ = false;
     }
     if (center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        if (left_lane_.lane_existance_ || right_lane_.lane_existance_) {
-            center_lane_.lane_existance_ = false;
+        if (left_lane_.is_existence_ || right_lane_.is_existence_) {
+            center_lane_.is_existence_ = false;
         }
     }
 
     // Contruct map interface for behavior planner
     std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
-    std::map<Common::LaneId, Lane> lanes_info;
-    if (center_lane_.getLaneExistance()) {
+    std::map<Common::LaneId, ParametricLane> lanes_info;
+    if (center_lane_.is_existence_) {
         lanes_exist_info[Common::LaneId::CenterLane] = true;
         lanes_info[Common::LaneId::CenterLane] = center_lane_;
     }
-    if (left_lane_.getLaneExistance()) {
+    if (left_lane_.is_existence_) {
         lanes_exist_info[Common::LaneId::LeftLane] = true;
         lanes_info[Common::LaneId::LeftLane] = left_lane_;
     }
-    if (right_lane_.getLaneExistance()) {
+    if (right_lane_.is_existence_) {
         lanes_exist_info[Common::LaneId::RightLane] = true;
         lanes_info[Common::LaneId::RightLane] = right_lane_;
     }
@@ -105,16 +105,16 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
 
     // Contruct map interface for HPDM 
     std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
-    std::map<Common::LaneId, Lane> lanes_info;
-    if (center_lane_.getLaneExistance()) {
+    std::map<Common::LaneId, ParametricLane> lanes_info;
+    if (center_lane_.is_existence_) {
         lanes_exist_info[Common::LaneId::CenterLane] = true;
         lanes_info[Common::LaneId::CenterLane] = center_lane_;
     }
-    if (left_lane_.getLaneExistance()) {
+    if (left_lane_.is_existence_) {
         lanes_exist_info[Common::LaneId::LeftLane] = true;
         lanes_info[Common::LaneId::LeftLane] = left_lane_;
     }
-    if (right_lane_.getLaneExistance()) {
+    if (right_lane_.is_existence_) {
         lanes_exist_info[Common::LaneId::RightLane] = true;
         lanes_info[Common::LaneId::RightLane] = right_lane_;
     }
@@ -143,7 +143,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
-    Lane nearest_lane = map_interface.calculateNearestLane(ego_vehicle);
+    ParametricLane nearest_lane = map_interface.calculateNearestLane(ego_vehicle);
 
     // Clear information
     unlaned_obstacles_.clear();
@@ -156,9 +156,9 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     // Run HPDM
     // Load information
     // HpdmPlanner::HpdmPlannerCore* hpdm_planner = new HpdmPlanner::HpdmPlannerCore();
-    std::string model_path = "/home/fjw/Desktop/model/20220714/model0.pt";
+    // std::string model_path = "/home/fjw/Desktop/model/20220714/model0.pt";
     clock_t hpdm_planning_start_time = clock();
-    hpdm_planner_->initialize(&map_interface, &observation_buffer_, module_, nearest_lane, model_path, vis_behavior_planner_ego_states_pub_, vis_behavior_planner_candidates_states_pub_);
+    hpdm_planner_->initialize(&map_interface, &observation_buffer_, module_, nearest_lane, vis_behavior_planner_ego_states_pub_, vis_behavior_planner_candidates_states_pub_);
     
     if (ego_trajectory_.size() != 0 && is_previous_behavior_lane_changed_) {
         hpdm_planner_->load(ego_vehicle, surround_vehicles, lane_info, reference_lane_, ego_trajectory_.back());
@@ -172,7 +172,7 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     Trajectory current_episode_ego_trajectory;
     std::unordered_map<int, Trajectory> current_episode_surround_trajectories;
     bool current_episode_lane_chaned = false;
-    Lane current_episode_reference_lane;
+    ParametricLane current_episode_reference_lane;
     hpdm_planner_->runHpdmPlanner(11, &current_episode_ego_trajectory, &current_episode_surround_trajectories, &current_episode_reference_lane, &is_safe, &cost, &current_episode_lane_chaned);
     clock_t hpdm_planning_end_time = clock();
     printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);

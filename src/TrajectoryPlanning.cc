@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-22 15:12:55
+ * @LastEditTime: 2022-07-21 08:47:57
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -97,7 +97,7 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     // Trajectory planning
     std::vector<Common::Point3f> trajectory;
     bool result = false;
-    if (!reference_lane_.lane_existance_) {
+    if (!reference_lane_.is_existence_) {
         *trajectory_planning_result = false;
         printf("[SscPlanner] unknown reference lane information.\n");
         return;

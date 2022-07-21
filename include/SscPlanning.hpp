@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-18 15:14:05
+ * @LastEditTime: 2022-07-21 08:44:57
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -465,7 +465,7 @@ class SscTrajectoryPlanningCore {
     ~SscTrajectoryPlanningCore();
 
     // Load data
-    void load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs);
+    void load(const Vehicle& cur_vehicle_state, const ParametricLane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs);
 
     // Generate trajectory
     void runOnce(bool* result, std::vector<Point3f>* trajectory);
@@ -477,7 +477,7 @@ class SscTrajectoryPlanningCore {
 
 
     Vehicle current_vehicle_state_;
-    Lane reference_lane_;
+    ParametricLane reference_lane_;
     std::vector<Vehicle> ego_traj_;
     std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
     std::vector<Obstacle> sur_unlaned_obs_;

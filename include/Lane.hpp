@@ -176,50 +176,50 @@ class ParametricLane {
      * @param {vector<double>} stations: distances in the continuous points, TODO: replace this with a message from map 
      * @param {vector<std::array<double, 12>>} coefficients: coefficients for each segment of the whole piecewise quintic spline, TODO: replace this with a message from map
      */
-    void generateLaneCenter(path_planning_msgs::BoundedCurve geometry, std::vector<double> gaps, std::vector<std::array<double, 12>> coefficients);
+    void generateLaneCenter(path_planning_msgs::BoundedCurve geometry, double gap, std::vector<vec_map_cpp_msgs::SplineCoef> coefficients);
 
     /**
      * @description: transform a point from world to frenet (only containing abscissa and ordinate)
      * @return point position in frenet frame
      */    
-    Eigen::Vector2d calculateFrenetPoint(const Eigen::Vector2d& pos);
+    Eigen::Vector2d calculateFrenetPoint(const Eigen::Vector2d& pos) const;
 
     /**
      * @description: transform a point from frenet to world (only containing abscissa and ordinate)
      * @return point position in world frame
      */ 
-    Eigen::Vector2d calculateWorldPoint(const Eigen::Vector2d& frenet_pos);
+    Eigen::Vector2d calculateWorldPoint(const Eigen::Vector2d& frenet_pos) const;
 
     /**
      * @description: calculate the nearest in the lane given a position
      * @return {*}
      */    
-    PathPlanningUtilities::CurvePoint findNearestPoint(const Eigen::Vector2d& pos);
+    PathPlanningUtilities::CurvePoint findNearestPoint(const Eigen::Vector2d& pos) const;
 
     /**
      * @description: calculate nearest key points index with binary search
      * @return the corresponding index
      */    
-    int calculateNearestScatterPointIndex(const Eigen::Vector2d& pos);
+    int calculateNearestScatterPointIndex(const Eigen::Vector2d& pos) const;
 
     /**
      * @description: find the distance given a position
      * @return nearest distance
      */    
-    double calculateDistanceFromPosition(const Eigen::Vector2d& cur_pos);
+    double calculateDistanceFromPosition(const Eigen::Vector2d& cur_pos) const;
 
     /**
      * @description: calculate the extend point in the lane given a position and a distance
      * @param {double} distance
      * @return {*}
      */    
-    Eigen::Vector2d calculateTargetLanePosition(const Eigen::Vector2d& position, double distance);
+    Eigen::Vector2d calculateTargetLanePosition(const Eigen::Vector2d& position, double distance) const;
 
     /**
      * @description: judge whether the given point is in the lane
      * @param {Point2f&} query point
      */    
-    bool isInLane(const PathPlanningUtilities::Point2f& position);
+    bool isInLane(const PathPlanningUtilities::Point2f& position) const;
 
     /**
      * @description: pre-process, judge whether a lane is occupied by static obstacle and virtual traffic rule obstacle
@@ -228,14 +228,14 @@ class ParametricLane {
      * @param {traffic_vistual_obs} obstacles provided by map
      * @return whether the lane is occupied 
      */    
-    bool isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs);
+    bool isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>& position, const std::vector<Obstacle>& all_obs, const std::vector<vec_map_cpp_msgs::VirtualObstacle> &traffic_virtual_obs) const;
 
     /**
      * @description: calculate the corresponding arc length given a position
      * @param {pos} query position
      * @return {*}
      */
-    double calculateArcLength(const Eigen::Vector2d& pos);
+    double calculateArcLength(const Eigen::Vector2d& pos) const;
 
 
     /**
@@ -243,7 +243,7 @@ class ParametricLane {
      * @param {arc_length} query arc length
      * @return {*}
      */
-    PathPlanningUtilities::CurvePoint calculateCurvePointFromArcLength(const double& arc_length);
+    PathPlanningUtilities::CurvePoint calculateCurvePointFromArcLength(const double& arc_length) const;
 
     
 
@@ -254,6 +254,8 @@ class ParametricLane {
     std::vector<PathPlanningUtilities::CoordinationPoint> lane_coorination_;  // Complete information for each given points
     std::vector<Eigen::Vector2d> points_; // Scatter key points
     Eigen::Matrix<double, Eigen::Dynamic, 12> coefficients_; // Coefficients for piecewise quintic spline
+    std::vector<double> lane_highest_velocity_;  // 道路上每一点的速度上限
+    std::vector<double> lane_lowest_velocity_;  // 道路上每一点的速度下限
 
 };
 

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-01-17 14:19:31
+ * @LastEditTime: 2022-07-21 08:44:43
  * @Description: Components for ssc planner.
  */
 
@@ -1583,7 +1583,7 @@ namespace SscPlanner {
     SscTrajectoryPlanningCore::~SscTrajectoryPlanningCore() = default;
 
     // Load data
-    void SscTrajectoryPlanningCore::load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
+    void SscTrajectoryPlanningCore::load(const Vehicle& cur_vehicle_state, const ParametricLane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
         current_vehicle_state_ = cur_vehicle_state;
         reference_lane_ = reference_lane;
         ego_traj_ = ego_traj;

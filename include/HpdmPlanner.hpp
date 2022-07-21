@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-20 09:21:44
+ * @LastEditTime: 2022-07-20 22:27:40
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -61,7 +61,7 @@ class ActionInterface {
  */
 class StateInterface {
  public:
-    StateInterface(const Lane& nearest_lane);
+    StateInterface(const ParametricLane& nearest_lane);
     StateInterface();
     ~StateInterface();
 
@@ -112,6 +112,7 @@ class StateInterface {
 class TorchInterface {
  public:
     TorchInterface(const std::string& model_path);
+    TorchInterface();
     ~TorchInterface();
 
     /**
@@ -146,7 +147,7 @@ class TrajectoryGenerator {
      * @param {*}
      * @return {*}
      */    
-    void load(const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+    void load(const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
 
     /**
      * @brief Simulate single behavior sequence
@@ -157,7 +158,7 @@ class TrajectoryGenerator {
      * @param safe
      * @param cost
      */    
-    void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_behavior_reference_lane);
+    void simulateSingleBehaviorSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const BehaviorSequence& behavior_sequence, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, ParametricLane* target_behavior_reference_lane);
 
     /**
      * @brief Simulate single behavior sequence
@@ -168,7 +169,7 @@ class TrajectoryGenerator {
      * @param safe
      * @param cost
      */    
-    void simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, const int& action_index, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_intention_reference_lane, bool* is_lane_changed);
+    void simulateSingleIntentionSequence(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const IntentionSequence& intention_sequence, const int& action_index, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, ParametricLane* target_intention_reference_lane, bool* is_lane_changed);
 
     /**
      * @brief simulate single behavior in a sequence 
@@ -184,14 +185,14 @@ class TrajectoryGenerator {
      * @param {*}
      * @return {*}
      */
-    void simulateCandidatesBehaviorSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index);
+    void simulateCandidatesBehaviorSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<BehaviorSequence>& candi_sequences, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, ParametricLane* target_reference_lane, int* final_action_index);
 
     /**
      * @brief simulate all candidates behavior
      * @param {*}
      * @return {*}
      */
-    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, const std::vector<int>& selected_idxs, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, Lane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed);
+    void simulateCandidatesIntentionSequences(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<IntentionSequence>& candi_sequences, const std::vector<int>& selected_idxs, Trajectory* ego_traj, std::unordered_map<int, Trajectory>* sur_trajs, bool* safe, double* cost, ParametricLane* target_reference_lane, int* final_action_index, bool* is_final_lane_changed);
 
     /**
      * @brief multi thread interface 
@@ -218,7 +219,7 @@ class TrajectoryGenerator {
     std::vector<std::unordered_map<int, Trajectory>> candi_sur_trajs_{};
     std::vector<bool> candi_safes_{};
     std::vector<double> candi_costs_{};
-    std::vector<Lane> candi_reference_lanes_{};
+    std::vector<ParametricLane> candi_reference_lanes_{};
     std::vector<bool> candi_is_lane_changed_{};
     // DEBUG visualization
     ros::Publisher vis_pub_;
@@ -226,7 +227,7 @@ class TrajectoryGenerator {
     BehaviorPlanner::MapInterface* map_itf_{nullptr};
     double dt_{0.0};
     bool with_consistence_ = false;
-    Lane pre_reference_lane_;
+    ParametricLane pre_reference_lane_;
     Vehicle pre_ego_desired_vehicle_state_;
 };
 
@@ -236,14 +237,14 @@ class HpdmPlannerCore {
     HpdmPlannerCore();
     ~HpdmPlannerCore();
 
-    void initialize(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path);
-    void initialize(BehaviorPlanner::MapInterface* map_itf, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
-    void initialize(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const Lane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
+    void initialize(BehaviorPlanner::MapInterface* map_itf, const ParametricLane& nearest_lane, const std::string& model_path);
+    void initialize(BehaviorPlanner::MapInterface* map_itf, const ParametricLane& nearest_lane, const std::string& model_path, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
+    void initialize(BehaviorPlanner::MapInterface* map_itf, Utils::ObservationBuffer* observation_buffer, torch::jit::script::Module& model, const ParametricLane& nearest_lane, const ros::Publisher& vis_pub, const ros::Publisher& vis_pub_2);
 
 
 
     // Load data with consistence, which means in an replanning circle
-    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+    void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
 
     // Load data without consistence
     void load(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, const std::vector<double>& lane_info);
@@ -255,7 +256,7 @@ class HpdmPlannerCore {
     void generateCandidateBehavior();
 
     // Generate trajectories
-    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, Lane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed);
+    void runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed);
 
     Utils::ObservationBuffer* obs_buffer_{nullptr};
     torch::jit::script::Module model_;
@@ -271,7 +272,7 @@ class HpdmPlannerCore {
     std::unordered_map<int, Vehicle> surround_vehicles_;
     std::vector<double> lane_info_;
     bool with_consistence_ = false;
-    Lane pre_reference_lane_;
+    ParametricLane pre_reference_lane_;
     Vehicle pre_ego_desired_vehicle_state_;
 
     // Middle variable
@@ -282,7 +283,7 @@ class HpdmPlannerCore {
     std::unordered_map<int, std::vector<Vehicle>> sur_trajectories_;
     bool is_safe_{false};
     double policy_cost_{0.0};
-    Lane target_ref_lane_;
+    ParametricLane target_ref_lane_;
     bool is_final_lane_changed_{false};
 
 };

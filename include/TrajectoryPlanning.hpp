@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2021-12-20 15:04:52
+ * @LastEditTime: 2022-07-21 08:46:41
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -1151,7 +1151,7 @@ class TrajectoryPlanningCore {
     ~TrajectoryPlanningCore() = default;
 
     // Load data
-    void load(const Vehicle& cur_vehicle_state, const Lane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
+    void load(const Vehicle& cur_vehicle_state, const ParametricLane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
         current_vehicle_state_ = cur_vehicle_state;
         reference_lane_ = reference_lane;
         ego_traj_ = ego_traj;
@@ -1228,7 +1228,7 @@ class TrajectoryPlanningCore {
     TrajectoryOptimizer* traj_opt_itf_{nullptr};
 
     Vehicle current_vehicle_state_;
-    Lane reference_lane_;
+    ParametricLane reference_lane_;
     std::vector<Vehicle> ego_traj_;
     std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
     std::vector<Obstacle> sur_unlaned_obs_;

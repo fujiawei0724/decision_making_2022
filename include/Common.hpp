@@ -258,9 +258,13 @@ class SubVehicle{
     // 直行车道信息(包含车道中心线、车道宽度、停止线位置、路口白线位置，道路特殊标记点，路口是否存在红绿灯，最高限速等)
     // 当前位置的道路最高限速
     // 是否为单车道
-    Lane left_lane_;
-    Lane right_lane_;
-    Lane center_lane_;
+    // Lane left_lane_;
+    // Lane right_lane_;
+    // Lane center_lane_;
+    ParametricLane center_lane_;
+    ParametricLane left_lane_;
+    ParametricLane right_lane_;
+
     size_t guidance_type_;
     double expected_velocity_upper_bound_;
     bool is_avoidance_capable_;
@@ -360,7 +364,7 @@ class SubVehicle{
     Utils::ObservationBuffer observation_buffer_; 
     torch::jit::script::Module module_;
     std::vector<Obstacle> unlaned_obstacles_;
-    Lane reference_lane_;
+    ParametricLane reference_lane_;
     bool is_previous_behavior_lane_changed_{false};
 
 

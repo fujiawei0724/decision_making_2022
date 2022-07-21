@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-02-08 20:03:01
+ * @LastEditTime: 2022-07-21 08:42:13
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -25,7 +25,7 @@ namespace BehaviorPlanner {
     constexpr double BehaviorPlannerConfig::max_steer_rate;
     constexpr double BehaviorPlannerConfig::max_curvature_abs;
 
-    MapInterface::MapInterface(const std::map<LaneId, bool>& lane_exist, const std::map<LaneId, Lane>& lane_info) {
+    MapInterface::MapInterface(const std::map<LaneId, bool>& lane_exist, const std::map<LaneId, ParametricLane>& lane_info) {
         // Initialize lane information
         if (lane_exist.at(LaneId::CenterLane)) {
             center_lane_exist_ = true;
@@ -120,7 +120,7 @@ namespace BehaviorPlanner {
 
     LateralBehavior MapInterface::predictSurroundVehicleLateralBehavior(const Vehicle& vehicle, const LaneId& nearest_lane_id) {
         // Get nearest lane
-        Lane nearest_lane = lane_set_[nearest_lane_id];
+        ParametricLane nearest_lane = lane_set_[nearest_lane_id];
 
         // Get frenet state
         StateTransformer stf(nearest_lane);
@@ -152,14 +152,14 @@ namespace BehaviorPlanner {
     SemanticVehicle MapInterface::getSingleSurroundSemanticVehicle(const Vehicle& surround_vehicle) {
         // Calculate nearest lane
         LaneId nearest_lane_id = calculateNearestLaneId(surround_vehicle.state_.position_);
-        Lane nearest_lane = lane_set_[nearest_lane_id];
+        ParametricLane nearest_lane = lane_set_[nearest_lane_id];
 
         // Calculate potential behavior
         LateralBehavior potential_lateral_behavior = predictSurroundVehicleLateralBehavior(surround_vehicle, nearest_lane_id);
 
         // Calculate reference lane 
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, potential_lateral_behavior);
-        Lane reference_lane = lane_set_[reference_lane_id];
+        ParametricLane reference_lane = lane_set_[reference_lane_id];
 
         return SemanticVehicle(surround_vehicle, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
     }
@@ -177,12 +177,12 @@ namespace BehaviorPlanner {
     SemanticVehicle MapInterface::getEgoSemanticVehicle(const Vehicle& ego_vehicle, const LateralBehavior& ego_vehicle_lat_beh) {
         // Calculate nearest lane
         LaneId nearest_lane_id = calculateNearestLaneId(ego_vehicle.state_.position_);
-        Lane nearest_lane = lane_set_[nearest_lane_id];
+        ParametricLane nearest_lane = lane_set_[nearest_lane_id];
 
         // Update reference lane
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, ego_vehicle_lat_beh);
-        Lane reference_lane;
-        if (lane_set_[reference_lane_id].lane_existance_) {
+        ParametricLane reference_lane;
+        if (lane_set_[reference_lane_id].is_existence_) {
             reference_lane = lane_set_[reference_lane_id];
         } else {
             reference_lane = nearest_lane;
@@ -201,10 +201,11 @@ namespace BehaviorPlanner {
 
         // Get reference lane id and reference lane
         // LaneId ref_lane_id = cur_semantic_vehicle.reference_lane_id_;
-        Lane ref_lane = cur_semantic_vehicle.reference_lane_;
+        ParametricLane ref_lane = cur_semantic_vehicle.reference_lane_;
 
         // Calculate current vehicle index in reference lane
-        size_t current_vehicle_index = ref_lane.findCurrenPositionIndexInLane(cur_semantic_vehicle.vehicle_.state_.position_(0), cur_semantic_vehicle.vehicle_.state_.position_(1));
+        // size_t current_vehicle_index = ref_lane.findCurrenPositionIndexInLane(cur_semantic_vehicle.vehicle_.state_.position_(0), cur_semantic_vehicle.vehicle_.state_.position_(1));
+        double current_vehicle_arc_length = ref_lane.calculateArcLength(cur_semantic_vehicle.vehicle_.state_.position_);
 
         // Traverse vehicles
         for (const auto& sem_veh: other_semantic_vehicles_set) {
@@ -214,10 +215,11 @@ namespace BehaviorPlanner {
 
             if(sem_veh.second.nearest_lane_id_ == cur_semantic_vehicle.reference_lane_id_) {
                 // Calculate this vehicle index in reference lane (its nearest lane)
-                size_t this_vehicle_index = ref_lane.findCurrenPositionIndexInLane(sem_veh.second.vehicle_.state_.position_(0), sem_veh.second.vehicle_.state_.position_(1));
+                // size_t this_vehicle_index = ref_lane.findCurrenPositionIndexInLane(sem_veh.second.vehicle_.state_.position_(0), sem_veh.second.vehicle_.state_.position_(1));
+                double this_vehicle_arc_length = ref_lane.calculateArcLength(sem_veh.second.vehicle_.state_.position_);
 
-                if (static_cast<int>(this_vehicle_index) > static_cast<int>(current_vehicle_index) && ((static_cast<int>(this_vehicle_index) - static_cast<int>(current_vehicle_index)) < min_diff_index)) {
-                    min_diff_index = static_cast<int>(this_vehicle_index) - static_cast<int>(current_vehicle_index);
+                if (this_vehicle_arc_length > current_vehicle_arc_length && (this_vehicle_arc_length - current_vehicle_arc_length) < min_diff_index) {
+                    min_diff_index = this_vehicle_arc_length - current_vehicle_arc_length;
                     leading_veh = sem_veh.second.vehicle_;
                     leading_veh_existed = true;
                 }
@@ -232,11 +234,11 @@ namespace BehaviorPlanner {
     double MapInterface::calculateSpeedLimit(const Vehicle& vehicle) {
         // Calculate nearest lane and its speed limit
         LaneId nearest_lane_id = calculateNearestLaneId(vehicle);
-        Lane nearest_lane = lane_set_[nearest_lane_id];
-        std::vector<double> speed_limits = nearest_lane.getLaneVelocityLimitation();
+        ParametricLane nearest_lane = lane_set_[nearest_lane_id];
+        std::vector<double> speed_limits = nearest_lane.lane_highest_velocity_;
         
         // Calculate the point index in the lane 
-        size_t point_index = nearest_lane.findCurrenPositionIndexInLane(vehicle.state_.position_);
+        int point_index = nearest_lane.calculateNearestScatterPointIndex(vehicle.state_.position_);
 
         return speed_limits[point_index];
     }
@@ -266,12 +268,12 @@ namespace BehaviorPlanner {
         // Calculate the nearest lane
         Eigen::Matrix<double, 2, 1> point_position{position.x_, position.y_};
         LaneId nearest_lane_id = calculateNearestLaneId(point_position);
-        Lane nearest_lane = lane_set_[nearest_lane_id];
+        ParametricLane nearest_lane = lane_set_[nearest_lane_id];
 
         // Calculate the nearest lane point from the position
-        size_t nearest_lane_point_index = nearest_lane.findCurrenPositionIndexInLane(point_position);
+        PathPlanningUtilities::CurvePoint nearest_curve_point = nearest_lane.findNearestPoint(point_position);
 
-        double orientation = nearest_lane.getLaneCoordnation()[nearest_lane_point_index].worldpos_.theta_;
+        double orientation = nearest_curve_point.theta_;
 
         return orientation;
     }
@@ -284,21 +286,21 @@ namespace BehaviorPlanner {
     std::vector<double> MapInterface::getLaneInfo() {
         // Encode left and right lane existence and gap information
         std::vector<double> lane_info(5, 0.0);
-        PathPlanningUtilities::Point2f center_lane_start_point = lane_set_[LaneId::CenterLane].getLaneCenterPathInWorld()[0]; 
+        PathPlanningUtilities::Point2f center_lane_start_point = lane_set_[LaneId::CenterLane].lane_coorination_[0].worldpos_.position_; 
         if (left_lane_exist_) {
             lane_info[0] = 1.0;
-            PathPlanningUtilities::Point2f left_lane_start_point = lane_set_[LaneId::LeftLane].getLaneCenterPathInWorld()[0];
+            PathPlanningUtilities::Point2f left_lane_start_point = lane_set_[LaneId::LeftLane].lane_coorination_[0].worldpos_.position_; 
             lane_info[2] = (center_lane_start_point - left_lane_start_point).norm();
         }
         if (right_lane_exist_) {
             lane_info[1] = 1.0;
-            PathPlanningUtilities::Point2f right_lane_start_point = lane_set_[LaneId::RightLane].getLaneCenterPathInWorld()[0];
+            PathPlanningUtilities::Point2f right_lane_start_point = lane_set_[LaneId::RightLane].lane_coorination_[0].worldpos_.position_;
             lane_info[3] = (center_lane_start_point - right_lane_start_point).norm();
         }
 
         // Calculate speed limit 
         // TODO: maybe need consider the speed limit in different position in lane
-        double speed_limit = lane_set_[LaneId::CenterLane].getLaneVelocityLimitation()[0];
+        double speed_limit = lane_set_[LaneId::CenterLane].lane_highest_velocity_[0];
         lane_info[4] = speed_limit;
 
         return lane_info;
@@ -309,7 +311,7 @@ namespace BehaviorPlanner {
      * @param {*}
      * @return {*}
      */
-    Lane MapInterface::calculateNearestLane(const Vehicle& vehicle) {
+    ParametricLane MapInterface::calculateNearestLane(const Vehicle& vehicle) {
         return lane_set_[calculateNearestLaneId(vehicle)];
     }
     
@@ -551,14 +553,20 @@ namespace BehaviorPlanner {
         } else {
             // The distance between leading vehicle and ego vehicle could also be calculated in frenet frame
             // With leading vehicle
-            Lane corresponding_lane = cur_semantic_vehicle.reference_lane_;
+            ParametricLane corresponding_lane = cur_semantic_vehicle.reference_lane_;
 
-            // Calculate cur vehicle index and leading vehicle index in corresponding lane
-            size_t cur_vehicle_index = corresponding_lane.findCurrenPositionIndexInLane(cur_semantic_vehicle.vehicle_.state_.position_);
-            size_t leading_vehicle_index = corresponding_lane.findCurrenPositionIndexInLane(leading_vehicle.state_.position_);
+            // // Calculate cur vehicle index and leading vehicle index in corresponding lane
+            // size_t cur_vehicle_index = corresponding_lane.findCurrenPositionIndexInLane(cur_semantic_vehicle.vehicle_.state_.position_);
+            // size_t leading_vehicle_index = corresponding_lane.findCurrenPositionIndexInLane(leading_vehicle.state_.position_);
 
-            // Calculate gap distance
-            double leading_cur_distance = (static_cast<int>(leading_vehicle_index) - static_cast<int>(cur_vehicle_index)) * 0.1;
+            // Calculate the arc length of the ego vehicle and leading vehicle
+            double ego_vehicle_arc_length = corresponding_lane.calculateArcLength(cur_semantic_vehicle.vehicle_.state_.position_);
+            double leading_vehicle_arc_length = corresponding_lane.calculateArcLength(leading_vehicle.state_.position_);
+
+            // // Calculate gap distance
+            // double leading_cur_distance = (static_cast<int>(leading_vehicle_index) - static_cast<int>(cur_vehicle_index)) * 0.1;
+
+            double leading_cur_distance = leading_vehicle_arc_length - ego_vehicle_arc_length;
 
             target_velocity = idm.calculateVelocity(0.0, leading_cur_distance, cur_semantic_vehicle.vehicle_.state_.velocity_, leading_vehicle.state_.velocity_, dt, desired_velocity);
         }
@@ -731,7 +739,7 @@ namespace BehaviorPlanner {
     }
 
     // Calculate consistence cost
-    double PolicyEvaluater::calculateConsistenceCost(const Trajectory& ego_trajectory, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
+    double PolicyEvaluater::calculateConsistenceCost(const Trajectory& ego_trajectory, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state) {
         double consistence_cost = 0.0;
         
         // TODO: adjust parameters in detailed
@@ -742,10 +750,11 @@ namespace BehaviorPlanner {
             consistence_cost += 0.2;
         }
 
-        // Calculate the deviance between current desired state and previous reference lane
-        int corresponding_index = pre_reference_lane.findCurrenPositionIndexInLane(current_desired_state.state_.position_);
-        Eigen::Matrix<double, 2, 1> corresponding_point{pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].x_, pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].y_};
-        double distance = (current_desired_state.state_.position_ - corresponding_point).norm();
+        // // Calculate the deviance between current desired state and previous reference lane
+        // int corresponding_index = pre_reference_lane.findCurrenPositionIndexInLane(current_desired_state.state_.position_);
+        // Eigen::Matrix<double, 2, 1> corresponding_point{pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].x_, pre_reference_lane.getLaneCenterPathInWorld()[corresponding_index].y_};
+        // double distance = (current_desired_state.state_.position_ - corresponding_point).norm();
+        double distance = pre_reference_lane.calculateDistanceFromPosition(current_desired_state.state_.position_);
         consistence_cost += distance / 10.0;
         // if (consistence_cost > 0.2) {
         //     consistence_cost += 5.0;
@@ -858,7 +867,7 @@ namespace BehaviorPlanner {
     }
 
     // Behavior planner runner
-    bool BehaviorPlannerCore::runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, Lane* target_behavior_reference_lane) {
+    bool BehaviorPlannerCore::runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane) {
         // Simulate all policies
         simulateAllBehaviors(ego_vehicle, surround_vehicles);
 

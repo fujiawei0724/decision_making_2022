@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-14 15:10:05
+ * @LastEditTime: 2022-07-21 08:37:26
  * @Descripttion: Behavior planner core.
  */
 
@@ -37,7 +37,7 @@ public:
 class MapInterface {
 public:
     // Constructor
-    MapInterface(const std::map<LaneId, bool>& lane_exist, const std::map<LaneId, Lane>& lane_info);
+    MapInterface(const std::map<LaneId, bool>& lane_exist, const std::map<LaneId, ParametricLane>& lane_info);
 
     // Destructor
     ~MapInterface();
@@ -88,13 +88,13 @@ public:
      * @param {*}
      * @return {*}
      */
-    Lane calculateNearestLane(const Vehicle& vehicle);
+    ParametricLane calculateNearestLane(const Vehicle& vehicle);
 
     // Lane information in map interface
     bool center_lane_exist_{false};
     bool left_lane_exist_{false};
     bool right_lane_exist_{false};
-    std::map<LaneId, Lane> lane_set_;
+    std::map<LaneId, ParametricLane> lane_set_;
 };
 
 // Intelligent driver model
@@ -232,7 +232,7 @@ public:
     static double calculateEfficiencyCost(const Trajectory& ego_trajectory, const double& speed_limit);
 
     // Calculate consistence cost
-    static double calculateConsistenceCost(const Trajectory& ego_trajectory, const Lane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
+    static double calculateConsistenceCost(const Trajectory& ego_trajectory, const ParametricLane& pre_reference_lane, const Vehicle& pre_ego_desired_vehicle_state);
 
     // Judge is safe
     static bool calculateSafe(const Trajectory& ego_trajectory, const std::unordered_map<int, Trajectory>& surround_trajectories, double speed_limit);
@@ -272,7 +272,7 @@ class BehaviorPlannerCore {
     ~BehaviorPlannerCore();
 
     // Behavior planner runner
-    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, Lane* target_behavior_reference_lane);
+    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane);
 
     // Evaluate all policies
     void evaluatePolicies(int& winner_index, double& winner_cost);

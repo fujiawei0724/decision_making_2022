@@ -1,29 +1,18 @@
-/*
-    Copyright [2019] Jian ZhiQiang
-*/
-
 #include "Common.hpp"
 
 // 更新地图信息，ros服务(TODO)
 void DecisionMaking::SubVehicle::updateMapInformation() {
     do {
         // 初始化道路
-        this->left_lane_ = Lane();
-        this->right_lane_ = Lane();
-        this->center_lane_ = Lane();
+        left_lane_ = ParametricLane();
+        right_lane_ = ParametricLane();
+        center_lane_ = ParametricLane();
         // 调用地图服务，提供服务所需参数
         vec_map_cpp_msgs::GetGuidedCurves map_service;
         geometry_msgs::PoseStamped current_pose;
         current_pose.header.frame_id = "world";
         current_pose.header.stamp = ros::Time::now();
         this->current_vehicle_world_position_mutex_.lock();
-        // // 以车头的中心点作为中心道路锚点
-        // double vehicle_head_x, vehicle_head_y, vehicle_rear_axis_center_scale;
-        // this->nh_.getParam("vehicle_rear_axis_center_scale", vehicle_rear_axis_center_scale);
-        // vehicle_head_x = this->current_vehicle_world_position_.position_.x_ + vehicle_rear_axis_center_scale * this->vehicle_length_ * cos(this->current_vehicle_world_position_.theta_/2.0);
-        // vehicle_head_y = this->current_vehicle_world_position_.position_.y_ + vehicle_rear_axis_center_scale * this->vehicle_length_ * sin(this->current_vehicle_world_position_.theta_/2.0);
-        // current_pose.pose.position.x = vehicle_head_x;
-        // current_pose.pose.position.y = vehicle_head_y;
         current_pose.pose.position.x = this->current_vehicle_world_position_.position_.x_;
         current_pose.pose.position.y = this->current_vehicle_world_position_.position_.y_;
         current_pose.pose.orientation.x = 0.0;
@@ -32,8 +21,8 @@ void DecisionMaking::SubVehicle::updateMapInformation() {
         current_pose.pose.orientation.w = cos(this->current_vehicle_world_position_.theta_/2.0);
         this->current_vehicle_world_position_mutex_.unlock();
         current_pose.pose.position.z = 0;
-        LOG(INFO) << "向地图请求的当前位置为" << std::setprecision(14) << current_pose.pose.position.x << "||" << std::setprecision(14) << current_pose.pose.position.y << "||" << std::setprecision(14) << std::atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w) * 2.0;
-        std::cout << "向地图请求的当前位置为" << std::setprecision(14) << current_pose.pose.position.x << "||" << std::setprecision(14) << current_pose.pose.position.y << "||" << std::setprecision(14) << std::atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w) * 2.0 << std::endl;
+        // LOG(INFO) << "向地图请求的当前位置为" << std::setprecision(14) << current_pose.pose.position.x << "||" << std::setprecision(14) << current_pose.pose.position.y << "||" << std::setprecision(14) << std::atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w) * 2.0;
+        // std::cout << "向地图请求的当前位置为" << std::setprecision(14) << current_pose.pose.position.x << "||" << std::setprecision(14) << current_pose.pose.position.y << "||" << std::setprecision(14) << std::atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w) * 2.0 << std::endl;
         map_service.request.current_pose = current_pose;
         bool current_pose_ignore_orientation;
         this->nh_.getParam("current_pose_ignore_orientation", current_pose_ignore_orientation);
@@ -105,103 +94,109 @@ void DecisionMaking::SubVehicle::updateMapInformation() {
         //     LOG(INFO) << "地图服务得到的终点不可达";
         // }
 
-        // 获取服务的返回值,首先是中间车道
-        this->center_lane_.enable();
-        // 判断是否需要连续换道
-        if (map_service.response.multiple_lane_changes) {
-            // 需要
-            std::vector<double> max_speeds, min_speeds;
-            for (auto max_speed: map_service.response.center_lane.max_speeds) {
-                max_speeds.push_back(0.5 * max_speed);
-            }
-            this->center_lane_.setLaneVelocityLimitation(max_speeds);
+        // The part below needs to be changed  
 
-            for (auto min_speed: map_service.response.center_lane.min_speeds) {
-                min_speeds.push_back(0.5 * min_speed);
-            }
-            this->center_lane_.setLowVelocity(min_speeds);
-        } else {
-            // 不需要
-            this->center_lane_.setLaneVelocityLimitation(map_service.response.center_lane.max_speeds);
-            this->center_lane_.setLowVelocity(map_service.response.center_lane.min_speeds);
-        }
+
+        // 获取服务的返回值,首先是中间车道
+        center_lane_.is_existence_ = true;
+        // // 判断是否需要连续换道
+        // if (map_service.response.multiple_lane_changes) {
+        //     // 需要
+        //     std::vector<double> max_speeds, min_speeds;
+        //     for (auto max_speed: map_service.response.center_lane.max_speeds) {
+        //         max_speeds.push_back(0.5 * max_speed);
+        //     }
+        //     this->center_lane_.setLaneVelocityLimitation(max_speeds);
+
+        //     for (auto min_speed: map_service.response.center_lane.min_speeds) {
+        //         min_speeds.push_back(0.5 * min_speed);
+        //     }
+        //     this->center_lane_.setLowVelocity(min_speeds);
+        // } else {
+        //     // 不需要
+        //     this->center_lane_.setLaneVelocityLimitation(map_service.response.center_lane.max_speeds);
+        //     this->center_lane_.setLowVelocity(map_service.response.center_lane.min_speeds);
+        // }
+        center_lane_.lane_highest_velocity_ = map_service.response.center_lane.max_speeds;
+        center_lane_.lane_lowest_velocity_ = map_service.response.center_lane.min_speeds;
         
         // 附加打灯情况
-        this->center_lane_.setTurn(map_service.response.center_lane.turn);
+        // this->center_lane_.setTurn(map_service.response.center_lane.turn);
         // for (size_t i = 0; i < map_service.response.center_lane.max_speeds.size(); i++) {
         //     std::cout << "asfwgax " << map_service.response.center_lane.min_speeds[i] << std::endl;
         // }
-        this->center_lane_.generateLaneCenter(map_service.response.center_lane.geometry);
-        this->center_lane_.generateLaneTransMatrix();
+        center_lane_.generateLaneCenter(map_service.response.center_lane.geometry, LANE_GAP_DISTANCE, map_service.response.spline_coef_center);
+        // this->center_lane_.generateLaneTransMatrix();
+
         // 判断左侧车道是否存在
         if (map_service.response.left_lane_exist) {
-            // 判断左道长度
-            if (map_service.response.left_lane.geometry.points.size() < static_cast<size_t>(15.0 / LANE_GAP_DISTANCE)) {
-                LOG(INFO) << "给出左侧道路过短" << map_service.response.left_lane.geometry.points.size();
-                continue;
-            }
-            this->left_lane_.enable();
-            // 判断是否需要连续换道
-            if (map_service.response.multiple_lane_changes) {
-                // 需要
-                std::vector<double> max_speeds, min_speeds;
-                for (auto max_speed: map_service.response.left_lane.max_speeds) {
-                    max_speeds.push_back(0.5 * max_speed);
-                }
-                this->left_lane_.setLaneVelocityLimitation(max_speeds);
+            // // 判断左道长度
+            // if (map_service.response.left_lane.geometry.points.size() < static_cast<size_t>(15.0 / LANE_GAP_DISTANCE)) {
+            //     LOG(INFO) << "给出左侧道路过短" << map_service.response.left_lane.geometry.points.size();
+            //     continue;
+            // }
+            left_lane_.is_existence_ = true;
+            // // 判断是否需要连续换道
+            // if (map_service.response.multiple_lane_changes) {
+            //     // 需要
+            //     std::vector<double> max_speeds, min_speeds;
+            //     for (auto max_speed: map_service.response.left_lane.max_speeds) {
+            //         max_speeds.push_back(0.5 * max_speed);
+            //     }
+            //     this->left_lane_.setLaneVelocityLimitation(max_speeds);
 
-                for (auto min_speed: map_service.response.left_lane.min_speeds) {
-                    min_speeds.push_back(0.5 * min_speed);
-                }
-                this->left_lane_.setLowVelocity(min_speeds);
-            } else {
-                // 不需要
-                this->left_lane_.setLaneVelocityLimitation(map_service.response.left_lane.max_speeds);
-                this->left_lane_.setLowVelocity(map_service.response.left_lane.min_speeds);
-            }
-            this->left_lane_.generateLaneCenter(map_service.response.left_lane.geometry);
-            this->left_lane_.generateLaneTransMatrix();
-            // 附加打灯情况
-            this->left_lane_.setTurn(map_service.response.left_lane.turn);
-        } else {
-            this->left_lane_.disable();
+            //     for (auto min_speed: map_service.response.left_lane.min_speeds) {
+            //         min_speeds.push_back(0.5 * min_speed);
+            //     }
+            //     this->left_lane_.setLowVelocity(min_speeds);
+            // } else {
+            //     // 不需要
+            //     this->left_lane_.setLaneVelocityLimitation(map_service.response.left_lane.max_speeds);
+            //     this->left_lane_.setLowVelocity(map_service.response.left_lane.min_speeds);
+            // }
+            left_lane_.lane_highest_velocity_ = map_service.response.left_lane.max_speeds;
+            left_lane_.lane_lowest_velocity_ = map_service.response.left_lane.min_speeds;
+            left_lane_.generateLaneCenter(map_service.response.left_lane.geometry, LANE_GAP_DISTANCE, map_service.response.spline_coef_left);
+            // this->left_lane_.generateLaneTransMatrix();
+            // // 附加打灯情况
+            // this->left_lane_.setTurn(map_service.response.left_lane.turn);
         }
         // 判断右侧车道是否存在
         if (map_service.response.right_lane_exist) {
-            // 判断右道长度
-            if (map_service.response.right_lane.geometry.points.size() < static_cast<size_t>(15.0 / LANE_GAP_DISTANCE)) {
-                LOG(INFO) << "给出右侧道路过短" << map_service.response.right_lane.geometry.points.size();
-                continue;
-            }
-            this->right_lane_.enable();
-            // 判断是否需要连续换道
-            if (map_service.response.multiple_lane_changes) {
-                // 需要
-                std::vector<double> max_speeds, min_speeds;
-                for (auto max_speed: map_service.response.right_lane.max_speeds) {
-                    max_speeds.push_back(0.5 * max_speed);
-                }
-                this->right_lane_.setLaneVelocityLimitation(max_speeds);
+            // // 判断右道长度
+            // if (map_service.response.right_lane.geometry.points.size() < static_cast<size_t>(15.0 / LANE_GAP_DISTANCE)) {
+            //     LOG(INFO) << "给出右侧道路过短" << map_service.response.right_lane.geometry.points.size();
+            //     continue;
+            // }
+            right_lane_.is_existence_ = true;
+            // // 判断是否需要连续换道
+            // if (map_service.response.multiple_lane_changes) {
+            //     // 需要
+            //     std::vector<double> max_speeds, min_speeds;
+            //     for (auto max_speed: map_service.response.right_lane.max_speeds) {
+            //         max_speeds.push_back(0.5 * max_speed);
+            //     }
+            //     this->right_lane_.setLaneVelocityLimitation(max_speeds);
 
-                for (auto min_speed: map_service.response.right_lane.min_speeds) {
-                    min_speeds.push_back(0.5 * min_speed);
-                }
-                this->right_lane_.setLowVelocity(min_speeds);
-            } else {
-                // 不需要
-                this->right_lane_.setLaneVelocityLimitation(map_service.response.right_lane.max_speeds);
-                this->right_lane_.setLowVelocity(map_service.response.right_lane.min_speeds);
-            }
-            this->right_lane_.generateLaneCenter(map_service.response.right_lane.geometry);
-            this->right_lane_.generateLaneTransMatrix();
+            //     for (auto min_speed: map_service.response.right_lane.min_speeds) {
+            //         min_speeds.push_back(0.5 * min_speed);
+            //     }
+            //     this->right_lane_.setLowVelocity(min_speeds);
+            // } else {
+            //     // 不需要
+            //     this->right_lane_.setLaneVelocityLimitation(map_service.response.right_lane.max_speeds);
+            //     this->right_lane_.setLowVelocity(map_service.response.right_lane.min_speeds);
+            // }
+            right_lane_.lane_highest_velocity_ = map_service.response.right_lane.max_speeds;
+            right_lane_.lane_lowest_velocity_ = map_service.response.right_lane.max_speeds;
+            right_lane_.generateLaneCenter(map_service.response.right_lane.geometry, LANE_GAP_DISTANCE, map_service.response.spline_coef_right);
+            // this->right_lane_.generateLaneTransMatrix();
             // 附加打灯情况
-            this->right_lane_.setTurn(map_service.response.right_lane.turn);
-        } else {
-            this->right_lane_.disable();
+            // this->right_lane_.setTurn(map_service.response.right_lane.turn);
         }
         // 确定引导道路类型
         this->guidance_type_ = map_service.response.guidance;
-        LOG(INFO) << "guided type: "<< this->guidance_type_;
+        // LOG(INFO) << "guided type: "<< this->guidance_type_;
         // std::cout << "guided type raw: "<< Lane::GuidanceType::ALL_AVAILABLE << std::endl;
         // if (this->guidance_type_ == Lane::GuidanceType::CHANGE_LEFT) {
         //     this->right_lane_.disable();
@@ -209,90 +204,90 @@ void DecisionMaking::SubVehicle::updateMapInformation() {
         //     this->left_lane_.disable();
         // }
 
-        // 设置道路优先级
-        // 确定中间道的优先级
-        switch (this->guidance_type_) {
-            case Lane::GuidanceType::CHANGE_LEFT:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                break;
-            case Lane::GuidanceType::KEEP_CENTER:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
-                break;
-            case Lane::GuidanceType::CHANGE_RIGHT:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                break;
-            case Lane::GuidanceType::CENTER_LEFT:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
-                break;
-            case Lane::GuidanceType::CENTER_RIGHT:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
-                break;
-            case Lane::GuidanceType::ALL_AVAILABLE:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
-                break;
-            default:
-                this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                break;
-        }
-        LOG(INFO) << "中间车道优先级" << this->center_lane_.getLanePriority();
-        // 设置左道优先级
-        if (this->left_lane_.getLaneExistance()) {
-            // 如果左道存在
-            switch (this->guidance_type_) {
-                case Lane::GuidanceType::CHANGE_LEFT:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
-                    break;
-                case Lane::GuidanceType::KEEP_CENTER:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                    break;
-                case Lane::GuidanceType::CHANGE_RIGHT:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MIN);
-                    break;
-                case Lane::GuidanceType::CENTER_LEFT:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
-                    break;
-                case Lane::GuidanceType::CENTER_RIGHT:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_LOW);
-                    break;
-                case Lane::GuidanceType::ALL_AVAILABLE:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
-                    break;
-                default:
-                    this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                    break;
-            }
-            LOG(INFO) << "左边车道优先级" << this->left_lane_.getLanePriority();
-        }
-        // 设置右道优先级
-        if (this->right_lane_.getLaneExistance()) {
-            switch (this->guidance_type_) {
-                case Lane::GuidanceType::CHANGE_LEFT:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MIN);
-                    break;
-                case Lane::GuidanceType::KEEP_CENTER:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                    break;
-                case Lane::GuidanceType::CHANGE_RIGHT:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
-                    break;
-                case Lane::GuidanceType::CENTER_LEFT:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_LOW);
-                    break;
-                case Lane::GuidanceType::CENTER_RIGHT:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
-                    break;
-                case Lane::GuidanceType::ALL_AVAILABLE:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
-                    break;
-                default:
-                    this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
-                    break;
-            }
-            LOG(INFO) << "右边车道优先级" << this->right_lane_.getLanePriority();
-        }
+        // // 设置道路优先级
+        // // 确定中间道的优先级
+        // switch (this->guidance_type_) {
+        //     case Lane::GuidanceType::CHANGE_LEFT:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //         break;
+        //     case Lane::GuidanceType::KEEP_CENTER:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
+        //         break;
+        //     case Lane::GuidanceType::CHANGE_RIGHT:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //         break;
+        //     case Lane::GuidanceType::CENTER_LEFT:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
+        //         break;
+        //     case Lane::GuidanceType::CENTER_RIGHT:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
+        //         break;
+        //     case Lane::GuidanceType::ALL_AVAILABLE:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
+        //         break;
+        //     default:
+        //         this->center_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //         break;
+        // }
+        // LOG(INFO) << "中间车道优先级" << this->center_lane_.getLanePriority();
+        // // 设置左道优先级
+        // if (this->left_lane_.getLaneExistance()) {
+        //     // 如果左道存在
+        //     switch (this->guidance_type_) {
+        //         case Lane::GuidanceType::CHANGE_LEFT:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
+        //             break;
+        //         case Lane::GuidanceType::KEEP_CENTER:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //             break;
+        //         case Lane::GuidanceType::CHANGE_RIGHT:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MIN);
+        //             break;
+        //         case Lane::GuidanceType::CENTER_LEFT:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
+        //             break;
+        //         case Lane::GuidanceType::CENTER_RIGHT:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_LOW);
+        //             break;
+        //         case Lane::GuidanceType::ALL_AVAILABLE:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
+        //             break;
+        //         default:
+        //             this->left_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //             break;
+        //     }
+        //     LOG(INFO) << "左边车道优先级" << this->left_lane_.getLanePriority();
+        // }
+        // // 设置右道优先级
+        // if (this->right_lane_.getLaneExistance()) {
+        //     switch (this->guidance_type_) {
+        //         case Lane::GuidanceType::CHANGE_LEFT:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MIN);
+        //             break;
+        //         case Lane::GuidanceType::KEEP_CENTER:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //             break;
+        //         case Lane::GuidanceType::CHANGE_RIGHT:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MAX);
+        //             break;
+        //         case Lane::GuidanceType::CENTER_LEFT:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_LOW);
+        //             break;
+        //         case Lane::GuidanceType::CENTER_RIGHT:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
+        //             break;
+        //         case Lane::GuidanceType::ALL_AVAILABLE:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_HIGH);
+        //             break;
+        //         default:
+        //             this->right_lane_.setLanePriority(PRIORITY_INIT_VALUE_MEDIAN);
+        //             break;
+        //     }
+        //     LOG(INFO) << "右边车道优先级" << this->right_lane_.getLanePriority();
+        // }
 
         // 当前位置最大限速
-        this->expected_velocity_upper_bound_ = this->center_lane_.getLaneVelocityLimitation()[0];
+        expected_velocity_upper_bound_ = center_lane_.lane_highest_velocity_[0];
 
         // 获取交通规则生成的障碍物
         this->traffic_rule_obstacles_raw_ = map_service.response.virtual_obstacles;
@@ -338,8 +333,8 @@ void DecisionMaking::SubVehicle::updateMapInformation() {
         }
         // this->is_length_enough_ = true;
         this->remain_distance_ = shortest_distance;
-        LOG(INFO) << "可以自由行驶的距离还剩" << shortest_distance << "，是否足够" << this->is_length_enough_;
-        std::cout << "可以自由行驶的距离还剩" << shortest_distance << "，是否足够" << this->is_length_enough_ << std::endl;
+        // LOG(INFO) << "可以自由行驶的距离还剩" << shortest_distance << "，是否足够" << this->is_length_enough_;
+        // std::cout << "可以自由行驶的距离还剩" << shortest_distance << "，是否足够" << this->is_length_enough_ << std::endl;
 
         // if (map_service.response.extra_flags != "") {
         //     if (map_service.response.extra_flags == "HIGHWAY_DOWN_MIDDLE") {
