@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-22 13:10:02
+ * @LastEditTime: 2022-07-22 15:06:35
  * @Description: Hpdm planner.
  */
 
@@ -940,21 +940,6 @@ namespace HpdmPlanner {
         candi_action_idxs_set_.insert(147);
         candi_action_idxs_set_.insert(148);
         candi_action_idxs_set_.insert(167);
-    }
-
-    // END DEBUG
-
-    // Run HPDM planner
-    void HpdmPlannerCore::generateTrajs(int lon_candidate_num) {
-
-        while (ros::ok()) {
-            if (!candi_action_idxs_set_.empty()) {
-                break;
-            }
-        }
-
-
-
         // Parse the previous behavior from the index
         if (previous_behavior_index_ != -1 && with_consistence_) {
 
@@ -984,22 +969,22 @@ namespace HpdmPlanner {
             // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
             // // END DEBUG
 
-            // Construct the related behaviors that with different lane change time stamp
+            // // Construct the related behaviors that with different lane change time stamp
             std::vector<int> related_behavior_indice;
-            int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
-            int lat_base_index = -1;
-            if (lat_beh_val % 2 == 0) {
-                lat_base_index = 0;
-            } else {
-                lat_base_index = 1;
-            }
+            // int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
+            // int lat_base_index = -1;
+            // if (lat_beh_val % 2 == 0) {
+            //     lat_base_index = 0;
+            // } else {
+            //     lat_base_index = 1;
+            // }
 
             // // Superimpose behaviors with the same longitudinal velocity
             // for (int i = lat_base_index; i <= 19; i += 2) {
             //     related_behavior_indice.emplace_back(lon_base_index + i);
             // }
 
-            // Super =impose behaviors with the same lateral lane change behavior and time stamp
+            // Superimpose behaviors with the same lateral lane change behavior and time stamp
             for (int i = 0; i < 231; i += 21) {
                 related_behavior_indice.emplace_back(i + lat_beh_val);
             }
@@ -1007,13 +992,29 @@ namespace HpdmPlanner {
             candi_action_idxs_set_.insert(related_behavior_indice.begin(), related_behavior_indice.end());
         }
 
+        behaviors_generation_success_ = true;
+    }
+
+
+    // Run HPDM planner
+    void HpdmPlannerCore::generateTrajs(int lon_candidate_num) {
+
+        while (ros::ok()) {
+            if (behaviors_generation_success_) {
+                break;
+            }
+        }
+
         // // DEBUG
         // std::cout << "---------------------------------------------" << std::endl;
         // std::cout << "candi_action_idxs size: " << candi_action_idxs_.size() << std::endl;
         // std::cout << "candi_action_idxs_set size: " << candi_action_idxs_set_.size() << std::endl;
-        // std::cout << candi_action_idxs_set_ << std::endl;
+        // // std::cout << candi_action_idxs_set_ << std::endl;
         // std::cout << "---------------------------------------------" << std::endl;
         // // END DEBUG
+
+        printf("[HpdmPlanner] final behaviors space include: %d items.\n", static_cast<int>(candi_action_idxs_set_.size()));
+
 
         candi_action_idxs_.assign(candi_action_idxs_set_.begin(), candi_action_idxs_set_.end());
         
@@ -1116,6 +1117,7 @@ namespace HpdmPlanner {
 
     // Generate trajectories
     void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed, int* behavior_index) {
+        behaviors_generation_success_ = false;
         candi_action_idxs_set_.clear();
         candi_action_idxs_.clear();
         std::thread candidate_behavior_thread = std::thread(&HpdmPlannerCore::generateCandidateBehavior, this);

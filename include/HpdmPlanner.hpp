@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-12 16:51:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 20:58:44
+ * @LastEditTime: 2022-07-22 15:06:16
  * @Description: Realization of the HPDM behavior planner based on reinforcement learning.
  */
 
@@ -288,6 +288,7 @@ class HpdmPlannerCore {
     ParametricLane target_ref_lane_;
     bool is_final_lane_changed_{false};
     int current_behavior_index_{-1};
+    bool behaviors_generation_success_{false};
 
 };
 
