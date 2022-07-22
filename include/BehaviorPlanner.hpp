@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:37:26
+ * @LastEditTime: 2022-07-22 16:21:05
  * @Descripttion: Behavior planner core.
  */
 
@@ -21,7 +21,7 @@ public:
     // TODO: adjust parameters
     static constexpr double look_ahead_min_distance{3.0};
     static constexpr double look_ahead_max_distance{50.0};
-    static constexpr double steer_control_gain{3.0};
+    static constexpr double steer_control_gain{2.0};
     static constexpr double wheelbase_length{2.8498};
 
     static constexpr double max_lon_acc_jerk{5.0};
