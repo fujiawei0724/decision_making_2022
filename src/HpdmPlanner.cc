@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 21:03:39
+ * @LastEditTime: 2022-07-22 13:10:02
  * @Description: Hpdm planner.
  */
 
@@ -937,6 +937,9 @@ namespace HpdmPlanner {
         // delete state_itf_;
 
         candi_action_idxs_set_.insert(candi_action_idxs.begin(), candi_action_idxs.end());
+        candi_action_idxs_set_.insert(147);
+        candi_action_idxs_set_.insert(148);
+        candi_action_idxs_set_.insert(167);
     }
 
     // END DEBUG
@@ -950,63 +953,67 @@ namespace HpdmPlanner {
             }
         }
 
-        // // DEBUG    
-        // candi_action_idxs = std::vector<int>{228, 230, 229, 214, 210};
+
+
+        // Parse the previous behavior from the index
+        if (previous_behavior_index_ != -1 && with_consistence_) {
+
+            // Calculate related information
+            int lon_beh_val = previous_behavior_index_ / 21;
+            int lat_beh_val = previous_behavior_index_ % 21;
+            double lon_vel_comp = static_cast<double>(lon_beh_val) - 5.0;  
+            LateralBehavior lat_beh;
+            int change_begin_index = -1;
+            if (lat_beh_val == 20) {
+                printf("[HpdmPLanner] invalid previous behavior information.\n");
+                // Without lane change
+                lat_beh = LateralBehavior::LaneKeeping;
+            } else {
+                if (lat_beh_val % 2 == 0) {
+                    lat_beh = LateralBehavior::LaneChangeLeft;
+                } else {
+                    lat_beh = LateralBehavior::LaneChangeRight;
+                }
+                change_begin_index = lat_beh_val / 2;
+            }
+
+            // // DEBUG
+            // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+            // std::cout << "Previous behavior index: " << previous_behavior_index_ << std::endl;
+            // std::cout << "Velocity compensation: " << lon_vel_comp << std::endl;
+            // std::cout << "+++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+            // // END DEBUG
+
+            // Construct the related behaviors that with different lane change time stamp
+            std::vector<int> related_behavior_indice;
+            int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
+            int lat_base_index = -1;
+            if (lat_beh_val % 2 == 0) {
+                lat_base_index = 0;
+            } else {
+                lat_base_index = 1;
+            }
+
+            // // Superimpose behaviors with the same longitudinal velocity
+            // for (int i = lat_base_index; i <= 19; i += 2) {
+            //     related_behavior_indice.emplace_back(lon_base_index + i);
+            // }
+
+            // Super =impose behaviors with the same lateral lane change behavior and time stamp
+            for (int i = 0; i < 231; i += 21) {
+                related_behavior_indice.emplace_back(i + lat_beh_val);
+            }
+
+            candi_action_idxs_set_.insert(related_behavior_indice.begin(), related_behavior_indice.end());
+        }
+
+        // // DEBUG
+        // std::cout << "---------------------------------------------" << std::endl;
+        // std::cout << "candi_action_idxs size: " << candi_action_idxs_.size() << std::endl;
+        // std::cout << "candi_action_idxs_set size: " << candi_action_idxs_set_.size() << std::endl;
+        // std::cout << candi_action_idxs_set_ << std::endl;
+        // std::cout << "---------------------------------------------" << std::endl;
         // // END DEBUG
-
-        // std::cout << candi_action_idxs_ << std::endl;
-
-        // Superimpose the backup behaviors
-        // Note this is a trick, we hope that with the training epoches increasing, the macro-behavior planning would be more intelligent
-        // if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 147) == candi_action_idxs_.end()) {
-        //     candi_action_idxs_.emplace_back(147);
-        // }
-        // if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 148) == candi_action_idxs_.end()) {
-        //     candi_action_idxs_.emplace_back(148);
-        // }
-        // if (std::find(candi_action_idxs_.begin(), candi_action_idxs_.end(), 167) == candi_action_idxs_.end()) {
-        //     candi_action_idxs_.emplace_back(167);
-        // }
-        candi_action_idxs_set_.insert(147);
-        candi_action_idxs_set_.insert(148);
-        candi_action_idxs_set_.insert(167);
-
-        // // Parse the previous behavior from the index
-        // if (previous_behavior_index_ != -1) {
-        //     // Calculate related information
-        //     int lon_beh_val = previous_behavior_index_ / 21;
-        //     int lat_beh_val = previous_behavior_index_ % 21;
-        //     double lon_vel_comp = static_cast<double>(lon_beh_val) - 5.0;  
-        //     // LateralBehavior lat_beh;
-        //     int change_begin_index = -1;
-        //     if (lat_beh_val == 20) {
-        //         printf("[HpdmPLanner] invalid previous behavior information.\n");
-        //         // Without lane change
-        //         // lat_beh = LateralBehavior::LaneKeeping;
-        //     } else {
-        //         // if (lat_beh_val % 2 == 0) {
-        //         //     lat_beh = LateralBehavior::LaneChangeLeft;
-        //         // } else {
-        //         //     lat_beh = LateralBehavior::LaneChangeRight;
-        //         // }
-        //         change_begin_index = lat_beh_val / 2;
-        //     }
-            
-        //     // Construct the related behaviors that with different lane change time stamp
-        //     std::vector<int> related_behavior_indice;
-        //     int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
-        //     int lat_base_index = -1;
-        //     if (lat_beh_val % 2 == 0) {
-        //         lat_base_index = 0;
-        //     } else {
-        //         lat_base_index = 1;
-        //     }
-        //     for (int i = lat_base_index; i <= 19; i += 2) {
-        //         related_behavior_indice.emplace_back(lon_base_index + i);
-        //     }
-        //     candi_action_idxs_set_.insert(related_behavior_indice.begin(), related_behavior_indice.end());
-
-        // }
 
         candi_action_idxs_.assign(candi_action_idxs_set_.begin(), candi_action_idxs_set_.end());
         
@@ -1025,7 +1032,7 @@ namespace HpdmPlanner {
         //     all_action_idxs.emplace_back(i);
         // }
         // END DEBUG
-        
+
         if (lon_candidate_num == 3) {
             behavior_sequence_vec_raw = ActionInterface::indexVecToBehSeqVec(candi_action_idxs_);
             for (const auto& beh_seq : behavior_sequence_vec_raw) {
@@ -1101,7 +1108,7 @@ namespace HpdmPlanner {
         policy_cost_ = policy_cost;
         target_ref_lane_ = target_ref_lane;
         is_final_lane_changed_ = is_final_lane_changed;
-        current_behavior_index_ = final_win_index;
+        current_behavior_index_ = candi_action_idxs_[final_win_index];
 
 
 
@@ -1109,6 +1116,8 @@ namespace HpdmPlanner {
 
     // Generate trajectories
     void HpdmPlannerCore::runHpdmPlanner(int lon_candidate_num, std::vector<Vehicle>* ego_traj, std::unordered_map<int, std::vector<Vehicle>>* sur_trajs, ParametricLane* target_reference_lane, bool* safe, double* cost, bool* is_lane_changed, int* behavior_index) {
+        candi_action_idxs_set_.clear();
+        candi_action_idxs_.clear();
         std::thread candidate_behavior_thread = std::thread(&HpdmPlannerCore::generateCandidateBehavior, this);
         std::thread trajs_generate_thread = std::thread(&HpdmPlannerCore::generateTrajs, this, lon_candidate_num);
         // if (candi_action_idxs_.empty()) {

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 09:13:44
+ * @LastEditTime: 2022-07-22 11:00:30
  * @Description: Lane components
  */
 
@@ -762,7 +762,9 @@ Eigen::Vector2d ParametricLane::calculateTargetLanePosition(const Eigen::Vector2
     // Get segment of target point
     int target_point_segment = std::lower_bound(stations_.begin(), stations_.end(), target_arc_length) - stations_.begin();
     if (target_point_segment >= n_ - 1) {
-        printf("[Lane] target point is out of range.\n");
+        // // DEBUG
+        // printf("[Lane] target point is out of range.\n");
+        // // END DEBUG
         return points_[n_ - 1];
     } 
     // Get truncate arc length
