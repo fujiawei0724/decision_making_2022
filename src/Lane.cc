@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-22 11:00:30
+ * @LastEditTime: 2022-07-23 09:46:27
  * @Description: Lane components
  */
 
@@ -623,6 +623,14 @@ Eigen::Vector2d ParametricLane::calculateFrenetPoint(const Eigen::Vector2d& pos)
         }
     }
 
+    // Ensure target index is legal
+    if (target_index < 0) {
+        target_index = 0;
+    }
+    if (target_index >= n_ - 1) {
+        target_index = n_ - 2;
+    }
+
     // Get origin arc length 
     double arc_length = stations_[target_index];
     // Get extra arc length
@@ -751,6 +759,14 @@ Eigen::Vector2d ParametricLane::calculateTargetLanePosition(const Eigen::Vector2
         }
     }
 
+    // Ensure target index is legal
+    if (target_index < 0) {
+        target_index = 0;
+    }
+    if (target_index >= n_ - 1) {
+        target_index = n_ - 2;
+    }
+
     // Get origin arc length 
     double arc_length = stations_[target_index];
     // Get extra arc length
@@ -862,6 +878,14 @@ double ParametricLane::calculateArcLength(const Eigen::Vector2d& pos) const {
         if (transformed_point.x_ < 0.0) {
             target_index -= 1;
         }
+    }
+
+    // Ensure target index is legal
+    if (target_index < 0) {
+        target_index = 0;
+    }
+    if (target_index >= n_ - 1) {
+        target_index = n_ - 2;
     }
 
     // Get origin arc length 

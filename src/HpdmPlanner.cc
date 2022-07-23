@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-22 15:06:35
+ * @LastEditTime: 2022-07-23 10:02:11
  * @Description: Hpdm planner.
  */
 
@@ -332,7 +332,7 @@ namespace HpdmPlanner {
         printf("[TorchInterface] torch forward time consumption: %lf.\n", torch_forward_time_consumption);
 
 
-        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(16, 1);
+        std::tuple<torch::Tensor, torch::Tensor> result = pred_res.topk(10, 1);
         // auto top_values = std::get<0>(result).view(-1);
         auto top_idxs = std::get<1>(result).view(-1).to(torch::kCPU);
         std::vector<int> res(top_idxs.data_ptr<long>(), top_idxs.data_ptr<long>() + top_idxs.numel());
@@ -940,6 +940,13 @@ namespace HpdmPlanner {
         candi_action_idxs_set_.insert(147);
         candi_action_idxs_set_.insert(148);
         candi_action_idxs_set_.insert(167);
+        candi_action_idxs_set_.insert(105);
+        candi_action_idxs_set_.insert(106);
+        candi_action_idxs_set_.insert(125);
+        candi_action_idxs_set_.insert(63);
+        candi_action_idxs_set_.insert(64);
+        candi_action_idxs_set_.insert(83);
+        
         // Parse the previous behavior from the index
         if (previous_behavior_index_ != -1 && with_consistence_) {
 

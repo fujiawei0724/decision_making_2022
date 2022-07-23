@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-16 18:40:30
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-18 14:48:57
+ * @LastEditTime: 2022-07-23 09:30:11
  * @Description: the storage of observations sequence.
  */
 
@@ -18,7 +18,7 @@ class ObservationBuffer {
     ObservationBuffer(int full_size = 10);
     ~ObservationBuffer();
 
-    inline int size() {return static_cast<int>(data_.size());}
+    inline int size() const {return static_cast<int>(data_.size());}
 
     /**
      * @description: update the information in the buffer from the current percepted information and filter these observations whose timestamp is not suitable

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-10 21:55:14
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-18 14:07:51
+ * @LastEditTime: 2022-07-23 09:32:56
  * @Description: Generate image from the percepted obstacles.
  */
 
@@ -10,7 +10,10 @@
 
 namespace Utils {
 
-
+constexpr int ImageGenerator::height_;
+constexpr int ImageGenerator::width_;
+constexpr double ImageGenerator::scale_;
+constexpr double ImageGenerator::lane_width_;
 
 cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info, const std::vector<Common::FsImageVehicle>& surrounding_vehicles) {
     // Initialize canvas 
