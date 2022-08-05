@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-08-05 11:43:32
+ * @LastEditTime: 2022-08-05 16:52:06
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -240,7 +240,13 @@ namespace BehaviorPlanner {
         // Calculate the point index in the lane 
         int point_index = nearest_lane.calculateNearestScatterPointIndex(vehicle.state_.position_);
 
-        return speed_limits[point_index];
+        double max_speed = TEST_MAX_SPEED / 3.6;
+
+        // // DEBUG
+        // std::cout << max_speed << std::endl;
+        // // END DEBUG
+
+        return max_speed;
     }
 
     // Calculate point in lane

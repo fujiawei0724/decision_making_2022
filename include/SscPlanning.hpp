@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:44:57
+ * @LastEditTime: 2022-08-05 15:27:49
  * @Descripttion: Ssc trajectory planning.
  */
 

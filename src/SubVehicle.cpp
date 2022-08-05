@@ -563,11 +563,11 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         // }
         // // END DEBUG
 
-        // Avoid illegal trajectory
-        if (fabs(*std::max_element(curvatures.begin(), curvatures.end())) > 0.05) {
-            printf("[MainPineline] illegal trajectory with too large curvature.\n");
-            continue;
-        }
+        // // Avoid illegal trajectory
+        // if (fabs(*std::max_element(curvatures.begin(), curvatures.end())) > 0.05) {
+        //     printf("[MainPineline] illegal trajectory with too large curvature.\n");
+        //     continue;
+        // }
 
 
         // Publish trajectory

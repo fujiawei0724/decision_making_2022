@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-08-05 12:37:28
+ * @LastEditTime: 2022-08-05 16:40:53
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -11,7 +11,7 @@
 void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_consumption) {
     // Update information for behavior planning
     updateMapInformation();
-    updateValidateTrafficRuleInformation();
+    // updateValidateTrafficRuleInformation();
     updateObstacleInformation();
 
     // Transform ego vehicle information and surround vehice information

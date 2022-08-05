@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-23 09:46:27
+ * @LastEditTime: 2022-08-05 15:52:32
  * @Description: Lane components
  */
 
@@ -569,7 +569,10 @@ ParametricLane::~ParametricLane() = default;
 void ParametricLane::generateLaneCenter(path_planning_msgs::BoundedCurve geometry, double gap, std::vector<vec_map_cpp_msgs::SplineCoef> coefficients) {
     // Supply data for gaps and stations 
     n_ = coefficients.size() + 1;
-    gaps_ = std::vector<double>(n_ - 1, gap);
+    gaps_ = std::vector<double>(n_ - 1, 0.0);
+    for (int i = 0; i < n_ - 1; i++) {
+        gaps_[i] = sqrt(pow(geometry.points[i + 1].center_point.x - geometry.points[i].center_point.x, 2) + pow(geometry.points[i + 1].center_point.y - geometry.points[i].center_point.y, 2));
+    }
     stations_.resize(n_, 0.0);
     for (int i = 1; i < n_; i++) {
         stations_[i] = stations_[i - 1] + gaps_[i - 1];
