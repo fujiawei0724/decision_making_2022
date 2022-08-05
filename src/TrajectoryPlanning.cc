@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:47:57
+ * @LastEditTime: 2022-08-05 10:12:34
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -88,6 +88,10 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
         current_vehicle_steer_metex_.unlock();
     }
     
+    // // // DEBUG
+    // start_point_kappa = std::min(std::max(start_point_kappa, -0.00), 0.00);
+    // current_vehicle_steer = atan(2.8498 * start_point_kappa);
+    // // // END DEBUG
 
 
     // Update data
@@ -117,7 +121,34 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
     
     delete ssc_planning_core;
 
+
+    
+
     if (result) {
+        // // Smooth path
+        // PathPlanningUtilities::Path raw_path;
+        // PathPlanningUtilities::Path smoothed_path;
+        // for (int i = 0; i < trajectory.size(); i++) {
+        //     PathPlanningUtilities::Point2f cur_point;
+        //     cur_point.x_ = trajectory[i].x_;
+        //     cur_point.y_ = trajectory[i].y_;
+        //     raw_path.push_back(cur_point);
+        // }
+        // double ave_dis = sqrt(pow((trajectory.back().x_ - trajectory.front().x_), 2) + pow((trajectory.back().y_ - trajectory.front().y_), 2)) / static_cast<int>(trajectory.size());
+        // PathPlanningUtilities::PathUtilities::pathSmooth(raw_path, smoothed_path, ave_dis);
+        
+        // std::vector<Common::Point3f> smoothed_traj;
+        // smoothed_traj.emplace_back(trajectory[0]);
+        // for (int i = 1; i < smoothed_path.size(); i++) {
+        //     double distance = sqrt(pow(smoothed_path[i].x_ - smoothed_traj.back().x_, 2) + pow(smoothed_path[i].y_ - smoothed_traj.back().y_, 2));
+
+
+        //     Common::Point3f cur_traj_point = Common::Point3f(smoothed_path[i].x_, smoothed_path[i].y_, trajectory[i].z_);
+        //     smoothed_traj.emplace_back(cur_traj_point);
+
+        // }
+        // generated_trajectory_ = smoothed_traj;
+
         generated_trajectory_ = trajectory;
     }
     *trajectory_planning_result = result;

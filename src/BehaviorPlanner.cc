@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-07-21 08:42:13
+ * @LastEditTime: 2022-08-05 10:38:18
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -159,6 +159,9 @@ namespace BehaviorPlanner {
 
         // Calculate reference lane 
         LaneId reference_lane_id = calculateReferenceLaneId(nearest_lane_id, potential_lateral_behavior);
+        if (!lane_set_.count(reference_lane_id)) {
+            reference_lane_id = nearest_lane_id;
+        }
         ParametricLane reference_lane = lane_set_[reference_lane_id];
 
         return SemanticVehicle(surround_vehicle, nearest_lane_id, reference_lane_id, nearest_lane, reference_lane);
@@ -239,6 +242,10 @@ namespace BehaviorPlanner {
         
         // Calculate the point index in the lane 
         int point_index = nearest_lane.calculateNearestScatterPointIndex(vehicle.state_.position_);
+
+        // // DEBUG
+        // std::cout << "Speed limit: " << speed_limits[point_index] << std::endl;
+        // // END DEBUG
 
         return speed_limits[point_index];
     }
@@ -671,25 +678,35 @@ namespace BehaviorPlanner {
         std::vector<std::vector<VehicleBehavior>> veh_beh_set;
 
         std::vector<VehicleBehavior> lane_keeping_beh;
+        std::vector<VehicleBehavior> lane_keeping_beh_slow;
         for (int i = 0; i < sequence_length_; i++) {
             lane_keeping_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior::Undefined));
+            lane_keeping_beh_slow.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior::Conservative));
         }
         veh_beh_set.emplace_back(lane_keeping_beh);
+        veh_beh_set.emplace_back(lane_keeping_beh_slow);
 
         if (is_lane_change_left_available_) {
             std::vector<VehicleBehavior> lane_change_left_beh;
+            std::vector<VehicleBehavior> lane_change_left_beh_slow;
             for (int i = 0; i < sequence_length_; i++) {
                 lane_change_left_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeLeft, LongitudinalBehavior::Undefined));
+                lane_change_left_beh_slow.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeLeft, LongitudinalBehavior::Conservative));
             }
             veh_beh_set.emplace_back(lane_change_left_beh);
+            veh_beh_set.emplace_back(lane_change_left_beh_slow);
+            
         }
 
         if (is_lane_change_right_available_) {
             std::vector<VehicleBehavior> lane_change_right_beh;
+            std::vector<VehicleBehavior> lane_change_right_beh_slow;
             for (int i = 0; i < sequence_length_; i++) {
                 lane_change_right_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeRight, LongitudinalBehavior::Undefined));
+                lane_change_right_beh_slow.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeRight, LongitudinalBehavior::Conservative));
             }
             veh_beh_set.emplace_back(lane_change_right_beh);
+            veh_beh_set.emplace_back(lane_change_right_beh_slow);
         }
 
         return veh_beh_set;
@@ -876,9 +893,14 @@ namespace BehaviorPlanner {
         double winner_cost = MAX_VALUE;
         evaluatePolicies(winner_index, winner_cost);
         if (winner_index == -1) {
+            // std_msgs::ColorRGBA color;
+            // color.a = 1.0;
+            // color.r = 0.0;
+            // color.g = 0.0;
+            // color.b = 1.0;
             // // DEBUG
             // for (int i = 0; i < static_cast<int>(behavior_sequence_cost_.size()); i++) {
-            //     VisualizationMethods::visualizeTrajectory(ego_traj_[i], vis_pub_, i);
+            //     VisualizationMethods::visualizeTrajectory(ego_traj_[i], vis_pub_, i, color);
             // }
             // // END DEBUG
 
@@ -897,11 +919,31 @@ namespace BehaviorPlanner {
         // Visualization best traj and print
         std_msgs::ColorRGBA color;
         color.a = 1.0;
-        color.r = 0.0;
-        color.g = 1.0;
+        color.r = 1.0;
+        color.g = 0.0;
         color.b = 0.0;
         VisualizationMethods::visualizeTrajectory(ego_traj_[winner_index], vis_pub_, 0, color);
         printf("[BehaviorPlanner] selected action index: %d, with the cost: %lf.\n", winner_index, winner_cost);
+
+        // std_msgs::ColorRGBA color;
+        // color.a = 0.2;
+        // color.r = 0.0;
+        // color.g = 0.0;
+        // color.b = 1.0;
+        // // DEBUG
+        // for (int i = 0; i < static_cast<int>(behavior_sequence_cost_.size()); i++) {
+        //     VisualizationMethods::visualizeTrajectory(ego_traj_[i], vis_pub_, i, color);
+        // }
+        // // END DEBUG
+
+        std_msgs::ColorRGBA color_sur;
+        color_sur.a = 1.0;
+        color_sur.r = 0.0;
+        color_sur.g = 0.0;
+        color_sur.b = 0.0;
+        for (const auto& sin_sur_traj_info : sur_veh_trajs_[winner_index]) {
+            VisualizationMethods::visualizeTrajectory(sin_sur_traj_info.second, vis_pub_, 7500 + sin_sur_traj_info.first * 100, color_sur);
+        }
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];

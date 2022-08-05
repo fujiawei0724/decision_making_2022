@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-14 11:57:46
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-23 10:02:11
+ * @LastEditTime: 2022-08-04 20:15:44
  * @Description: Hpdm planner.
  */
 
@@ -587,6 +587,11 @@ namespace HpdmPlanner {
             }
         }
 
+        // Ban the behavior denoting try to change to a lane occupied by static of virtual traffic obstacles
+        if (map_itf_->lane_set_[ego_semantic_vehicle.reference_lane_id_].is_static_obstacles_occupied_) {
+            is_safe = false;
+        }
+
         // Cache
         *ego_traj = ego_trajectory;
         *sur_trajs = surround_trajectories;
@@ -760,7 +765,7 @@ namespace HpdmPlanner {
             auto single_candi_traj = candi_ego_trajs_[i];
             std_msgs::ColorRGBA color;
             if (i == win_idx) {
-                color.a = 1.0;
+                color.a = 0.0;
                 color.r = 1.0;
                 color.g = 0.0;
                 color.b = 0.0;
@@ -770,7 +775,7 @@ namespace HpdmPlanner {
                 color.g = 0.0;
                 color.b = 1.0;
             }
-            VisualizationMethods::visualizeTrajectoryTo2D(single_candi_traj, vis_pub_, candi_traj_vis_start_index, color);
+            VisualizationMethods::visualizeTrajectory(single_candi_traj, vis_pub_, candi_traj_vis_start_index, color);
             candi_traj_vis_start_index += 1;
         }
 
@@ -946,6 +951,12 @@ namespace HpdmPlanner {
         candi_action_idxs_set_.insert(63);
         candi_action_idxs_set_.insert(64);
         candi_action_idxs_set_.insert(83);
+
+        // // DEBUG
+        // for (int i = 0; i < 231; i++) {
+        //     candi_action_idxs_set_.insert(i);
+        // }
+        // // END DEBUG
         
         // Parse the previous behavior from the index
         if (previous_behavior_index_ != -1 && with_consistence_) {
@@ -978,13 +989,13 @@ namespace HpdmPlanner {
 
             // // Construct the related behaviors that with different lane change time stamp
             std::vector<int> related_behavior_indice;
-            // int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
-            // int lat_base_index = -1;
-            // if (lat_beh_val % 2 == 0) {
-            //     lat_base_index = 0;
-            // } else {
-            //     lat_base_index = 1;
-            // }
+            int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
+            int lat_base_index = -1;
+            if (lat_beh_val % 2 == 0) {
+                lat_base_index = 0;
+            } else {
+                lat_base_index = 1;
+            }
 
             // // Superimpose behaviors with the same longitudinal velocity
             // for (int i = lat_base_index; i <= 19; i += 2) {
@@ -998,6 +1009,33 @@ namespace HpdmPlanner {
 
             candi_action_idxs_set_.insert(related_behavior_indice.begin(), related_behavior_indice.end());
         }
+
+        // // DEBUG
+        // // Parse the previous behavior from the index
+        // if (previous_behavior_index_ != -1 && with_consistence_) {
+        //     candi_action_idxs_set_.clear();
+        //     // Calculate related information
+        //     int lon_beh_val = previous_behavior_index_ / 21;
+        //     int lat_beh_val = previous_behavior_index_ % 21;
+        //     double lon_vel_comp = static_cast<double>(lon_beh_val) - 5.0;  
+        //     std::vector<int> related_behavior_indice;
+        //     int lon_base_index = static_cast<int>((lon_vel_comp + 5) * 21);
+        //     int lat_base_index = -1;
+        //     if (lat_beh_val % 2 == 0) {
+        //         lat_base_index = 0;
+        //     } else {
+        //         lat_base_index = 1;
+        //     }
+
+        //     // Superimpose behaviors with the same longitudinal velocity
+        //     if (lat_beh_val - 2 > lat_base_index) {
+        //         related_behavior_indice.emplace_back(lon_base_index + lat_beh_val - 2);
+        //     } else {
+        //         related_behavior_indice.emplace_back(lon_base_index + lat_base_index);
+        //     }
+       
+        // }
+        // // END DEBUG
 
         behaviors_generation_success_ = true;
     }
@@ -1023,6 +1061,19 @@ namespace HpdmPlanner {
         printf("[HpdmPlanner] final behaviors space include: %d items.\n", static_cast<int>(candi_action_idxs_set_.size()));
 
 
+        // // DEBUG
+        // candi_action_idxs_set_.clear();
+        // candi_action_idxs_set_.insert(147);
+        // candi_action_idxs_set_.insert(148);
+        // candi_action_idxs_set_.insert(167);
+        // candi_action_idxs_set_.insert(105);
+        // candi_action_idxs_set_.insert(106);
+        // candi_action_idxs_set_.insert(125);
+        // candi_action_idxs_set_.insert(63);
+        // candi_action_idxs_set_.insert(64);
+        // candi_action_idxs_set_.insert(83);
+        // // END DEBUG
+
         candi_action_idxs_.assign(candi_action_idxs_set_.begin(), candi_action_idxs_set_.end());
         
 
@@ -1041,27 +1092,20 @@ namespace HpdmPlanner {
         // }
         // END DEBUG
 
-        if (lon_candidate_num == 3) {
-            behavior_sequence_vec_raw = ActionInterface::indexVecToBehSeqVec(candi_action_idxs_);
-            for (const auto& beh_seq : behavior_sequence_vec_raw) {
-                if (beh_seq.back().lat_beh_ == LateralBehavior::LaneChangeLeft && !map_itf_->left_lane_exist_) {
-                    continue;
-                }
-                if (beh_seq.back().lat_beh_ == LateralBehavior::LaneChangeRight && !map_itf_->right_lane_exist_) {
-                    continue;
-                }
-                behavior_sequence_vec.emplace_back(beh_seq);
-            }
-        } else if (lon_candidate_num == 11) {
+        if (lon_candidate_num == 11) {
             intention_sequence_vec_raw = ActionInterface::indexVecToIntentionSeqVec(candi_action_idxs_);
+            int i = 0;
             for (const auto& intention_seq : intention_sequence_vec_raw) {
                 if (intention_seq.back().lat_beh_ == LateralBehavior::LaneChangeLeft && !map_itf_->left_lane_exist_) {
+                    candi_action_idxs_.erase(candi_action_idxs_.begin() + i);
                     continue;
                 }
                 if (intention_seq.back().lat_beh_ == LateralBehavior::LaneChangeRight && !map_itf_->right_lane_exist_) {
+                    candi_action_idxs_.erase(candi_action_idxs_.begin() + i);
                     continue;
                 }
                 intention_sequence_vec.emplace_back(intention_seq);
+                i += 1;
             }
         } else {
             assert(false);
@@ -1083,12 +1127,7 @@ namespace HpdmPlanner {
         int final_win_index = -1;
         bool is_final_lane_changed = false;
 
-        if (lon_candidate_num == 3) {
-            // DEBUG
-            // Test the situation where there are only 3 longitudinal target velocities  
-            traj_generator_->simulateCandidatesBehaviorSequences(ego_vehicle_, surround_vehicles_, behavior_sequence_vec, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index);
-            // END DEBUG
-        } else if (lon_candidate_num == 11) {
+        if (lon_candidate_num == 11) {
             clock_t traj_generation_start_time = clock();
             traj_generator_->simulateCandidatesIntentionSequences(ego_vehicle_, surround_vehicles_, intention_sequence_vec, candi_action_idxs_, &ego_trajectory, &sur_trajectories, &is_safe, &policy_cost, &target_ref_lane, &final_win_index, &is_final_lane_changed);
             clock_t traj_generation_end_time = clock();
@@ -1100,12 +1139,22 @@ namespace HpdmPlanner {
 
         // Visualization and print
         if (is_safe) {
-            std_msgs::ColorRGBA color;
-            color.a = 1.0;
-            color.r = 1.0;
-            color.g = 0.0;
-            color.b = 0.0;
-            VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 1000, color);
+            std_msgs::ColorRGBA color_r;
+            color_r.a = 1.0;
+            color_r.r = 1.0;
+            color_r.g = 0.0;
+            color_r.b = 0.0;
+            VisualizationMethods::visualizeTrajectory(ego_trajectory, vis_pub_, 1000, color_r);
+
+            std_msgs::ColorRGBA color_sur;
+            color_sur.a = 1.0;
+            color_sur.r = 0.0;
+            color_sur.g = 0.0;
+            color_sur.b = 0.0;
+            for (const auto& sin_sur_traj_info : sur_trajectories) {
+                VisualizationMethods::visualizeTrajectory(sin_sur_traj_info.second, vis_pub_, 7500 + sin_sur_traj_info.first * 100, color_sur);
+            }
+
         }
         printf("[HpdmPLanner] selected action index: %d, is safe: %d, cost: %lf.\n", candi_action_idxs_[final_win_index], is_safe, policy_cost);
 

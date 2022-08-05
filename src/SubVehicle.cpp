@@ -523,16 +523,28 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
             continue;
         }
 
-        // Run HPDM
-        bool is_hpdm_planning_success = false;
+        // Run MPDM or EUDM
+        bool is_planning_success = false;
         double time_cons = 0.0;
-        hpdmPlanning(&is_hpdm_planning_success, &time_cons);
-        if (!is_hpdm_planning_success) {
-            printf("[MainPineline] hpdm planning failed.\n");
+        behaviorPlanning(&is_planning_success, &time_cons);
+        if (!is_planning_success) {
+            printf("[MainPineline] behavior planning failed.\n");
             ego_trajectory_.clear();
             surround_trajectories_.clear();
             continue;
         }
+
+
+        // // Run HPDM
+        // bool is_hpdm_planning_success = false;
+        // double time_cons = 0.0;
+        // hpdmPlanning(&is_hpdm_planning_success, &time_cons);
+        // if (!is_hpdm_planning_success) {
+        //     printf("[MainPineline] hpdm planning failed.\n");
+        //     ego_trajectory_.clear();
+        //     surround_trajectories_.clear();
+        //     continue;
+        // }
 
         // Run trajectory planning
         bool is_trajectory_planning_success = false;
@@ -545,13 +557,20 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         // Check trajectory
         std::vector<double> thetas, curvatures, velocities, accelerations;
         trajectoryCheck(&thetas, &curvatures, &velocities, &accelerations);
+        if (fabs(*std::max_element(curvatures.begin(), curvatures.end())) > 0.1) {
+            printf("[MainPineline] maximum curvature excess the limitation failed.\n");
+            continue;
+        }
 
-        // // DEBUG
-        // for (int i = 0; i < static_cast<int>(thetas.size()); i++) {
-        //     printf("Index: %d, theta: %lf, curvature: %lf, velocity: %lf, acceleration: %lf.\n", i, thetas[i], curvatures[i], velocities[i], accelerations[i]);
-        // }
-        // // END DEBUG
+        // DEBUG
+        for (int i = 0; i < static_cast<int>(thetas.size()); i++) {
+            printf("Index: %d, theta: %lf, curvature: %lf, velocity: %lf, acceleration: %lf.\n", i, thetas[i], curvatures[i], velocities[i], accelerations[i]);
+        }
+        // END DEBUG
 
+        // DEBUG
+        VisualizationMethods::visualizeTrajectory(generated_trajectory_, vis_trajectory_planner_pub_, false);
+        // END DBEUG
 
         // Publish trajectory
         if (need_replanning_) {

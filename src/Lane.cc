@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-20 17:01:13
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-23 09:46:27
+ * @LastEditTime: 2022-07-23 10:54:29
  * @Description: Lane components
  */
 
@@ -826,7 +826,7 @@ bool ParametricLane::isLaneOccupiedByStaticObs(const Eigen::Matrix<double, 2, 1>
         sampled_points.emplace_back(calculateCurvePointFromArcLength(cur_arc_length));
     }
     // Construct occupation area of lane
-    DecisionMaking::RSS::OccupationArea lane_occupation_area = DecisionMaking::RSS::OccupationArea(sampled_points, 3.0, 5.0, 1);
+    DecisionMaking::RSS::OccupationArea lane_occupation_area = DecisionMaking::RSS::OccupationArea(sampled_points, 1.0, 5.0, 1);
     // Construct occupation area for static obs
     for (const auto& obs : all_obs) {
         // Only static obs

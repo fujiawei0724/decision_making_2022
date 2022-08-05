@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2022-07-10 21:55:14
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-23 09:32:56
+ * @LastEditTime: 2022-07-27 12:47:40
  * @Description: Generate image from the percepted obstacles.
  */
 
@@ -42,6 +42,11 @@ cv::Mat ImageGenerator::generateSingleImage(const std::vector<double>& lane_info
         contours.emplace_back(cur_contour);
     }
     cv::fillPoly(img, contours, cv::Scalar(0), 8);
+
+    // // DEBUG
+    // cv::imshow("Observation", img);
+    // cv::waitKey(0);
+    // // END DEBUG
 
     return img / 255.0;
 

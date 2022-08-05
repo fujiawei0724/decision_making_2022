@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-22 15:16:13
+ * @LastEditTime: 2022-08-04 21:33:00
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -32,21 +32,24 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
     double current_vehicle_steer = current_vehicle_steer_;
     current_vehicle_steer_metex_.unlock();
 
+    // DEBUG
+    start_point_kappa = 0.0;
+    current_vehicle_steer = 0.0;
+    // END DEBUG
+
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
 
     // Shield the lane which is occupied by static obstacles
-    if (left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        left_lane_.is_existence_ = false;
+    if (left_lane_.is_existence_ && left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+        left_lane_.is_static_obstacles_occupied_ = true;
     }
-    if (right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        right_lane_.is_existence_ = false;
+    if (right_lane_.is_existence_ && right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+        right_lane_.is_static_obstacles_occupied_ = true;
     }
-    if (center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        if (left_lane_.is_existence_ || right_lane_.is_existence_) {
-            center_lane_.is_existence_ = false;
-        }
+    if (center_lane_.is_existence_ && center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+        center_lane_.is_static_obstacles_occupied_ = true;
     }
 
     // Contruct map interface for behavior planner
@@ -84,7 +87,14 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
     BehaviorPlanner::BehaviorPlannerCore* behavior_planner = new BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt, vis_behavior_planner_ego_states_pub_);
     is_behavior_planning_success = behavior_planner->runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_, &reference_lane_);
     clock_t behavior_planning_end_time = clock();
-    printf("[MainPipeline] behavior planning time consumption: %lf.\n", static_cast<double>((behavior_planning_end_time - behavior_planning_start_time)) / CLOCKS_PER_SEC);
+
+
+    double cur_time_consumption = static_cast<double>((behavior_planning_end_time - behavior_planning_start_time)) / CLOCKS_PER_SEC;
+    printf("[MainPipeline] behavior planning time consumption: %lf.\n", cur_time_consumption);
+    if (cur_time_consumption < 0.05) {
+        double sleep_time = (0.05 - cur_time_consumption) * 1000000;
+        usleep(static_cast<int>(sleep_time));
+    }
 
     // // Visualization best policy states predicted by behavior planning
     // if (is_behavior_planning_success) {
@@ -101,26 +111,8 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
 void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consumption) {
     // Update information for behavior planning
     updateMapInformation();
+    updateValidateTrafficRuleInformation();
     updateObstacleInformation();
-
-    // Contruct map interface for HPDM 
-    std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
-    std::map<Common::LaneId, ParametricLane> lanes_info;
-    if (center_lane_.is_existence_) {
-        lanes_exist_info[Common::LaneId::CenterLane] = true;
-        lanes_info[Common::LaneId::CenterLane] = center_lane_;
-    }
-    if (left_lane_.is_existence_) {
-        lanes_exist_info[Common::LaneId::LeftLane] = true;
-        lanes_info[Common::LaneId::LeftLane] = left_lane_;
-    }
-    if (right_lane_.is_existence_) {
-        lanes_exist_info[Common::LaneId::RightLane] = true;
-        lanes_info[Common::LaneId::RightLane] = right_lane_;
-    }
-    BehaviorPlanner::MapInterface map_interface = BehaviorPlanner::MapInterface(lanes_exist_info, lanes_info);
-    // Get lane information
-    std::vector<double> lane_info = map_interface.getLaneInfo();
 
     // Transform ego vehicle information and surround vehice information
     // Update vehicle information
@@ -148,6 +140,43 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
+
+    // Shield the lane which is occupied by static obstacles
+    if (left_lane_.is_existence_ && left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+        left_lane_.is_static_obstacles_occupied_ = true;
+    }
+    if (right_lane_.is_existence_ && right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+        right_lane_.is_static_obstacles_occupied_ = true;
+    }
+    if (center_lane_.is_existence_ && center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+        center_lane_.is_static_obstacles_occupied_ = true;
+    }
+
+    // // DEBUG
+    // std::cout << "Center lane existence: " << center_lane_.is_existence_ << std::endl;;
+    // std::cout << "Left lane existence: " << left_lane_.is_existence_ << std::endl;
+    // std::cout << "Right lane existence: " << right_lane_.is_existence_ << std::endl;
+    // // END DEBUG
+
+    // Contruct map interface for HPDM 
+    std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
+    std::map<Common::LaneId, ParametricLane> lanes_info;
+    if (center_lane_.is_existence_) {
+        lanes_exist_info[Common::LaneId::CenterLane] = true;
+        lanes_info[Common::LaneId::CenterLane] = center_lane_;
+    }
+    if (left_lane_.is_existence_) {
+        lanes_exist_info[Common::LaneId::LeftLane] = true;
+        lanes_info[Common::LaneId::LeftLane] = left_lane_;
+    }
+    if (right_lane_.is_existence_) {
+        lanes_exist_info[Common::LaneId::RightLane] = true;
+        lanes_info[Common::LaneId::RightLane] = right_lane_;
+    }
+    BehaviorPlanner::MapInterface map_interface = BehaviorPlanner::MapInterface(lanes_exist_info, lanes_info);
+    // Get lane information
+    std::vector<double> lane_info = map_interface.getLaneInfo();
+
     ParametricLane nearest_lane = map_interface.calculateNearestLane(ego_vehicle);
 
     // Clear information
@@ -181,9 +210,13 @@ void DecisionMaking::SubVehicle::hpdmPlanning(bool* result, double* time_consump
     ParametricLane current_episode_reference_lane;
     int current_behavior_index;
     hpdm_planner_->runHpdmPlanner(11, &current_episode_ego_trajectory, &current_episode_surround_trajectories, &current_episode_reference_lane, &is_safe, &cost, &current_episode_lane_chaned, &current_behavior_index);
-    usleep(150000);
     clock_t hpdm_planning_end_time = clock();
-    printf("[MainPipeline] hpdm planning time consumption: %lf.\n", static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC);
+    double cur_time_consumption = static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC;
+    printf("[MainPipeline] hpdm planning time consumption: %lf.\n", cur_time_consumption);
+    if (cur_time_consumption < 0.05) {
+        double sleep_time = (0.05 - cur_time_consumption) * 1000000;
+        usleep(static_cast<int>(sleep_time));
+    }
 
     *result = is_safe;
     *time_consumption = static_cast<double>((hpdm_planning_end_time - hpdm_planning_start_time)) / CLOCKS_PER_SEC;

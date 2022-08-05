@@ -248,6 +248,7 @@ class ParametricLane {
     
 
     bool is_existence_{false}; // Existence
+    bool is_static_obstacles_occupied_{false}; // Occupied by static obstacles or virtual traffic obstacles
     int n_{0}; // Scatter points' number
     std::vector<double> stations_; // Specify the accumulated distance from the first point of lane
     std::vector<double> gaps_; // Specify the distance between each two continuous points
