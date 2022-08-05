@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-12 20:14:57
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:47:57
+ * @LastEditTime: 2022-08-05 12:22:52
  * @Descripttion: Trajectory planner's interface with the main pipeline
  */
 
@@ -87,6 +87,16 @@ void DecisionMaking::SubVehicle::sscPlanning(bool* trajectory_planning_result) {
         current_vehicle_steer = current_vehicle_steer_;
         current_vehicle_steer_metex_.unlock();
     }
+
+
+    // start_point_kappa = 0.0;
+    // current_vehicle_steer = 0.0;
+
+    // DEBUG
+    std::cout << start_point_kappa << std::endl;
+    std::cout << current_vehicle_steer << std::endl;
+    // END DEBUG
+
     
 
 

@@ -205,7 +205,11 @@ Visualization Manager:
           Marker Topic: /map/vis
           Name: Main
           Namespaces:
+            auxiliary: true
+            building: true
+            label: true
             line: true
+            region: true
           Queue Size: 100
           Value: true
         - Alpha: 1
@@ -649,8 +653,6 @@ Visualization Manager:
               Value: true
             front_camera_optical:
               Value: true
-            map:
-              Value: true
             odom:
               Value: true
             perfect_gps:
@@ -677,27 +679,7 @@ Visualization Manager:
               Value: true
             velodyne_base_link:
               Value: true
-            views/frontdoor:
-              Value: true
-            views/garage:
-              Value: true
-            views/highway01:
-              Value: true
-            views/highway02:
-              Value: true
-            views/highway03:
-              Value: true
-            views/highway04:
-              Value: true
-            views/highway05:
-              Value: true
-            views/nine_squares_center:
-              Value: true
-            views/test_junction:
-              Value: true
-            views/uturn01:
-              Value: true
-            views/uturn02:
+            views/sidafaming:
               Value: true
             wheel_fl:
               Value: true
@@ -745,28 +727,7 @@ Visualization Manager:
                 velodyne_base_link:
                   velodyne:
                     {}
-              views/frontdoor:
-                {}
-              views/garage:
-                {}
-              views/highway01:
-                {}
-              views/highway02:
-                {}
-              views/highway03:
-                {}
-              views/highway04:
-                {}
-              views/highway05:
-                {}
-              views/nine_squares_center:
-                {}
-              views/test_junction:
-                map:
-                  {}
-              views/uturn01:
-                {}
-              views/uturn02:
+              views/sidafaming:
                 {}
           Update Interval: 0
           Value: true
@@ -798,67 +759,6 @@ Visualization Manager:
             Expand Link Details: false
             Expand Tree: false
             Link Tree Style: Links in Alphabetic Order
-            base_footprint:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            base_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            front_camera:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            front_camera_optical:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            perfect_gps:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            steer_fl:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            steer_fr:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            velodyne:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            velodyne_base_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            wheel_fl:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            wheel_fr:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            wheel_rl:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            wheel_rr:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
           Name: RobotModel
           Robot Description: vehicle/robot_description
           TF Prefix: vehicle
@@ -1005,7 +905,7 @@ Visualization Manager:
       Marker Topic: /motion_planning/vis_obstacle_topic
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 0.5
@@ -1065,8 +965,6 @@ Visualization Manager:
           Value: true
         front_camera_optical:
           Value: true
-        map:
-          Value: true
         odom:
           Value: true
         perfect_gps:
@@ -1093,27 +991,7 @@ Visualization Manager:
           Value: true
         velodyne_base_link:
           Value: true
-        views/frontdoor:
-          Value: true
-        views/garage:
-          Value: true
-        views/highway01:
-          Value: true
-        views/highway02:
-          Value: true
-        views/highway03:
-          Value: true
-        views/highway04:
-          Value: true
-        views/highway05:
-          Value: true
-        views/nine_squares_center:
-          Value: true
-        views/test_junction:
-          Value: true
-        views/uturn01:
-          Value: true
-        views/uturn02:
+        views/sidafaming:
           Value: true
         wheel_fl:
           Value: true
@@ -1161,28 +1039,7 @@ Visualization Manager:
             velodyne_base_link:
               velodyne:
                 {}
-          views/frontdoor:
-            {}
-          views/garage:
-            {}
-          views/highway01:
-            {}
-          views/highway02:
-            {}
-          views/highway03:
-            {}
-          views/highway04:
-            {}
-          views/highway05:
-            {}
-          views/nine_squares_center:
-            {}
-          views/test_junction:
-            map:
-              {}
-          views/uturn01:
-            {}
-          views/uturn02:
+          views/sidafaming:
             {}
       Update Interval: 0
       Value: true
@@ -1229,13 +1086,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /behavior_planning/vis_ego_states_topic
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /trajectory_planning/vis_trajectory_topic
@@ -1245,13 +1102,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /behavior_planning/vis_candidates_states_topic
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -1280,7 +1137,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -1.47499883
+      Angle: -2.64500785
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
@@ -1290,11 +1147,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 16.0672417
+      Scale: 8.68161201
       Target Frame: base_footprint
       Value: TopDownOrtho (rviz)
-      X: 8.32340717
-      Y: -9.07786942
+      X: -52.531601
+      Y: -34.2781219
     Saved: ~
 Window Geometry:
   Displays:

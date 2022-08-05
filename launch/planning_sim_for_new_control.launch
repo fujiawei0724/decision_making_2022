@@ -31,7 +31,7 @@
     <arg name="can_ns" value="can_bus_dbw" />
   </include>
 
-  <include file="$(find pioneer_transform)/launch/changshu.launch" />
+  <include file="$(find pioneer_transform)/launch/xian.launch" />
   <!-- visualizer -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find motion_planning)/rviz/vec_map_local_path.rviz"/>
 

@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-07-21 08:42:13
+ * @LastEditTime: 2022-08-05 11:43:32
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -671,25 +671,35 @@ namespace BehaviorPlanner {
         std::vector<std::vector<VehicleBehavior>> veh_beh_set;
 
         std::vector<VehicleBehavior> lane_keeping_beh;
+        std::vector<VehicleBehavior> lane_keeping_beh_slow;
         for (int i = 0; i < sequence_length_; i++) {
             lane_keeping_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior::Undefined));
+            lane_keeping_beh_slow.emplace_back(VehicleBehavior(LateralBehavior::LaneKeeping, LongitudinalBehavior::Conservative));
         }
         veh_beh_set.emplace_back(lane_keeping_beh);
+        veh_beh_set.emplace_back(lane_keeping_beh_slow);
 
         if (is_lane_change_left_available_) {
             std::vector<VehicleBehavior> lane_change_left_beh;
+            std::vector<VehicleBehavior> lane_change_left_beh_slow;
             for (int i = 0; i < sequence_length_; i++) {
                 lane_change_left_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeLeft, LongitudinalBehavior::Undefined));
+                lane_change_left_beh_slow.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeLeft, LongitudinalBehavior::Conservative));
             }
             veh_beh_set.emplace_back(lane_change_left_beh);
+            veh_beh_set.emplace_back(lane_change_left_beh_slow);
+            
         }
 
         if (is_lane_change_right_available_) {
             std::vector<VehicleBehavior> lane_change_right_beh;
+            std::vector<VehicleBehavior> lane_change_right_beh_slow;
             for (int i = 0; i < sequence_length_; i++) {
                 lane_change_right_beh.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeRight, LongitudinalBehavior::Undefined));
+                lane_change_right_beh_slow.emplace_back(VehicleBehavior(LateralBehavior::LaneChangeRight, LongitudinalBehavior::Conservative));
             }
             veh_beh_set.emplace_back(lane_change_right_beh);
+            veh_beh_set.emplace_back(lane_change_right_beh_slow);
         }
 
         return veh_beh_set;

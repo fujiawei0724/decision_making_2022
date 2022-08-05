@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-22 15:16:13
+ * @LastEditTime: 2022-08-05 12:37:28
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -32,22 +32,27 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
     double current_vehicle_steer = current_vehicle_steer_;
     current_vehicle_steer_metex_.unlock();
 
+    // DEBUG
+    start_point_kappa = 0.0;
+    current_vehicle_steer = 0.0;
+    // END DEBUG
+
     // Update data
     Eigen::Matrix<double, 2, 1> ego_veh_position{start_point_in_world.position_.x_, start_point_in_world.position_.y_};
     Common::Vehicle ego_vehicle = BehaviorPlanner::VehicleInterface::getEgoVehicle(ego_veh_position, start_point_in_world.theta_, start_point_kappa, start_point_movement.velocity_, start_point_movement.acceleration_, current_vehicle_steer, vehicle_length_, vehicle_width_);
 
-    // Shield the lane which is occupied by static obstacles
-    if (left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        left_lane_.is_existence_ = false;
-    }
-    if (right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        right_lane_.is_existence_ = false;
-    }
-    if (center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
-        if (left_lane_.is_existence_ || right_lane_.is_existence_) {
-            center_lane_.is_existence_ = false;
-        }
-    }
+    // // Shield the lane which is occupied by static obstacles
+    // if (left_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+    //     left_lane_.is_existence_ = false;
+    // }
+    // if (right_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+    //     right_lane_.is_existence_ = false;
+    // }
+    // if (center_lane_.isLaneOccupiedByStaticObs(ego_vehicle.state_.position_, obstacles_, traffic_rule_obstacles_)) {
+    //     if (left_lane_.is_existence_ || right_lane_.is_existence_) {
+    //         center_lane_.is_existence_ = false;
+    //     }
+    // }
 
     // Contruct map interface for behavior planner
     std::map<Common::LaneId, bool> lanes_exist_info{{Common::LaneId::CenterLane, false}, {Common::LaneId::LeftLane, false}, {Common::LaneId::RightLane, false}};
