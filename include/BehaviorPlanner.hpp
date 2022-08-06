@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-08-05 21:02:25
+ * @LastEditTime: 2022-08-06 16:34:57
  * @Descripttion: Behavior planner core.
  */
 
@@ -272,7 +272,7 @@ class BehaviorPlannerCore {
     ~BehaviorPlannerCore();
 
     // Behavior planner runner
-    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane);
+    bool runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane, bool* is_current_behavior_lane_changed);
 
     // Evaluate all policies
     void evaluatePolicies(int& winner_index, double& winner_cost);

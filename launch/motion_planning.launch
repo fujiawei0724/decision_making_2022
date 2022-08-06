@@ -72,6 +72,9 @@
         <param name="forced_stop_service" value="/motion_planning/forced_stop" />
         <!-- 发布强制停车 -->
         <param name="emergency_break_publish_topic" value="/astar_emergency_braking_request" />
+        <param name="vis_behavior_planner_ego_states_topic" value="/behavior_planning/vis_ego_states_topic"/>
+        <param name="vis_behavior_planner_candidates_states_topic" value="/behavior_planning/vis_candidates_states_topic"/>
+        <param name="vis_trajectory_planner_topic" value="/trajectory_planning/vis_trajectory_topic"/>
     </node>
 
     <!-- rosbag recorder -->

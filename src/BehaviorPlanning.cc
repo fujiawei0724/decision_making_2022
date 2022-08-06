@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:30:42
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-08-05 21:06:48
+ * @LastEditTime: 2022-08-06 16:37:15
  * @Descripttion: behavior planner interface with the whole pipeline.
  */
 
@@ -73,8 +73,8 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
 
     // Clear information
     unlaned_obstacles_.clear();
-    ego_trajectory_.clear();
-    surround_trajectories_.clear();
+    // ego_trajectory_.clear();
+    // surround_trajectories_.clear();
 
     // Unlaned obstacles are considered in trajectory planner to generate occupied semantic cubes
     std::vector<Obstacle> unlaned_obstacles;
@@ -87,10 +87,10 @@ void DecisionMaking::SubVehicle::behaviorPlanning(bool* result, double* time_con
     bool is_behavior_planning_success = false;
     clock_t behavior_planning_start_time = clock();
     BehaviorPlanner::BehaviorPlannerCore* behavior_planner = new BehaviorPlanner::BehaviorPlannerCore(&map_interface, behavior_planner_time_span, behavior_planner_dt, vis_behavior_planner_ego_states_pub_);
-    if (ego_trajectory_.size() != 0) {
+    if (ego_trajectory_.size() != 0 && is_previous_behavior_lane_changed_) {
         behavior_planner->load(reference_lane_, ego_trajectory_.back());
     }
-    is_behavior_planning_success = behavior_planner->runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_, &reference_lane_);
+    is_behavior_planning_success = behavior_planner->runBehaviorPlanner(ego_vehicle, surround_vehicles, &ego_trajectory_, &surround_trajectories_, &reference_lane_, &is_previous_behavior_lane_changed_);
     clock_t behavior_planning_end_time = clock();
     printf("[MainPipeline] behavior planning time consumption: %lf.\n", static_cast<double>((behavior_planning_end_time - behavior_planning_start_time)) / CLOCKS_PER_SEC);
 

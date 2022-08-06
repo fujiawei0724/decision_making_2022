@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-08-05 21:04:46
+ * @LastEditTime: 2022-08-06 16:40:17
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -762,7 +762,7 @@ namespace BehaviorPlanner {
         // Calculate velocities gap between current desired state and previous desired state
         Vehicle current_desired_state = ego_trajectory.back();
         double velocities_gap = fabs(current_desired_state.state_.velocity_ - pre_ego_desired_vehicle_state.state_.velocity_);
-        if (velocities_gap > 4.0) {
+        if (velocities_gap > 2.0) {
             consistence_cost += 0.2;
         }
 
@@ -891,7 +891,7 @@ namespace BehaviorPlanner {
     }
 
     // Behavior planner runner
-    bool BehaviorPlannerCore::runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane) {
+    bool BehaviorPlannerCore::runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane, bool* is_current_behavior_lane_changed) {
         // Simulate all policies
         simulateAllBehaviors(ego_vehicle, surround_vehicles);
 
@@ -912,6 +912,7 @@ namespace BehaviorPlanner {
             //     std::cout << "Behavior sequence: " << i << ", cost: " << behavior_sequence_cost_[i] << ", safe: " << behavior_safety_[i] << std::endl; 
             // }
             // // END DEBUG
+            *is_current_behavior_lane_changed = false;
 
             return false;
         }
@@ -930,6 +931,7 @@ namespace BehaviorPlanner {
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];
         *target_behavior_reference_lane = mtf_->lane_set_[final_reference_lane_id_[winner_index]];
+        *is_current_behavior_lane_changed = is_lane_changed_[winner_index];
         return true;
 
     }
@@ -1138,6 +1140,11 @@ namespace BehaviorPlanner {
 
         // Calculate policy situation cost
         behavior_sequence_cost_[index] = PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, lane_change_flag, speed_limit);
+
+
+        // // DEBUG
+        // std::cout << "with consistence: " << with_consistence_ << std::endl;
+        // // END DEBUG
 
         // Calculate consistence cost
         if (with_consistence_) {
