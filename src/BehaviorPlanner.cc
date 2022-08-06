@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-08-05 16:52:06
+ * @LastEditTime: 2022-08-05 21:04:46
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -882,6 +882,14 @@ namespace BehaviorPlanner {
         
     }
 
+
+    // Load consistence information
+    void BehaviorPlannerCore::load(const ParametricLane& prev_ref_lane, const Vehicle& prev_ego_veh_desired_state) {
+        previous_reference_lane_ = prev_ref_lane;
+        previous_ego_veh_desired_state_ = prev_ego_veh_desired_state;
+        with_consistence_ = true;
+    }
+
     // Behavior planner runner
     bool BehaviorPlannerCore::runBehaviorPlanner(const Vehicle& ego_vehicle, const std::unordered_map<int, Vehicle>& surround_vehicles, Trajectory* ego_best_traj, std::unordered_map<int, Trajectory>* sur_best_trajs, ParametricLane* target_behavior_reference_lane) {
         // Simulate all policies
@@ -1127,8 +1135,23 @@ namespace BehaviorPlanner {
         // Calculate policy situation whether safe
         behavior_safety_[index] = PolicyEvaluater::calculateSafe(ego_trajectory, surround_trajectories, speed_limit);
 
+
         // Calculate policy situation cost
         behavior_sequence_cost_[index] = PolicyEvaluater::calculateCost(ego_trajectory, surround_trajectories, lane_change_flag, speed_limit);
+
+        // Calculate consistence cost
+        if (with_consistence_) {
+            double consistence_cost = PolicyEvaluater::calculateConsistenceCost(ego_trajectory, previous_reference_lane_, previous_ego_veh_desired_state_);
+            if (consistence_cost >= 0.2) {
+                behavior_safety_[index] = false;
+            }
+            behavior_sequence_cost_[index] += consistence_cost;
+        }
+
+        // Calculate policy situation whether safe
+        behavior_safety_[index] = PolicyEvaluater::calculateSafe(ego_trajectory, surround_trajectories, speed_limit);
+
+
 
         // // DEBUG
         // std::cout << "Index: " << index << std::endl;

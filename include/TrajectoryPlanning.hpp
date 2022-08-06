@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-04 15:05:54
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 08:46:41
+ * @LastEditTime: 2022-08-05 17:07:39
  * @Descripttion: The components for trajectory planning. 
  */
 
@@ -610,377 +610,377 @@ class OptimizationUtils {
 };
 
 
-// Interface with optimization library
-class OptimizerInterface {
- public:
-    using ET = CGAL::Gmpz;
-    using Program = CGAL::Quadratic_program_from_iterators<
-                        std::vector<double*>::iterator,                            // For A
-                        double*,                                                   // For b
-                        CGAL::Const_oneset_iterator<CGAL::Comparison_result>,      // For r
-                        bool*,                                                     // For fl
-                        double*,                                                   // For l
-                        bool*,                                                     // For fu
-                        double*,                                                   // For u
-                        std::vector<double*>::iterator,                            // For D
-                        double*>;                                                  // For c
-    using Solution = CGAL::Quadratic_program_solution<ET>;
+// // Interface with optimization library
+// class OptimizerInterface {
+//  public:
+//     using ET = CGAL::Gmpz;
+//     using Program = CGAL::Quadratic_program_from_iterators<
+//                         std::vector<double*>::iterator,                            // For A
+//                         double*,                                                   // For b
+//                         CGAL::Const_oneset_iterator<CGAL::Comparison_result>,      // For r
+//                         bool*,                                                     // For fl
+//                         double*,                                                   // For l
+//                         bool*,                                                     // For fu
+//                         double*,                                                   // For u
+//                         std::vector<double*>::iterator,                            // For D
+//                         double*>;                                                  // For c
+//     using Solution = CGAL::Quadratic_program_solution<ET>;
 
-    OptimizerInterface() = default;
-    ~OptimizerInterface() = default;
+//     OptimizerInterface() = default;
+//     ~OptimizerInterface() = default;
 
-    // Load data 
-    void load(const std::vector<double>& all_ref_stamps, const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const std::array<std::vector<double>, 4>& unequal_constraints) {
-        all_ref_stamps_ = all_ref_stamps;
-        start_constraint_ = start_constraint;
-        end_constraint_ = end_constraint;
-        unequal_constraints_ = unequal_constraints;
-    }
+//     // Load data 
+//     void load(const std::vector<double>& all_ref_stamps, const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const std::array<std::vector<double>, 4>& unequal_constraints) {
+//         all_ref_stamps_ = all_ref_stamps;
+//         start_constraint_ = start_constraint;
+//         end_constraint_ = end_constraint;
+//         unequal_constraints_ = unequal_constraints;
+//     }
 
-    /**
-     * @brief Multi thread optimize trajectory scatter points in s and d dimensions synchronous
-     */    
-    void runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
-        // Prepare data for s and d dimensions
-        std::array<double, 3> s_start_constraints = start_constraint_.toDimensionS();
-        std::array<double, 3> s_end_constraints = end_constraint_.toDimensionS();
-        std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
-        std::array<double, 3> d_start_constraints = start_constraint_.toDimensionD();
-        std::array<double, 3> d_end_constraints = end_constraint_.toDimensionD();
-        std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
+//     /**
+//      * @brief Multi thread optimize trajectory scatter points in s and d dimensions synchronous
+//      */    
+//     void runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
+//         // Prepare data for s and d dimensions
+//         std::array<double, 3> s_start_constraints = start_constraint_.toDimensionS();
+//         std::array<double, 3> s_end_constraints = end_constraint_.toDimensionS();
+//         std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
+//         std::array<double, 3> d_start_constraints = start_constraint_.toDimensionD();
+//         std::array<double, 3> d_end_constraints = end_constraint_.toDimensionD();
+//         std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
-        // Multi thread calculation
-        // TODO: add logic to handle the situation where the optimization process is failed
-        std::thread s_thread(&OptimizerInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        std::thread d_thread(&OptimizerInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        s_thread.join();
-        d_thread.join();
+//         // Multi thread calculation
+//         // TODO: add logic to handle the situation where the optimization process is failed
+//         std::thread s_thread(&OptimizerInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+//         std::thread d_thread(&OptimizerInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+//         s_thread.join();
+//         d_thread.join();
 
-        // Cache information
-        *optimized_s = optimized_data_["s"];
-        *optimized_d = optimized_data_["d"];
-    }
+//         // Cache information
+//         *optimized_s = optimized_data_["s"];
+//         *optimized_d = optimized_data_["d"];
+//     }
 
-    /**
-     * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
-     * @param D 
-     * @param c
-     */
-    void calculateDcMatrix(std::vector<double*>* D, double** c) {
+//     /**
+//      * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
+//      * @param D 
+//      * @param c
+//      */
+//     void calculateDcMatrix(std::vector<double*>* D, double** c) {
         
-        // Initialize D matrix
-        int points_num = static_cast<int>(all_ref_stamps_.size());
-        Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(points_num, points_num);
-        int segment_number = points_num - 5;
+//         // Initialize D matrix
+//         int points_num = static_cast<int>(all_ref_stamps_.size());
+//         Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(points_num, points_num);
+//         int segment_number = points_num - 5;
 
-        // Calculate D matrix
-        for (int i = 0; i < segment_number; i++) {
-            // Calculate time span
-            std::vector<double> cur_segment_ref_stamps{all_ref_stamps_.begin() + i, all_ref_stamps_.begin() + i + 6};
-            double time_span = OptimizationUtils::calculateTimeSpan(cur_segment_ref_stamps);
-            // TODO: check this logic, the exponent is "-3" or "-5"?
-            double time_coefficient = pow(time_span, -3);
+//         // Calculate D matrix
+//         for (int i = 0; i < segment_number; i++) {
+//             // Calculate time span
+//             std::vector<double> cur_segment_ref_stamps{all_ref_stamps_.begin() + i, all_ref_stamps_.begin() + i + 6};
+//             double time_span = OptimizationUtils::calculateTimeSpan(cur_segment_ref_stamps);
+//             // TODO: check this logic, the exponent is "-3" or "-5"?
+//             double time_coefficient = pow(time_span, -3);
 
-            // Intergrate to objective function
-            D_matrix.block(i, i, 6, 6) += BSplineHessianMatrix * time_coefficient;
-        }
+//             // Intergrate to objective function
+//             D_matrix.block(i, i, 6, 6) += BSplineHessianMatrix * time_coefficient;
+//         }
 
-        // Convert the eigen data to double**
-        std::vector<double*> tmp_D(points_num);
-        for (int i = 0; i < points_num; i++) {
-            double* d_col = new double[points_num];
-            for (int j = 0; j <= i; j++) {
-                *(d_col + j) = D_matrix(i, j);
-            }
-            tmp_D[i] = d_col;
-        }
+//         // Convert the eigen data to double**
+//         std::vector<double*> tmp_D(points_num);
+//         for (int i = 0; i < points_num; i++) {
+//             double* d_col = new double[points_num];
+//             for (int j = 0; j <= i; j++) {
+//                 *(d_col + j) = D_matrix(i, j);
+//             }
+//             tmp_D[i] = d_col;
+//         }
 
-        // Generate b information, all zeros
-        double* tmp_c = new double[points_num];
+//         // Generate b information, all zeros
+//         double* tmp_c = new double[points_num];
 
-        // TODO: check this parameters transformation process
-        *D = tmp_D;
-        *c = tmp_c;
-    }
+//         // TODO: check this parameters transformation process
+//         *D = tmp_D;
+//         *c = tmp_c;
+//     }
 
-    /**
-     * @brief Caclculate equal constraints in the start point and end point 
-     * @param A
-     * @param b
-     * @param single_start_constraints start constraints in one dimension (s/d)
-     * @param single_end_constraints end constraints in one dimension (s/d) 
-     */  
-    void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, std::vector<double*>* A, double** b) {
+//     /**
+//      * @brief Caclculate equal constraints in the start point and end point 
+//      * @param A
+//      * @param b
+//      * @param single_start_constraints start constraints in one dimension (s/d)
+//      * @param single_end_constraints end constraints in one dimension (s/d) 
+//      */  
+//     void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, std::vector<double*>* A, double** b) {
         
-        // Construct matrix A and b to load information
-        int points_num = static_cast<int>(all_ref_stamps_.size());
-        Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(8, points_num);
-        Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(8, 1);
+//         // Construct matrix A and b to load information
+//         int points_num = static_cast<int>(all_ref_stamps_.size());
+//         Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(8, points_num);
+//         Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(8, 1);
 
-        // Added points constraint conditions
-        A_matrix(0, 0) = 1.0, A_matrix(0, 2) = -2.0, A_matrix(0, 4) = 1.0;
-        A_matrix(1, 1) = 1.0, A_matrix(1, 2) = -2.0, A_matrix(1, 3) = 1.0;
-        A_matrix(2, points_num - 1) = 1.0, A_matrix(2, points_num - 3) = -2.0, A_matrix(2, points_num - 5) = 1.0;
-        A_matrix(3, points_num - 2) = 1.0, A_matrix(3, points_num - 3) = -2.0, A_matrix(3, points_num - 4) = 1.0;
+//         // Added points constraint conditions
+//         A_matrix(0, 0) = 1.0, A_matrix(0, 2) = -2.0, A_matrix(0, 4) = 1.0;
+//         A_matrix(1, 1) = 1.0, A_matrix(1, 2) = -2.0, A_matrix(1, 3) = 1.0;
+//         A_matrix(2, points_num - 1) = 1.0, A_matrix(2, points_num - 3) = -2.0, A_matrix(2, points_num - 5) = 1.0;
+//         A_matrix(3, points_num - 2) = 1.0, A_matrix(3, points_num - 3) = -2.0, A_matrix(3, points_num - 4) = 1.0;
 
-        // Start point and end point position constraint conditions
-        A_matrix(4, 2) = 1.0, A_matrix(5, points_num - 3) = 1.0;
-        b_matrix(4, 0) = single_start_constraints[0], b_matrix(5, 0) = single_end_constraints[0];
+//         // Start point and end point position constraint conditions
+//         A_matrix(4, 2) = 1.0, A_matrix(5, points_num - 3) = 1.0;
+//         b_matrix(4, 0) = single_start_constraints[0], b_matrix(5, 0) = single_end_constraints[0];
 
-        // Start point and end point velocity constraint conditions
-        std::vector<double> start_segment_ref_stamps{all_ref_stamps_.begin(), all_ref_stamps_.begin() + 6};
-        double start_segment_time_span = OptimizationUtils::calculateTimeSpan(start_segment_ref_stamps);
-        A_matrix(6, 0) = -1.0 / 24.0, A_matrix(6, 1) = -5.0 / 12.0, A_matrix(6, 3) = 5.0 / 12.0, A_matrix(6, 4) = 1.0 / 24.0;
-        b_matrix(6, 0) = single_start_constraints[1] * start_segment_time_span;
-        std::vector<double> end_segment_ref_stamps{all_ref_stamps_.begin() + points_num - 6, all_ref_stamps_.begin() + points_num};
-        double end_segment_time_span = OptimizationUtils::calculateTimeSpan(end_segment_ref_stamps);
-        A_matrix(7, points_num - 5) = -1.0 / 24.0, A_matrix(7, points_num - 4) = -5.0 / 12.0, A_matrix(7, points_num - 2) = 5.0 / 12.0, A_matrix(7, points_num - 1) = -1.0 / 24.0;
-        b_matrix(7, 0) = single_end_constraints[1] * end_segment_time_span;
+//         // Start point and end point velocity constraint conditions
+//         std::vector<double> start_segment_ref_stamps{all_ref_stamps_.begin(), all_ref_stamps_.begin() + 6};
+//         double start_segment_time_span = OptimizationUtils::calculateTimeSpan(start_segment_ref_stamps);
+//         A_matrix(6, 0) = -1.0 / 24.0, A_matrix(6, 1) = -5.0 / 12.0, A_matrix(6, 3) = 5.0 / 12.0, A_matrix(6, 4) = 1.0 / 24.0;
+//         b_matrix(6, 0) = single_start_constraints[1] * start_segment_time_span;
+//         std::vector<double> end_segment_ref_stamps{all_ref_stamps_.begin() + points_num - 6, all_ref_stamps_.begin() + points_num};
+//         double end_segment_time_span = OptimizationUtils::calculateTimeSpan(end_segment_ref_stamps);
+//         A_matrix(7, points_num - 5) = -1.0 / 24.0, A_matrix(7, points_num - 4) = -5.0 / 12.0, A_matrix(7, points_num - 2) = 5.0 / 12.0, A_matrix(7, points_num - 1) = -1.0 / 24.0;
+//         b_matrix(7, 0) = single_end_constraints[1] * end_segment_time_span;
 
-        // TODO: for quintic B-spline, the acceleration of the start point and point must be set to zero, add an algorithm to handle this problem
+//         // TODO: for quintic B-spline, the acceleration of the start point and point must be set to zero, add an algorithm to handle this problem
 
-        // Transform the structure of data
-        std::vector<double*> tmp_A(points_num);
-        for (int i = 0; i < points_num; i++) {
-            double* a_col = new double[8];
-            for (int j = 0; j < 8; j++) {
-                *(a_col + j) = A_matrix(j, i);
-            } 
-            tmp_A[i] = a_col;
-        }
-        double* tmp_b = new double[8];
-        for (int i = 0; i < 8; i++) {
-            *(tmp_b + i) = b_matrix(i, 0);
-        }
+//         // Transform the structure of data
+//         std::vector<double*> tmp_A(points_num);
+//         for (int i = 0; i < points_num; i++) {
+//             double* a_col = new double[8];
+//             for (int j = 0; j < 8; j++) {
+//                 *(a_col + j) = A_matrix(j, i);
+//             } 
+//             tmp_A[i] = a_col;
+//         }
+//         double* tmp_b = new double[8];
+//         for (int i = 0; i < 8; i++) {
+//             *(tmp_b + i) = b_matrix(i, 0);
+//         }
 
 
-        // TODO: check this parameters transformation process
-        *A = tmp_A;
-        *b = tmp_b;
-    }
+//         // TODO: check this parameters transformation process
+//         *A = tmp_A;
+//         *b = tmp_b;
+//     }
 
-    /**
-     * @brief Calculate lower and upper boundaries (provided by semantic cubes) for intermedite points 
-     * @param single_lower_boundaries lower boundaries for intermediate points in single dimension
-     * @param single_upper_boundaries upper boundaries for intermediate points in single dimension
-     * @param fl for each variable, is lower boundary valid
-     * @param l lower bounds for each variable 
-     * @param fu for each variable, is upper boundary valid
-     * @param u upper bounds for each variable
-     */    
-    void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
+//     /**
+//      * @brief Calculate lower and upper boundaries (provided by semantic cubes) for intermedite points 
+//      * @param single_lower_boundaries lower boundaries for intermediate points in single dimension
+//      * @param single_upper_boundaries upper boundaries for intermediate points in single dimension
+//      * @param fl for each variable, is lower boundary valid
+//      * @param l lower bounds for each variable 
+//      * @param fu for each variable, is upper boundary valid
+//      * @param u upper bounds for each variable
+//      */    
+//     void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
 
         
-        int points_num = static_cast<int>(all_ref_stamps_.size());
-        bool* tmp_fl = new bool[points_num];
-        double* tmp_l = new double[points_num];
-        bool* tmp_fu = new bool[points_num];
-        double* tmp_u = new double[points_num];
+//         int points_num = static_cast<int>(all_ref_stamps_.size());
+//         bool* tmp_fl = new bool[points_num];
+//         double* tmp_l = new double[points_num];
+//         bool* tmp_fu = new bool[points_num];
+//         double* tmp_u = new double[points_num];
 
-        for (int i = 0; i < points_num; i++) {
-            if (i <= 2 || i >= points_num - 3) {
-                // For the first three points and last three points, the unequal constraints are invalid
-                *(tmp_fl + i) = false;
-                *(tmp_fu + i) = false;
-            } else {
-                *(tmp_fl + i) = true;
-                *(tmp_fu + i) = true;
-                *(tmp_l + i) = single_lower_boundaries[i - 2];
-                *(tmp_u + i) = single_upper_boundaries[i - 2];
-            }
-        }
+//         for (int i = 0; i < points_num; i++) {
+//             if (i <= 2 || i >= points_num - 3) {
+//                 // For the first three points and last three points, the unequal constraints are invalid
+//                 *(tmp_fl + i) = false;
+//                 *(tmp_fu + i) = false;
+//             } else {
+//                 *(tmp_fl + i) = true;
+//                 *(tmp_fu + i) = true;
+//                 *(tmp_l + i) = single_lower_boundaries[i - 2];
+//                 *(tmp_u + i) = single_upper_boundaries[i - 2];
+//             }
+//         }
 
-        // TODO: check this parameters transformation process
-        *fl = tmp_fl;
-        *l = tmp_l;
-        *fu = tmp_fu;
-        *u = tmp_u;
-    }
+//         // TODO: check this parameters transformation process
+//         *fl = tmp_fl;
+//         *l = tmp_l;
+//         *fu = tmp_fu;
+//         *u = tmp_u;
+//     }
 
-    /**
-     * @brief Optimize trajectory scatter points in 2d 
-     * @param single_start_constraints start constraints' disintegration in single dimension (s/d)
-     * @param single_end_constraints end constraints' disintegration in single dimension (s/d)
-     * @param single_lower_boundaries lower boundaries in single dimension (s/d)
-     * @param single_upper_bounaries upper boundaries in single dimension (s/d)
-     * @param dimension_name "s" or "d"
-     */
-    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
-        // ~Stage I: calculate D and c matrices (objective function)
-        std::vector<double*> D;
-        double* c = nullptr;
-        calculateDcMatrix(&D, &c);
-        double c0 = 0.0;
+//     /**
+//      * @brief Optimize trajectory scatter points in 2d 
+//      * @param single_start_constraints start constraints' disintegration in single dimension (s/d)
+//      * @param single_end_constraints end constraints' disintegration in single dimension (s/d)
+//      * @param single_lower_boundaries lower boundaries in single dimension (s/d)
+//      * @param single_upper_bounaries upper boundaries in single dimension (s/d)
+//      * @param dimension_name "s" or "d"
+//      */
+//     void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
+//         // ~Stage I: calculate D and c matrices (objective function)
+//         std::vector<double*> D;
+//         double* c = nullptr;
+//         calculateDcMatrix(&D, &c);
+//         double c0 = 0.0;
 
-        // ~Stage II: calculate start and end points equal constraints
-        CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
-        std::vector<double*> A;
-        double* b = nullptr;
-        calculateAbMatrix(single_start_constraints, single_end_constraints, &A, &b);
+//         // ~Stage II: calculate start and end points equal constraints
+//         CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
+//         std::vector<double*> A;
+//         double* b = nullptr;
+//         calculateAbMatrix(single_start_constraints, single_end_constraints, &A, &b);
 
-        // ~Stage III: calculate low and up boundaries for intermediate points
-        bool* fl = nullptr;
-        double* l = nullptr;
-        bool* fu = nullptr;
-        double* u = nullptr;
-        calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
+//         // ~Stage III: calculate low and up boundaries for intermediate points
+//         bool* fl = nullptr;
+//         double* l = nullptr;
+//         bool* fu = nullptr;
+//         double* u = nullptr;
+//         calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
 
-        // ~Stage IV: optimization and transform the formation of optimization result
-        int variables_num = static_cast<int>(all_ref_stamps_.size());
-        int constraints_num = 8;
-        Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
-        Solution s = CGAL::solve_quadratic_program(qp, ET());
-        // Convert data
-        std::vector<double> optimized_values;
-        for (auto iter = s.variable_values_begin(); iter != s.variable_values_end(); iter++) {
-            double value = CGAL::to_double(*iter);
-            optimized_values.emplace_back(value);
-        }
-        // Truncate data to delete the addtional points
-        std::vector<double> truncated_optimized_data{optimized_values.begin() + 2, optimized_values.end() - 2};
+//         // ~Stage IV: optimization and transform the formation of optimization result
+//         int variables_num = static_cast<int>(all_ref_stamps_.size());
+//         int constraints_num = 8;
+//         Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
+//         Solution s = CGAL::solve_quadratic_program(qp, ET());
+//         // Convert data
+//         std::vector<double> optimized_values;
+//         for (auto iter = s.variable_values_begin(); iter != s.variable_values_end(); iter++) {
+//             double value = CGAL::to_double(*iter);
+//             optimized_values.emplace_back(value);
+//         }
+//         // Truncate data to delete the addtional points
+//         std::vector<double> truncated_optimized_data{optimized_values.begin() + 2, optimized_values.end() - 2};
         
-        // ~Stage V: store information
-        optimized_data_[dimension_name] = truncated_optimized_data;
-    }
+//         // ~Stage V: store information
+//         optimized_data_[dimension_name] = truncated_optimized_data;
+//     }
 
 
     
-    std::vector<double> all_ref_stamps_;
-    EqualConstraint start_constraint_;
-    EqualConstraint end_constraint_;
-    std::array<std::vector<double>, 4> unequal_constraints_;
-    std::unordered_map<std::string, std::vector<double>> optimized_data_;
-};
+//     std::vector<double> all_ref_stamps_;
+//     EqualConstraint start_constraint_;
+//     EqualConstraint end_constraint_;
+//     std::array<std::vector<double>, 4> unequal_constraints_;
+//     std::unordered_map<std::string, std::vector<double>> optimized_data_;
+// };
 
 
-// Trajectory optimizer
-class TrajectoryOptimizer {
- public:
-    using DrivingCorridor = std::vector<SemanticCube<double>>;
-    TrajectoryOptimizer() {
-        opt_itf_ = new OptimizerInterface();
-    }
-    ~TrajectoryOptimizer() = default;
+// // Trajectory optimizer
+// class TrajectoryOptimizer {
+//  public:
+//     using DrivingCorridor = std::vector<SemanticCube<double>>;
+//     TrajectoryOptimizer() {
+//         opt_itf_ = new OptimizerInterface();
+//     }
+//     ~TrajectoryOptimizer() = default;
 
-    // Load data to optimizer
-    void load(const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const DrivingCorridor& driving_corridor, const std::vector<double>& ref_stamps) {
-        start_constraint_ = start_constraint;
-        end_constraint_ = end_constraint;
-        driving_corridor_ = driving_corridor;
-        ref_stamps_ = ref_stamps;
-    }
+//     // Load data to optimizer
+//     void load(const EqualConstraint& start_constraint, const EqualConstraint& end_constraint, const DrivingCorridor& driving_corridor, const std::vector<double>& ref_stamps) {
+//         start_constraint_ = start_constraint;
+//         end_constraint_ = end_constraint;
+//         driving_corridor_ = driving_corridor;
+//         ref_stamps_ = ref_stamps;
+//     }
 
-    // Run optimizer
-    void runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t, bool* res) {
+//     // Run optimizer
+//     void runOnce(std::vector<double>* s, std::vector<double>* d, std::vector<double>* t, bool* res) {
         
-        // ~Stage I: check, prepare, and supply data 
-        assert(ref_stamps_.size() - 1 == driving_corridor_.size() && static_cast<int>(ref_stamps_.size()) >= 3);
-        // Add addtional time stamps to approximate start point and end point 
-        std::vector<double> all_ref_stamps = calculateAllRefStamps();
-        // Generate unequal constraints for the intermediate points
-        std::array<std::vector<double>, 4> unequal_constraints;
-        bool is_unequal_constraints_generation_success = generateUnequalConstraints(&unequal_constraints);
-        if (!is_unequal_constraints_generation_success) {
-            *res = false;
-            return;
-        }
+//         // ~Stage I: check, prepare, and supply data 
+//         assert(ref_stamps_.size() - 1 == driving_corridor_.size() && static_cast<int>(ref_stamps_.size()) >= 3);
+//         // Add addtional time stamps to approximate start point and end point 
+//         std::vector<double> all_ref_stamps = calculateAllRefStamps();
+//         // Generate unequal constraints for the intermediate points
+//         std::array<std::vector<double>, 4> unequal_constraints;
+//         bool is_unequal_constraints_generation_success = generateUnequalConstraints(&unequal_constraints);
+//         if (!is_unequal_constraints_generation_success) {
+//             *res = false;
+//             return;
+//         }
 
-        // ~Stage II: load data and optimization
-        // TODO: handle the optimization failed situation
-        std::vector<double> optimized_s;
-        std::vector<double> optimized_d;
-        opt_itf_->load(all_ref_stamps, start_constraint_, end_constraint_, unequal_constraints);
-        opt_itf_->runOnce(&optimized_s, &optimized_d);
+//         // ~Stage II: load data and optimization
+//         // TODO: handle the optimization failed situation
+//         std::vector<double> optimized_s;
+//         std::vector<double> optimized_d;
+//         opt_itf_->load(all_ref_stamps, start_constraint_, end_constraint_, unequal_constraints);
+//         opt_itf_->runOnce(&optimized_s, &optimized_d);
 
-        // ~Stage III: data return
-        *s = optimized_s;
-        *d = optimized_d;
-        *t = ref_stamps_;
-        *res = true;
+//         // ~Stage III: data return
+//         *s = optimized_s;
+//         *d = optimized_d;
+//         *t = ref_stamps_;
+//         *res = true;
         
-    }
+//     }
 
-    /**
-     * @brief Add additional points' reference time stamps to construct the whole reference time stamps
-     * @return all referencetime stamps
-     */    
-    std::vector<double> calculateAllRefStamps() {
-        int init_stamps_num = static_cast<int>(ref_stamps_.size());
-        std::vector<double> all_ref_stamps = std::vector<double>(init_stamps_num + 4, 0.0);
-        double add_stamp_1 = 2.0 * ref_stamps_[0] - ref_stamps_[2];
-        double add_stamp_2 = 2.0 * ref_stamps_[0] - ref_stamps_[1];
-        double add_stamp_3 = 2.0 * ref_stamps_[init_stamps_num - 1] - ref_stamps_[init_stamps_num - 2];
-        double add_stamp_4 = 2.0 * ref_stamps_[init_stamps_num - 1] - ref_stamps_[init_stamps_num - 3];
-        for (int i = 0; i < static_cast<int>(all_ref_stamps.size()); i++) {
-            if (i == 0) {
-                all_ref_stamps[i] = add_stamp_1;
-            } else if (i == 1) {
-                all_ref_stamps[i] = add_stamp_2;
-            } else if (i == static_cast<int>(all_ref_stamps.size()) - 2) {
-                all_ref_stamps[i] = add_stamp_3;
-            } else if (i == static_cast<int>(all_ref_stamps.size()) - 1) {
-                all_ref_stamps[i] = add_stamp_4;
-            } else {
-                all_ref_stamps[i] = ref_stamps_[i - 2];
-            }
-        }
-        return all_ref_stamps;
-    }
+//     /**
+//      * @brief Add additional points' reference time stamps to construct the whole reference time stamps
+//      * @return all referencetime stamps
+//      */    
+//     std::vector<double> calculateAllRefStamps() {
+//         int init_stamps_num = static_cast<int>(ref_stamps_.size());
+//         std::vector<double> all_ref_stamps = std::vector<double>(init_stamps_num + 4, 0.0);
+//         double add_stamp_1 = 2.0 * ref_stamps_[0] - ref_stamps_[2];
+//         double add_stamp_2 = 2.0 * ref_stamps_[0] - ref_stamps_[1];
+//         double add_stamp_3 = 2.0 * ref_stamps_[init_stamps_num - 1] - ref_stamps_[init_stamps_num - 2];
+//         double add_stamp_4 = 2.0 * ref_stamps_[init_stamps_num - 1] - ref_stamps_[init_stamps_num - 3];
+//         for (int i = 0; i < static_cast<int>(all_ref_stamps.size()); i++) {
+//             if (i == 0) {
+//                 all_ref_stamps[i] = add_stamp_1;
+//             } else if (i == 1) {
+//                 all_ref_stamps[i] = add_stamp_2;
+//             } else if (i == static_cast<int>(all_ref_stamps.size()) - 2) {
+//                 all_ref_stamps[i] = add_stamp_3;
+//             } else if (i == static_cast<int>(all_ref_stamps.size()) - 1) {
+//                 all_ref_stamps[i] = add_stamp_4;
+//             } else {
+//                 all_ref_stamps[i] = ref_stamps_[i - 2];
+//             }
+//         }
+//         return all_ref_stamps;
+//     }
 
-    /**
-     * @brief Generate unequal constraints for intermediate points
-     * @param unequal_constraints four vectors in the array represent the lower bounds of s, upper bounds of s, lower bounds of d, and upper bounds of d in order
-     * @return is success
-     */    
-    bool generateUnequalConstraints(std::array<std::vector<double>, 4>* unequal_constraints) {
-        // Initialize
-        std::array<std::vector<double>, 4> tmp_unequal_constraints = {};
-        for (int i = 0; i < 4; i++) {
-            tmp_unequal_constraints[i].resize(static_cast<int>(ref_stamps_.size()) - 2);
-        }
+//     /**
+//      * @brief Generate unequal constraints for intermediate points
+//      * @param unequal_constraints four vectors in the array represent the lower bounds of s, upper bounds of s, lower bounds of d, and upper bounds of d in order
+//      * @return is success
+//      */    
+//     bool generateUnequalConstraints(std::array<std::vector<double>, 4>* unequal_constraints) {
+//         // Initialize
+//         std::array<std::vector<double>, 4> tmp_unequal_constraints = {};
+//         for (int i = 0; i < 4; i++) {
+//             tmp_unequal_constraints[i].resize(static_cast<int>(ref_stamps_.size()) - 2);
+//         }
 
-        for (int i = 0; i < static_cast<int>(ref_stamps_.size()); i++) {
-            if (i == 0 || i == static_cast<int>(ref_stamps_.size()) - 1) {
-                // In the no added status, start point and end point only have equal constraints 
-                continue;
-            }
-            double ref_stamp = ref_stamps_[i];
+//         for (int i = 0; i < static_cast<int>(ref_stamps_.size()); i++) {
+//             if (i == 0 || i == static_cast<int>(ref_stamps_.size()) - 1) {
+//                 // In the no added status, start point and end point only have equal constraints 
+//                 continue;
+//             }
+//             double ref_stamp = ref_stamps_[i];
             
-            // Calculate the first semantic cube affects the point in reference stamp
-            int first_index = std::max(i - 5, 0);
-            // Traverse the affected semantic cubes to generate unequal constraint
-            double s_low = MIN_VALUE;
-            double s_up = MAX_VALUE;
-            double d_low = MIN_VALUE;
-            double d_up = MAX_VALUE;
-            for (int j = first_index; j < i + 1; j++) {
-                if (ref_stamp < driving_corridor_[j].t_start_ || ref_stamp > driving_corridor_[j].t_end_) {
-                    printf("[TrajectoryOptimizer] unequal constraint generation failed.");
-                    return false;
-                }
-                s_low = std::max(s_low, driving_corridor_[j].s_start_);
-                s_up = std::min(s_up, driving_corridor_[j].s_end_);
-                d_low = std::max(d_low, driving_corridor_[j].d_start_);
-                d_up = std::min(d_up, driving_corridor_[j].d_end_);
-            }
+//             // Calculate the first semantic cube affects the point in reference stamp
+//             int first_index = std::max(i - 5, 0);
+//             // Traverse the affected semantic cubes to generate unequal constraint
+//             double s_low = MIN_VALUE;
+//             double s_up = MAX_VALUE;
+//             double d_low = MIN_VALUE;
+//             double d_up = MAX_VALUE;
+//             for (int j = first_index; j < i + 1; j++) {
+//                 if (ref_stamp < driving_corridor_[j].t_start_ || ref_stamp > driving_corridor_[j].t_end_) {
+//                     printf("[TrajectoryOptimizer] unequal constraint generation failed.");
+//                     return false;
+//                 }
+//                 s_low = std::max(s_low, driving_corridor_[j].s_start_);
+//                 s_up = std::min(s_up, driving_corridor_[j].s_end_);
+//                 d_low = std::max(d_low, driving_corridor_[j].d_start_);
+//                 d_up = std::min(d_up, driving_corridor_[j].d_end_);
+//             }
 
-            tmp_unequal_constraints[0][i - 1] = s_low;
-            tmp_unequal_constraints[1][i - 1] = s_up;
-            tmp_unequal_constraints[2][i - 1] = d_low;
-            tmp_unequal_constraints[3][i - 1] = d_up; 
+//             tmp_unequal_constraints[0][i - 1] = s_low;
+//             tmp_unequal_constraints[1][i - 1] = s_up;
+//             tmp_unequal_constraints[2][i - 1] = d_low;
+//             tmp_unequal_constraints[3][i - 1] = d_up; 
             
-        }
+//         }
 
-        *unequal_constraints = tmp_unequal_constraints;
-        return true;
-    }
+//         *unequal_constraints = tmp_unequal_constraints;
+//         return true;
+//     }
 
-    OptimizerInterface* opt_itf_{nullptr};
-    EqualConstraint start_constraint_;
-    EqualConstraint end_constraint_;
-    DrivingCorridor driving_corridor_;
-    std::vector<double> ref_stamps_;
-};
+//     // OptimizerInterface* opt_itf_{nullptr};
+//     EqualConstraint start_constraint_;
+//     EqualConstraint end_constraint_;
+//     DrivingCorridor driving_corridor_;
+//     std::vector<double> ref_stamps_;
+// };
 
 class QuinticBSplineTrajectory {
  public:
@@ -1144,96 +1144,96 @@ class QuinticBSplineTrajectory {
 
 
 
-// Trajectory planning core
-class TrajectoryPlanningCore {
- public:
-    TrajectoryPlanningCore() = default;
-    ~TrajectoryPlanningCore() = default;
+// // Trajectory planning core
+// class TrajectoryPlanningCore {
+//  public:
+//     TrajectoryPlanningCore() = default;
+//     ~TrajectoryPlanningCore() = default;
 
-    // Load data
-    void load(const Vehicle& cur_vehicle_state, const ParametricLane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
-        current_vehicle_state_ = cur_vehicle_state;
-        reference_lane_ = reference_lane;
-        ego_traj_ = ego_traj;
-        sur_laned_veh_trajs_ = sur_laned_veh_trajs;
-        sur_unlaned_obs_ = sur_unlaned_obs;
-    }
+//     // Load data
+//     void load(const Vehicle& cur_vehicle_state, const ParametricLane& reference_lane, const std::vector<Vehicle>& ego_traj, const std::unordered_map<int, std::vector<Vehicle>>& sur_laned_veh_trajs, const std::vector<Obstacle>& sur_unlaned_obs) {
+//         current_vehicle_state_ = cur_vehicle_state;
+//         reference_lane_ = reference_lane;
+//         ego_traj_ = ego_traj;
+//         sur_laned_veh_trajs_ = sur_laned_veh_trajs;
+//         sur_unlaned_obs_ = sur_unlaned_obs;
+//     }
 
-    // Run trajectory planner
-    void runOnce(bool* result, std::vector<Point3f>* trajectory) {
-        // ~Stage I: construct bridge and transform information
-        bridge_itf_ = new BpTpBridge(reference_lane_);
-        FsVehicle current_vehicle_state_fs = bridge_itf_->getFsVehicle(current_vehicle_state_);
-        std::vector<FsVehicle> ego_traj_fs = bridge_itf_->getEgoFrenetTrajectory(ego_traj_);
+//     // Run trajectory planner
+//     void runOnce(bool* result, std::vector<Point3f>* trajectory) {
+//         // ~Stage I: construct bridge and transform information
+//         bridge_itf_ = new BpTpBridge(reference_lane_);
+//         FsVehicle current_vehicle_state_fs = bridge_itf_->getFsVehicle(current_vehicle_state_);
+//         std::vector<FsVehicle> ego_traj_fs = bridge_itf_->getEgoFrenetTrajectory(ego_traj_);
 
-        // // DEBUG 
-        // for (auto& veh_fs : ego_traj_fs) {
-        //     veh_fs.fs_.print();
-        // }
-        // // END DEBUG
+//         // // DEBUG 
+//         // for (auto& veh_fs : ego_traj_fs) {
+//         //     veh_fs.fs_.print();
+//         // }
+//         // // END DEBUG
 
-        std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
-        std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
+//         std::unordered_map<int, std::vector<FsVehicle>> sur_laned_trajs_fs = bridge_itf_->getSurFrenetTrajectories(sur_laned_veh_trajs_);
+//         std::unordered_map<int, std::vector<FsVehicle>> sur_unlaned_trajs_fs = bridge_itf_->getUnlanedSurFrenetTrajectories(sur_unlaned_obs_);
 
-        // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
-        TrajPlanning3DMap::Config config;
-        traj_planning_3d_map_itf_ = new TrajPlanning3DMap(config);
-        std::vector<SemanticCube<double>> semantic_cubes_sequence;
-        bool is_map_constructed_success = traj_planning_3d_map_itf_->runOnce(ego_traj_fs, sur_laned_trajs_fs, sur_unlaned_trajs_fs, &semantic_cubes_sequence);
-        if (!is_map_constructed_success) {
-            printf("[TrajectoryPlanningCore] traj planning 3d grid map constructed failed.\n");
-            *result = false;
-            return;
-        }
+//         // ~Stage II: contruct traj planning 3d grid map and generate semantic cubes
+//         TrajPlanning3DMap::Config config;
+//         traj_planning_3d_map_itf_ = new TrajPlanning3DMap(config);
+//         std::vector<SemanticCube<double>> semantic_cubes_sequence;
+//         bool is_map_constructed_success = traj_planning_3d_map_itf_->runOnce(ego_traj_fs, sur_laned_trajs_fs, sur_unlaned_trajs_fs, &semantic_cubes_sequence);
+//         if (!is_map_constructed_success) {
+//             printf("[TrajectoryPlanningCore] traj planning 3d grid map constructed failed.\n");
+//             *result = false;
+//             return;
+//         }
 
-        // DEBUG
-        for (auto& sem_cube : semantic_cubes_sequence) {
-            sem_cube.print();
-        }
-        // END DEBUG
+//         // DEBUG
+//         for (auto& sem_cube : semantic_cubes_sequence) {
+//             sem_cube.print();
+//         }
+//         // END DEBUG
 
-        // ~Stage III: determine constraints conditions and do optimization
-        EqualConstraint start_constraints, end_constraints;
-        start_constraints.load(current_vehicle_state_fs);
-        end_constraints.load(ego_traj_fs.back());
-        std::vector<double> ref_stamps;
-        for (const auto& ego_state : ego_traj_fs) {
-            ref_stamps.emplace_back(ego_state.fs_.time_stamp_);
-        }
-        traj_opt_itf_ = new TrajectoryOptimizer();
-        traj_opt_itf_->load(start_constraints, end_constraints, semantic_cubes_sequence, ref_stamps);
-        std::vector<double> optimized_s, optimized_d, t;
-        bool is_optimization_success = false;
-        traj_opt_itf_->runOnce(&optimized_s, &optimized_d, &t, &is_optimization_success);
-        if (!is_optimization_success) {
-            printf("[TrajectoryPlanningCore] traj optimization failed.\n");
-            *result = false;
-            return;
-        }
+//         // ~Stage III: determine constraints conditions and do optimization
+//         EqualConstraint start_constraints, end_constraints;
+//         start_constraints.load(current_vehicle_state_fs);
+//         end_constraints.load(ego_traj_fs.back());
+//         std::vector<double> ref_stamps;
+//         for (const auto& ego_state : ego_traj_fs) {
+//             ref_stamps.emplace_back(ego_state.fs_.time_stamp_);
+//         }
+//         traj_opt_itf_ = new TrajectoryOptimizer();
+//         traj_opt_itf_->load(start_constraints, end_constraints, semantic_cubes_sequence, ref_stamps);
+//         std::vector<double> optimized_s, optimized_d, t;
+//         bool is_optimization_success = false;
+//         traj_opt_itf_->runOnce(&optimized_s, &optimized_d, &t, &is_optimization_success);
+//         if (!is_optimization_success) {
+//             printf("[TrajectoryPlanningCore] traj optimization failed.\n");
+//             *result = false;
+//             return;
+//         }
 
-        // ~Stage IV: calculate quintic B-spline trajectory in frenet frame
-        B_spline_traj_itf_ = new QuinticBSplineTrajectory(optimized_s, optimized_d, t);
-        std::vector<Point3f> traj_fs = B_spline_traj_itf_->generateTraj(0.01);
+//         // ~Stage IV: calculate quintic B-spline trajectory in frenet frame
+//         B_spline_traj_itf_ = new QuinticBSplineTrajectory(optimized_s, optimized_d, t);
+//         std::vector<Point3f> traj_fs = B_spline_traj_itf_->generateTraj(0.01);
 
-        // ~Stage V: transform the trajectory from frenet to world
-        std::vector<Point3f> traj = bridge_itf_->getTrajFromTrajFs(traj_fs);
+//         // ~Stage V: transform the trajectory from frenet to world
+//         std::vector<Point3f> traj = bridge_itf_->getTrajFromTrajFs(traj_fs);
 
-        *trajectory = traj;
-        *result = true;
-    }
+//         *trajectory = traj;
+//         *result = true;
+//     }
 
-    QuinticBSplineTrajectory* B_spline_traj_itf_{nullptr};
-    TrajPlanning3DMap* traj_planning_3d_map_itf_{nullptr};
-    BpTpBridge* bridge_itf_{nullptr};
-    TrajectoryOptimizer* traj_opt_itf_{nullptr};
+//     QuinticBSplineTrajectory* B_spline_traj_itf_{nullptr};
+//     TrajPlanning3DMap* traj_planning_3d_map_itf_{nullptr};
+//     BpTpBridge* bridge_itf_{nullptr};
+//     TrajectoryOptimizer* traj_opt_itf_{nullptr};
 
-    Vehicle current_vehicle_state_;
-    ParametricLane reference_lane_;
-    std::vector<Vehicle> ego_traj_;
-    std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
-    std::vector<Obstacle> sur_unlaned_obs_;
+//     Vehicle current_vehicle_state_;
+//     ParametricLane reference_lane_;
+//     std::vector<Vehicle> ego_traj_;
+//     std::unordered_map<int, std::vector<Vehicle>> sur_laned_veh_trajs_;
+//     std::vector<Obstacle> sur_unlaned_obs_;
     
-};
+// };
 
 
 

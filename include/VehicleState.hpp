@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-10-27 11:36:32
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-21 09:24:25
+ * @LastEditTime: 2022-08-05 20:31:04
  * @Descripttion: The description of vehicle in different coordinations. 
  */
 
@@ -21,12 +21,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <CGAL/QP_models.h>
-#include <CGAL/QP_functions.h>
-#include <CGAL/Gmpzf.h>
-#include <CGAL/MP_Float.h>
-#include <torch/torch.h>
-#include <torch/script.h>
+// #include <CGAL/QP_models.h>
+// #include <CGAL/QP_functions.h>
+// #include <CGAL/Gmpzf.h>
+// #include <CGAL/MP_Float.h>
+// #include <torch/torch.h>
+// #include <torch/script.h>
 #include <boost/numeric/odeint.hpp>
 #include <boost/array.hpp>
 #include <boost/bind.hpp>

@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-08 18:50:38
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-07-22 16:21:05
+ * @LastEditTime: 2022-08-05 21:02:25
  * @Descripttion: Behavior planner core.
  */
 
@@ -294,6 +294,9 @@ class BehaviorPlannerCore {
     // TODO: add detailed cost information for the information of each behavior sequence
     void initializeContainer(int length);
 
+    // Load consistence information
+    void load(const ParametricLane& prev_ref_lane, const Vehicle& prev_ego_veh_desired_state);
+
     MapInterface* mtf_{nullptr};
     double predict_time_span_{0.0};
     double dt_{0.0};
@@ -310,6 +313,11 @@ class BehaviorPlannerCore {
     std::vector<double> target_position_velocity_limit_;
     std::vector<Trajectory> ego_traj_;
     std::vector<std::unordered_map<int, Trajectory>> sur_veh_trajs_;
+
+    bool with_consistence_{false};
+    ParametricLane previous_reference_lane_;
+    Vehicle previous_ego_veh_desired_state_;
+
 };
 
 } // End of namespace BehaviorPlanner

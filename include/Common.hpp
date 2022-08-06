@@ -345,9 +345,9 @@ class SubVehicle{
 
     void behaviorPlanning(bool* result, double* time_consumption);
 
-    void hpdmPlanning(bool* result, double* time_consumption);
+    // void hpdmPlanning(bool* result, double* time_consumption);
 
-    void trajectoryPlanning(bool* trajectory_planning_result);
+    // void trajectoryPlanning(bool* trajectory_planning_result);
 
     void sscPlanning(bool* trajectory_planning_result);
 
@@ -357,12 +357,12 @@ class SubVehicle{
 
     void triggerThread();
 
-    HpdmPlanner::HpdmPlannerCore* hpdm_planner_{nullptr};
+    // HpdmPlanner::HpdmPlannerCore* hpdm_planner_{nullptr};
 
     Trajectory ego_trajectory_;
     std::unordered_map<int, Trajectory> surround_trajectories_;
     Utils::ObservationBuffer observation_buffer_; 
-    torch::jit::script::Module module_;
+    // torch::jit::script::Module module_;
     std::vector<Obstacle> unlaned_obstacles_;
     ParametricLane reference_lane_;
     bool is_previous_behavior_lane_changed_{false};

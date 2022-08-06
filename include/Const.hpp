@@ -138,7 +138,7 @@
 #define SPEED_NORMALIZATION 25.0
 #define ACCELERATION_NORMALIZATION 3.0
 
-#define TEST_MAX_SPEED 30.0
+#define TEST_MAX_SPEED 40.0
 
 // 世界坐标系到frenet坐标系的变换矩阵
 struct TransMatrix {

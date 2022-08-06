@@ -50,12 +50,12 @@ DecisionMaking::SubVehicle::SubVehicle(const ros::NodeHandle &nh) {
     // 初始化ros相关节点和服务
     this->rosInit();
 
-    // Construct
-    hpdm_planner_ = new HpdmPlanner::HpdmPlannerCore();
+    // // Construct
+    // hpdm_planner_ = new HpdmPlanner::HpdmPlannerCore();
 
-    // // Load model
-    module_ = torch::jit::load("/home/fjw/Desktop/model/20220721/gpu/model0.pt");
-    module_.to(torch::kCUDA);
+    // // // Load model
+    // module_ = torch::jit::load("/home/fjw/Desktop/model/20220721/gpu/model0.pt");
+    // module_.to(torch::kCUDA);
 
     ROS_INFO("INITAL SUCCESS");
     std::cout << "IS_OVERTAKE_ENABLE_FLAG: " << this->IS_OVERTAKE_ENABLE_FLAG_ << std::endl;

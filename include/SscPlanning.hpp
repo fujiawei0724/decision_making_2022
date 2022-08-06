@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-11-22 16:30:19
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-08-05 15:27:49
+ * @LastEditTime: 2022-08-05 17:03:38
  * @Descripttion: Ssc trajectory planning.
  */
 
@@ -249,77 +249,77 @@ class SscPlanning3DMap {
 
 };
 
-// Optimization interface, based on CGAL
-class SscOptimizationInterface {
- public:
-    using ET = CGAL::MP_Float;
-    using Program = CGAL::Quadratic_program_from_iterators<
-                        std::vector<double*>::iterator,                            // For A
-                        double*,                                                   // For b
-                        CGAL::Const_oneset_iterator<CGAL::Comparison_result>,      // For r
-                        bool*,                                                     // For fl
-                        double*,                                                   // For l
-                        bool*,                                                     // For fu
-                        double*,                                                   // For u
-                        std::vector<double*>::iterator,                            // For D
-                        double*>;                                                  // For c
-    using Solution = CGAL::Quadratic_program_solution<ET>;
+// // Optimization interface, based on CGAL
+// class SscOptimizationInterface {
+//  public:
+//     using ET = CGAL::MP_Float;
+//     using Program = CGAL::Quadratic_program_from_iterators<
+//                         std::vector<double*>::iterator,                            // For A
+//                         double*,                                                   // For b
+//                         CGAL::Const_oneset_iterator<CGAL::Comparison_result>,      // For r
+//                         bool*,                                                     // For fl
+//                         double*,                                                   // For l
+//                         bool*,                                                     // For fu
+//                         double*,                                                   // For u
+//                         std::vector<double*>::iterator,                            // For D
+//                         double*>;                                                  // For c
+//     using Solution = CGAL::Quadratic_program_solution<ET>;
     
-    SscOptimizationInterface();
-    ~SscOptimizationInterface();
+//     SscOptimizationInterface();
+//     ~SscOptimizationInterface();
 
-    /**
-     * @brief load data
-     * @param ref_stamps time stamps of the point in in the intersection of two cubes
-     * @param start_constraints start points' constraints
-     * @param end_constraints end points' constraints
-     * @param unequal_constraints position limit of each point
-     * @param equal_constraints ensure the continuity of the connections between each two cubes
-     */    
-    void load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints);
+//     /**
+//      * @brief load data
+//      * @param ref_stamps time stamps of the point in in the intersection of two cubes
+//      * @param start_constraints start points' constraints
+//      * @param end_constraints end points' constraints
+//      * @param unequal_constraints position limit of each point
+//      * @param equal_constraints ensure the continuity of the connections between each two cubes
+//      */    
+//     void load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints);
 
-    /**
-     * @brief Run optimization
-     * @param {*}
-     * @return {*}
-     */    
-    void runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d);
+//     /**
+//      * @brief Run optimization
+//      * @param {*}
+//      * @return {*}
+//      */    
+//     void runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d);
 
-    /**
-     * @brief Optimize in single dimension
-     * @param {*}
-     */
-    void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name);
+//     /**
+//      * @brief Optimize in single dimension
+//      * @param {*}
+//      */
+//     void optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name);
     
-    /**
-     * @brief Calculate boundaries for intermediate points
-     * @param {*}
-     */    
-    void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u);
+//     /**
+//      * @brief Calculate boundaries for intermediate points
+//      * @param {*}
+//      */    
+//     void calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u);
 
-    /**
-     * @brief Calculate equal constraints, note that position constraints in the connection don't need to be considered
-     * @param {*}
-     */
-    void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, std::vector<double*>* A, double** b);
+//     /**
+//      * @brief Calculate equal constraints, note that position constraints in the connection don't need to be considered
+//      * @param {*}
+//      */
+//     void calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, std::vector<double*>* A, double** b);
 
-    /**
-     * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
-     * @param D 
-     * @param c
-     */
-    void calculateDcMatrix(std::vector<double*>* D, double** c);
+//     /**
+//      * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
+//      * @param D 
+//      * @param c
+//      */
+//     void calculateDcMatrix(std::vector<double*>* D, double** c);
 
-    std::vector<double> ref_stamps_;
-    EqualConstraint start_constraints_;
-    EqualConstraint end_constraints_;
-    std::array<std::vector<double>, 4> unequal_constraints_;
-    std::vector<std::vector<double>> equal_constraints_;
+//     std::vector<double> ref_stamps_;
+//     EqualConstraint start_constraints_;
+//     EqualConstraint end_constraints_;
+//     std::array<std::vector<double>, 4> unequal_constraints_;
+//     std::vector<std::vector<double>> equal_constraints_;
 
-    std::unordered_map<std::string, std::vector<double>> optimized_data_;
+//     std::unordered_map<std::string, std::vector<double>> optimized_data_;
 
     
-};
+// };
 
 // Optimization interface, based on OOQP
 class OoqpOptimizationInterface {

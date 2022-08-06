@@ -36,10 +36,10 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Glog REQUIRED COMPONENTS system)
 # find_package(/opt/ros/kinetic/include/opencv-3.3.1-dev)
 find_package(OpenCV REQUIRED)
-find_package(CGAL)
-find_package(Torch REQUIRED)
+# find_package(CGAL)
+# find_package(Torch REQUIRED)
 find_package(Boost REQUIRED)
-find_package(PCL REQUIRED)
+# find_package(PCL REQUIRED)
 
 
 
@@ -162,7 +162,7 @@ include_directories(
   ${GLOG_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
+  # ${PCL_INCLUDE_DIRS}
 )
 
 
@@ -199,23 +199,23 @@ add_dependencies(${PROJECT_NAME}_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}
   glog
-  CGAL::CGAL
+  # CGAL::CGAL
   ${OpenCV_LIBS}
   pthread
-  ${TORCH_LIBRARIES}
+  # ${TORCH_LIBRARIES}
   ${Boost_LIBRARIES}
-  ${PCL_LIBRARIES}
+  # ${PCL_LIBRARIES}
   # obstacle_utilities
 )
 
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
   glog
-  CGAL::CGAL
+  # CGAL::CGAL
   ${OpenCV_LIBS}
   ${PROJECT_NAME}_lib
   pthread
-  ${TORCH_LIBRARIES}
+  # ${TORCH_LIBRARIES}
   ooqpgensparse 
   ooqpsparse 
   ooqpgondzio 
@@ -224,7 +224,7 @@ target_link_libraries(${PROJECT_NAME}_node
   ma27 
   gfortran
   ${Boost_LIBRARIES}
-  ${PCL_LIBRARIES}
+  # ${PCL_LIBRARIES}
   # obstacle_utilities
 )
 

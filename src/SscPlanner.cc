@@ -2,7 +2,7 @@
  * @Author: fujiawei0724
  * @Date: 2021-12-09 19:59:05
  * @LastEditors: fujiawei0724
- * @LastEditTime: 2022-08-05 15:43:05
+ * @LastEditTime: 2022-08-05 17:05:06
  * @Description: Components for ssc planner.
  */
 
@@ -669,320 +669,320 @@ namespace SscPlanner {
 
     }
 
-    SscOptimizationInterface::SscOptimizationInterface() = default;
-    SscOptimizationInterface::~SscOptimizationInterface() = default;
+    // SscOptimizationInterface::SscOptimizationInterface() = default;
+    // SscOptimizationInterface::~SscOptimizationInterface() = default;
 
-    /**
-     * @brief load data
-     * @param ref_stamps time stamps of the point in in the intersection of two cubes
-     * @param start_constraints start points' constraints
-     * @param end_constraints end points' constraints
-     * @param unequal_constraints position limit of each point
-     * @param equal_constraints ensure the continuity of the connections between each two cubes
-     */    
-    void SscOptimizationInterface::load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints) {
-        ref_stamps_ = ref_stamps;
-        start_constraints_ = start_constraints;
-        end_constraints_ = end_constraints;
-        unequal_constraints_ = unequal_constraints;
-        equal_constraints_ = equal_constraints;
-    }
+    // /**
+    //  * @brief load data
+    //  * @param ref_stamps time stamps of the point in in the intersection of two cubes
+    //  * @param start_constraints start points' constraints
+    //  * @param end_constraints end points' constraints
+    //  * @param unequal_constraints position limit of each point
+    //  * @param equal_constraints ensure the continuity of the connections between each two cubes
+    //  */    
+    // void SscOptimizationInterface::load(const std::vector<double>& ref_stamps, const EqualConstraint& start_constraints, const EqualConstraint& end_constraints, std::array<std::vector<double>, 4>& unequal_constraints, std::vector<std::vector<double>>& equal_constraints) {
+    //     ref_stamps_ = ref_stamps;
+    //     start_constraints_ = start_constraints;
+    //     end_constraints_ = end_constraints;
+    //     unequal_constraints_ = unequal_constraints;
+    //     equal_constraints_ = equal_constraints;
+    // }
 
-    /**
-     * @brief Run optimization
-     * @param {*}
-     * @return {*}
-     */    
-    void SscOptimizationInterface::runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
-        // Prepare data for s and d dimensions
-        std::array<double, 3> s_start_constraints = start_constraints_.toDimensionS();
-        std::array<double, 3> s_end_constraints = end_constraints_.toDimensionS();
-        std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
-        std::array<double, 3> d_start_constraints = start_constraints_.toDimensionD();
-        std::array<double, 3> d_end_constraints = end_constraints_.toDimensionD();
-        std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
+    // /**
+    //  * @brief Run optimization
+    //  * @param {*}
+    //  * @return {*}
+    //  */    
+    // void SscOptimizationInterface::runOnce(std::vector<double>* optimized_s, std::vector<double>* optimized_d) {
+    //     // Prepare data for s and d dimensions
+    //     std::array<double, 3> s_start_constraints = start_constraints_.toDimensionS();
+    //     std::array<double, 3> s_end_constraints = end_constraints_.toDimensionS();
+    //     std::array<std::vector<double>, 2> s_unequal_constraints = {unequal_constraints_[0], unequal_constraints_[1]};
+    //     std::array<double, 3> d_start_constraints = start_constraints_.toDimensionD();
+    //     std::array<double, 3> d_end_constraints = end_constraints_.toDimensionD();
+    //     std::array<std::vector<double>, 2> d_unequal_constraints = {unequal_constraints_[2], unequal_constraints_[3]};
 
-        // Multi thread calculation
-        // TODO: add logic to handle the situation where the optimization process is failed
-        clock_t single_dim_optimization_start_time = clock();
-        std::thread s_thread(&SscOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        std::thread d_thread(&SscOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        s_thread.join();
-        d_thread.join();
-        clock_t single_dim_optimization_end_time = clock();
-        printf("[SscPlanner] single dimension optimization time consumption: %lf.\n", static_cast<double>((single_dim_optimization_end_time - single_dim_optimization_start_time)) / CLOCKS_PER_SEC);
+    //     // Multi thread calculation
+    //     // TODO: add logic to handle the situation where the optimization process is failed
+    //     clock_t single_dim_optimization_start_time = clock();
+    //     std::thread s_thread(&SscOptimizationInterface::optimizeSingleDim, this, s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+    //     std::thread d_thread(&SscOptimizationInterface::optimizeSingleDim, this, d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+    //     s_thread.join();
+    //     d_thread.join();
+    //     clock_t single_dim_optimization_end_time = clock();
+    //     printf("[SscPlanner] single dimension optimization time consumption: %lf.\n", static_cast<double>((single_dim_optimization_end_time - single_dim_optimization_start_time)) / CLOCKS_PER_SEC);
 
-        // // DEBUG
-        // optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
-        // optimizeSingleDim(d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
-        // // END DEBUG
+    //     // // DEBUG
+    //     // optimizeSingleDim(s_start_constraints, s_end_constraints, s_unequal_constraints[0], s_unequal_constraints[1], "s");
+    //     // optimizeSingleDim(d_start_constraints, d_end_constraints, d_unequal_constraints[0], d_unequal_constraints[1], "d");
+    //     // // END DEBUG
 
-        // Cache
-        *optimized_s = optimized_data_["s"];
-        *optimized_d = optimized_data_["d"];
-    }
+    //     // Cache
+    //     *optimized_s = optimized_data_["s"];
+    //     *optimized_d = optimized_data_["d"];
+    // }
 
-    /**
-     * @brief Optimize in single dimension
-     * @param {*}
-     */
-    void SscOptimizationInterface::optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
-        // ~Stage I: calculate D and c matrices (objective function)
-        std::vector<double*> D;
-        double* c = nullptr;
-        calculateDcMatrix(&D, &c);
-        double c0 = 0.0;
+    // /**
+    //  * @brief Optimize in single dimension
+    //  * @param {*}
+    //  */
+    // void SscOptimizationInterface::optimizeSingleDim(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, std::string dimension_name) {
+    //     // ~Stage I: calculate D and c matrices (objective function)
+    //     std::vector<double*> D;
+    //     double* c = nullptr;
+    //     calculateDcMatrix(&D, &c);
+    //     double c0 = 0.0;
 
-        // // DEBUG
-        // for (int i = 0; i < 18; i++) {
-        //     for (int j = 0; j < 18; j++) {
-        //         std::cout << *(D[i] + j) << ", ";
-        //     }
-        // }
-        // std::cout << "--------------------------" << std::endl;;
+    //     // // DEBUG
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     for (int j = 0; j < 18; j++) {
+    //     //         std::cout << *(D[i] + j) << ", ";
+    //     //     }
+    //     // }
+    //     // std::cout << "--------------------------" << std::endl;;
 
-        // for (int i = 0; i < 18; i++) {
-        //     std::cout << *(c + i) << ", ";
-        // }
-        // std::cout << "--------------------------" << std::endl;
-        // // END DEBUG
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     std::cout << *(c + i) << ", ";
+    //     // }
+    //     // std::cout << "--------------------------" << std::endl;
+    //     // // END DEBUG
 
 
-        // ~Stage II: calculate equal constraints, includes start point constraints, end point constraints and continuity constraints
-        CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
-        std::vector<double*> A;
-        double* b = nullptr;
-        calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, &A, &b);
+    //     // ~Stage II: calculate equal constraints, includes start point constraints, end point constraints and continuity constraints
+    //     CGAL::Const_oneset_iterator<CGAL::Comparison_result> r(CGAL::EQUAL);
+    //     std::vector<double*> A;
+    //     double* b = nullptr;
+    //     calculateAbMatrix(single_start_constraints, single_end_constraints, equal_constraints_, &A, &b);
 
-        // // DEBUG
-        // for (int i = 0; i < 18; i++) {
-        //     for (int j = 0; j < 12; j++) {
-        //         std::cout << *(A[i] + j) << ", ";
-        //     }
-        // }
-        // std::cout << "---------------------------" << std::endl;
-        // for (int i = 0; i < 12; i++) {
-        //     std::cout << *(b + i) << ", ";
-        // }
-        // std::cout << "---------------------------" << std::endl;
-        // // END DEBUG
+    //     // // DEBUG
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     for (int j = 0; j < 12; j++) {
+    //     //         std::cout << *(A[i] + j) << ", ";
+    //     //     }
+    //     // }
+    //     // std::cout << "---------------------------" << std::endl;
+    //     // for (int i = 0; i < 12; i++) {
+    //     //     std::cout << *(b + i) << ", ";
+    //     // }
+    //     // std::cout << "---------------------------" << std::endl;
+    //     // // END DEBUG
 
-        // ~Stage III: calculate low and up boundaries for intermediate points
-        bool* fl = nullptr;
-        double* l = nullptr;
-        bool* fu = nullptr;
-        double* u = nullptr;
-        calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
+    //     // ~Stage III: calculate low and up boundaries for intermediate points
+    //     bool* fl = nullptr;
+    //     double* l = nullptr;
+    //     bool* fu = nullptr;
+    //     double* u = nullptr;
+    //     calculateBoundariesForIntermediatePoints(single_lower_boundaries, single_upper_boundaries, &fl, &l, &fu, &u);
 
-        // // DEBUG
-        // std::cout << "fl" << std::endl;
-        // for (int i = 0; i < 18; i++) {
-        //     std::cout << *(fl + i) << ", ";
-        // }
-        // std::cout << std::endl;
-        // std::cout << "l" << std::endl;
-        // for (int i = 0; i < 18; i++) {
-        //     std::cout << *(l + i) << ", ";
-        // }
-        // std::cout << std::endl;
-        // std::cout << "fu" << std::endl;
-        // for (int i = 0; i < 18; i++) {
-        //     std::cout << *(fu + i) << ", ";
-        // }
-        // std::cout << std::endl;
-        // std::cout << "u" << std::endl;
-        // for (int i = 0; i < 18; i++) {
-        //     std::cout << *(u + i) << ", ";
-        // }
-        // std::cout << std::endl;
-        // std::cout << "-------------------" << std::endl;
-        // // END DEBUG
+    //     // // DEBUG
+    //     // std::cout << "fl" << std::endl;
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     std::cout << *(fl + i) << ", ";
+    //     // }
+    //     // std::cout << std::endl;
+    //     // std::cout << "l" << std::endl;
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     std::cout << *(l + i) << ", ";
+    //     // }
+    //     // std::cout << std::endl;
+    //     // std::cout << "fu" << std::endl;
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     std::cout << *(fu + i) << ", ";
+    //     // }
+    //     // std::cout << std::endl;
+    //     // std::cout << "u" << std::endl;
+    //     // for (int i = 0; i < 18; i++) {
+    //     //     std::cout << *(u + i) << ", ";
+    //     // }
+    //     // std::cout << std::endl;
+    //     // std::cout << "-------------------" << std::endl;
+    //     // // END DEBUG
         
-        // ~Stage IV: optimization and transform the formation of optimization result
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        int constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
-        Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
-        Solution s = CGAL::solve_quadratic_program(qp, ET());
-        // Convert data
-        std::vector<double> optimized_values;
-        for (auto iter = s.variable_values_begin(); iter != s.variable_values_end(); iter++) {
-            double value = CGAL::to_double(*iter);
-            optimized_values.emplace_back(value);
-        }
+    //     // ~Stage IV: optimization and transform the formation of optimization result
+    //     int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
+    //     int constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
+    //     Program qp(variables_num, constraints_num, A.begin(), b, r, fl, l, fu, u, D.begin(), c, c0);
+    //     Solution s = CGAL::solve_quadratic_program(qp, ET());
+    //     // Convert data
+    //     std::vector<double> optimized_values;
+    //     for (auto iter = s.variable_values_begin(); iter != s.variable_values_end(); iter++) {
+    //         double value = CGAL::to_double(*iter);
+    //         optimized_values.emplace_back(value);
+    //     }
         
-        // ~Stage V: store information
-        optimized_data_[dimension_name] = optimized_values;
+    //     // ~Stage V: store information
+    //     optimized_data_[dimension_name] = optimized_values;
 
-    }
+    // }
 
-    /**
-     * @brief Calculate boundaries for intermediate points
-     * @param {*}
-     */    
-    void SscOptimizationInterface::calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        bool* tmp_fl = new bool[variables_num];
-        double* tmp_l = new double[variables_num];
-        bool* tmp_fu = new bool[variables_num];
-        double* tmp_u = new double[variables_num];
+    // /**
+    //  * @brief Calculate boundaries for intermediate points
+    //  * @param {*}
+    //  */    
+    // void SscOptimizationInterface::calculateBoundariesForIntermediatePoints(const std::vector<double>& single_lower_boundaries, const std::vector<double>& single_upper_boundaries, bool** fl, double** l, bool** fu, double** u) {
+    //     int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
+    //     bool* tmp_fl = new bool[variables_num];
+    //     double* tmp_l = new double[variables_num];
+    //     bool* tmp_fu = new bool[variables_num];
+    //     double* tmp_u = new double[variables_num];
 
-        for (int i = 0; i < variables_num; i++) {
-            if (i == 0 || i == variables_num - 1) {
-                // For the first point and last point, the unequal constraints are invalid
-                *(tmp_fl + i) = false;
-                *(tmp_fu + i) = false;
-            } else {
-                *(tmp_fl + i) = true;
-                *(tmp_fu + i) = true;
-                *(tmp_l + i) = single_lower_boundaries[i];
-                *(tmp_u + i) = single_upper_boundaries[i];
-            }
-        }
+    //     for (int i = 0; i < variables_num; i++) {
+    //         if (i == 0 || i == variables_num - 1) {
+    //             // For the first point and last point, the unequal constraints are invalid
+    //             *(tmp_fl + i) = false;
+    //             *(tmp_fu + i) = false;
+    //         } else {
+    //             *(tmp_fl + i) = true;
+    //             *(tmp_fu + i) = true;
+    //             *(tmp_l + i) = single_lower_boundaries[i];
+    //             *(tmp_u + i) = single_upper_boundaries[i];
+    //         }
+    //     }
 
-        // TODO: check this parameters transformation process
-        *fl = tmp_fl;
-        *l = tmp_l;
-        *fu = tmp_fu;
-        *u = tmp_u;
-    }
+    //     // TODO: check this parameters transformation process
+    //     *fl = tmp_fl;
+    //     *l = tmp_l;
+    //     *fu = tmp_fu;
+    //     *u = tmp_u;
+    // }
 
-    /**
-     * @brief Calculate equal constraints, note that position constraints in the connection don't need to be considered
-     * @param {*}
-     */
-    void SscOptimizationInterface::calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, std::vector<double*>* A, double** b) {
+    // /**
+    //  * @brief Calculate equal constraints, note that position constraints in the connection don't need to be considered
+    //  * @param {*}
+    //  */
+    // void SscOptimizationInterface::calculateAbMatrix(const std::array<double, 3>& single_start_constraints, const std::array<double, 3>& single_end_constraints, const std::vector<std::vector<double>>& equal_constraints, std::vector<double*>* A, double** b) {
         
-        // Calculate dimensions and initialize
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        int equal_constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
-        double start_cube_time_span = ref_stamps_[1] - ref_stamps_[0];
-        double end_cube_time_span = ref_stamps_[ref_stamps_.size() - 1] - ref_stamps_[ref_stamps_.size() - 2];
-        Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
-        Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, 1);
+    //     // Calculate dimensions and initialize
+    //     int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
+    //     int equal_constraints_num = 6 + (static_cast<int>(ref_stamps_.size()) - 2) * 3;
+    //     double start_cube_time_span = ref_stamps_[1] - ref_stamps_[0];
+    //     double end_cube_time_span = ref_stamps_[ref_stamps_.size() - 1] - ref_stamps_[ref_stamps_.size() - 2];
+    //     Eigen::MatrixXd A_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, variables_num);
+    //     Eigen::MatrixXd b_matrix = Eigen::MatrixXd::Zero(equal_constraints_num, 1);
 
-        // supply start point and end point position constraints 
-        A_matrix(0, 0) = 1.0, A_matrix(1, variables_num - 1) = 1.0;
-        b_matrix(0, 0) = single_start_constraints[0], b_matrix(1, 0) = single_end_constraints[0];
+    //     // supply start point and end point position constraints 
+    //     A_matrix(0, 0) = 1.0, A_matrix(1, variables_num - 1) = 1.0;
+    //     b_matrix(0, 0) = single_start_constraints[0], b_matrix(1, 0) = single_end_constraints[0];
 
-        // supply start point and end point velocity constraints
-        A_matrix(2, 0) = -5.0, A_matrix(2, 1) = 5.0;
-        b_matrix(2, 0) = single_start_constraints[1] * start_cube_time_span;
-        A_matrix(3, variables_num - 2) = -5.0, A_matrix(3, variables_num - 1) = 5.0;
-        b_matrix(3, 0) = single_end_constraints[1] * end_cube_time_span;
+    //     // supply start point and end point velocity constraints
+    //     A_matrix(2, 0) = -5.0, A_matrix(2, 1) = 5.0;
+    //     b_matrix(2, 0) = single_start_constraints[1] * start_cube_time_span;
+    //     A_matrix(3, variables_num - 2) = -5.0, A_matrix(3, variables_num - 1) = 5.0;
+    //     b_matrix(3, 0) = single_end_constraints[1] * end_cube_time_span;
 
-        // supply start point and end point acceleration constraints
-        A_matrix(4, 0) = 20.0, A_matrix(4, 1) = -40.0, A_matrix(4, 2) = 20.0;
-        b_matrix(4, 0) = single_start_constraints[2] * start_cube_time_span;
-        A_matrix(5, variables_num - 3) = 20.0, A_matrix(5, variables_num - 2) = -40.0, A_matrix(5, variables_num - 1) = 20.0;
-        b_matrix(5, 0) = single_end_constraints[2] * end_cube_time_span;
+    //     // supply start point and end point acceleration constraints
+    //     A_matrix(4, 0) = 20.0, A_matrix(4, 1) = -40.0, A_matrix(4, 2) = 20.0;
+    //     b_matrix(4, 0) = single_start_constraints[2] * start_cube_time_span;
+    //     A_matrix(5, variables_num - 3) = 20.0, A_matrix(5, variables_num - 2) = -40.0, A_matrix(5, variables_num - 1) = 20.0;
+    //     b_matrix(5, 0) = single_end_constraints[2] * end_cube_time_span;
 
-        // supply continuity ensurance constraints
-        for (int i = 0; i < static_cast<int>(equal_constraints.size()); i++) {
-            int constraint_index = i + 6;
-            for (int j = 0; j < variables_num; j++) {
+    //     // supply continuity ensurance constraints
+    //     for (int i = 0; i < static_cast<int>(equal_constraints.size()); i++) {
+    //         int constraint_index = i + 6;
+    //         for (int j = 0; j < variables_num; j++) {
                 
-                // DEBUG: check this logic
-                assert(static_cast<int>(equal_constraints[i].size()) == variables_num);
-                // END DEBUG
+    //             // DEBUG: check this logic
+    //             assert(static_cast<int>(equal_constraints[i].size()) == variables_num);
+    //             // END DEBUG
 
-                A_matrix(constraint_index, j) = equal_constraints[i][j];
-            }
-        }
+    //             A_matrix(constraint_index, j) = equal_constraints[i][j];
+    //         }
+    //     }
 
-        // // DEBUG
-        // for (int i = 0; i < static_cast<int>(A_matrix.rows()); i++) {
-        //     for (int j = 0; j < static_cast<int>(A_matrix.cols()); j++) {
-        //         printf("%lf, ", A_matrix(i, j));
-        //     }
-        // }
-        // std::cout << "---------------------------";
-        // std::cout << std::endl;
-        // // END DEBUG
+    //     // // DEBUG
+    //     // for (int i = 0; i < static_cast<int>(A_matrix.rows()); i++) {
+    //     //     for (int j = 0; j < static_cast<int>(A_matrix.cols()); j++) {
+    //     //         printf("%lf, ", A_matrix(i, j));
+    //     //     }
+    //     // }
+    //     // std::cout << "---------------------------";
+    //     // std::cout << std::endl;
+    //     // // END DEBUG
 
-        // // DEBUG
-        // std::cout << b_matrix << std::endl;
-        // // EDN DEBUG
+    //     // // DEBUG
+    //     // std::cout << b_matrix << std::endl;
+    //     // // EDN DEBUG
         
 
-        // Transform data structure 
-        std::vector<double*> tmp_A(variables_num);
-        for (int i = 0; i < variables_num; i++) {
-            double* a_col = new double[equal_constraints_num];
-            for (int j = 0; j < equal_constraints_num; j++) {
-                *(a_col + j) = A_matrix(j, i);
-            }
-            tmp_A[i] = a_col;
-        }
-        double* tmp_b = new double[equal_constraints_num];
-        for (int i = 0; i < equal_constraints_num; i++) {
-            *(tmp_b + i) = b_matrix(i, 0);
-        }
+    //     // Transform data structure 
+    //     std::vector<double*> tmp_A(variables_num);
+    //     for (int i = 0; i < variables_num; i++) {
+    //         double* a_col = new double[equal_constraints_num];
+    //         for (int j = 0; j < equal_constraints_num; j++) {
+    //             *(a_col + j) = A_matrix(j, i);
+    //         }
+    //         tmp_A[i] = a_col;
+    //     }
+    //     double* tmp_b = new double[equal_constraints_num];
+    //     for (int i = 0; i < equal_constraints_num; i++) {
+    //         *(tmp_b + i) = b_matrix(i, 0);
+    //     }
 
-        *A = tmp_A;
-        *b = tmp_b;
+    //     *A = tmp_A;
+    //     *b = tmp_b;
 
-    }
+    // }
 
-    /**
-     * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
-     * @param D 
-     * @param c
-     */
-    void SscOptimizationInterface::calculateDcMatrix(std::vector<double*>* D, double** c) {
+    // /**
+    //  * @brief Calculate the matrices related to objective function, for both s and d dimensions, D and c has the same value
+    //  * @param D 
+    //  * @param c
+    //  */
+    // void SscOptimizationInterface::calculateDcMatrix(std::vector<double*>* D, double** c) {
         
-        // Initialize D matrix
-        int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
-        Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(variables_num, variables_num);
+    //     // Initialize D matrix
+    //     int variables_num = (static_cast<int>(ref_stamps_.size()) - 1) * 6;
+    //     Eigen::MatrixXd D_matrix = Eigen::MatrixXd::Zero(variables_num, variables_num);
 
-        // Calculate D matrix
-        for (int i = 0; i < static_cast<int>(ref_stamps_.size()) - 1; i++) {
-            // Calculate time span
-            double time_span = ref_stamps_[i + 1] - ref_stamps_[i];
-            double time_coefficient = pow(time_span, -3);
+    //     // Calculate D matrix
+    //     for (int i = 0; i < static_cast<int>(ref_stamps_.size()) - 1; i++) {
+    //         // Calculate time span
+    //         double time_span = ref_stamps_[i + 1] - ref_stamps_[i];
+    //         double time_coefficient = pow(time_span, -3);
 
-            // Intergrate to objective function
-            int influenced_variable_index = i * 6;
-            D_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
-        }
+    //         // Intergrate to objective function
+    //         int influenced_variable_index = i * 6;
+    //         D_matrix.block(influenced_variable_index, influenced_variable_index, 6, 6) += BezierCurveHessianMatrix * time_coefficient;
+    //     }
 
-        // // DEBUG
-        // for (int i = 0; i < static_cast<int>(D_matrix.rows()); i++) {
-        //     for (int j = 0; j < static_cast<int>(D_matrix.cols()); j++) {
-        //         printf("%lf, ", D_matrix(i, j));
-        //     }
-        // }
-        // printf("----------------------------------\n");
-        // // END DEBUG
+    //     // // DEBUG
+    //     // for (int i = 0; i < static_cast<int>(D_matrix.rows()); i++) {
+    //     //     for (int j = 0; j < static_cast<int>(D_matrix.cols()); j++) {
+    //     //         printf("%lf, ", D_matrix(i, j));
+    //     //     }
+    //     // }
+    //     // printf("----------------------------------\n");
+    //     // // END DEBUG
 
-        // Convert the eigen data to double**
-        std::vector<double*> tmp_D(variables_num);
-        for (int i = 0; i < variables_num; i++) {
-            double* d_col = new double[variables_num];
-            for (int j = 0; j < variables_num; j++) {
-                *(d_col + j) = D_matrix(i, j);
-            }
-            tmp_D[i] = d_col;
-        }
+    //     // Convert the eigen data to double**
+    //     std::vector<double*> tmp_D(variables_num);
+    //     for (int i = 0; i < variables_num; i++) {
+    //         double* d_col = new double[variables_num];
+    //         for (int j = 0; j < variables_num; j++) {
+    //             *(d_col + j) = D_matrix(i, j);
+    //         }
+    //         tmp_D[i] = d_col;
+    //     }
 
-        // // DEBUG
-        // for (int i = 0; i < variables_num; i++) {
-        //     for (int j = 0; j <= i; j++) {
-        //         printf("%lf ", *(tmp_D[i] + j));
-        //     }
-        //     printf("-----------------\n");
-        // }
-        // // END DEBUG
+    //     // // DEBUG
+    //     // for (int i = 0; i < variables_num; i++) {
+    //     //     for (int j = 0; j <= i; j++) {
+    //     //         printf("%lf ", *(tmp_D[i] + j));
+    //     //     }
+    //     //     printf("-----------------\n");
+    //     // }
+    //     // // END DEBUG
 
-        // Generate c information, all zeros
-        double* tmp_c = new double[variables_num];
-        for (int i = 0; i < variables_num; i++) {
-            *(tmp_c + i) = 0.0;
-        }
+    //     // Generate c information, all zeros
+    //     double* tmp_c = new double[variables_num];
+    //     for (int i = 0; i < variables_num; i++) {
+    //         *(tmp_c + i) = 0.0;
+    //     }
 
-        // TODO: check this parameters transformation process
-        *D = tmp_D;
-        *c = tmp_c;
-    }
+    //     // TODO: check this parameters transformation process
+    //     *D = tmp_D;
+    //     *c = tmp_c;
+    // }
 
     OoqpOptimizationInterface::OoqpOptimizationInterface() = default;
     OoqpOptimizationInterface::~OoqpOptimizationInterface() = default;
