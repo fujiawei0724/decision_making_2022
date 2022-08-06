@@ -1,7 +1,7 @@
 /*
  * @Author: fujiawei0724
  * @Date: 2021-12-01 21:10:42
- * @LastEditTime: 2022-08-06 16:40:17
+ * @LastEditTime: 2022-08-06 19:01:53
  * @LastEditors: fujiawei0724
  * @Description: Components for behavior planning.
  */
@@ -927,6 +927,7 @@ namespace BehaviorPlanner {
         color.b = 0.0;
         VisualizationMethods::visualizeTrajectory(ego_traj_[winner_index], vis_pub_, 0, color);
         printf("[BehaviorPlanner] selected action index: %d, with the cost: %lf.\n", winner_index, winner_cost);
+        LOG(INFO) << "[BehaviorPlanner] selected action index: " << winner_index << ", with the cost: " << winner_cost;
 
         *ego_best_traj = ego_traj_[winner_index];
         *sur_best_trajs = sur_veh_trajs_[winner_index];
@@ -1153,10 +1154,13 @@ namespace BehaviorPlanner {
                 behavior_safety_[index] = false;
             }
             behavior_sequence_cost_[index] += consistence_cost;
+            LOG(INFO) << "[BehaviorPlanner] consistence cost: " << consistence_cost;
         }
 
         // Calculate policy situation whether safe
         behavior_safety_[index] = PolicyEvaluater::calculateSafe(ego_trajectory, surround_trajectories, speed_limit);
+
+        LOG(INFO) << "[BehaviorPlanner] behavior index: " << index << ", lane change: " << lane_change_flag << ", behavior safe: " << behavior_safety_[index] << ", cost: " << behavior_sequence_cost_[index];
 
 
 
