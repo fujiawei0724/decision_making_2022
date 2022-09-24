@@ -1,1 +1,1 @@
-Trajectory planning with EUDM behavior planner.
+Decision-making algorithm using reinforcement-based branching.
