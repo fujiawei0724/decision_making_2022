@@ -550,6 +550,7 @@ void DecisionMaking::SubVehicle::motionPlanningThread() {
         sscPlanning(&is_trajectory_planning_success);
         if (!is_trajectory_planning_success) {
             printf("[MainPineline] ssc planning failed.\n");
+            LOG(INFO) << "[MainPineline] ssc planning failed.";
             continue;
         }
 
